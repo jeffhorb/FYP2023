@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
 
         user = autenticate.getCurrentUser();
         if (user == null){
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            Intent intent = new Intent(MainActivity.this, Login_activity.class);
             startActivity(intent);
             finish();
         }
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 FirebaseAuth.getInstance().signOut();
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                Intent intent = new Intent(MainActivity.this, Login_activity.class);
                 startActivity(intent);
                 finish();
             }
