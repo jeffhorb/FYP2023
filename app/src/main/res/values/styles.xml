@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources><!-- Defined a new style with three items of color. -->
+    <style name="status_bar_color" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/blue</item>
+
+        <!-- Defining that new color in ColorPrimaryDark -->
+        <item name="colorPrimaryDark">@color/blue</item>
+        <item name="colorAccent">@color/blue</item>
+    </style>
+</resources>

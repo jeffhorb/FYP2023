@@ -52,7 +52,7 @@
                 android:id="@+id/email"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:layout_marginTop="40dp"
+                android:layout_marginTop="20dp"
                 android:background="@drawable/login_backgroud"
                 android:drawablePadding="8dp"
                 android:hint="Email"
@@ -80,8 +80,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="right"
                 android:checked="false"
-                android:textOff="Hide"
-                android:textOn="Show" />
+                android:textOn="HIDE"
+                android:textOff="SHOW"
+                 />
 
             <TextView
                 android:id="@+id/AtoZ"

@@ -16,7 +16,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.graphics.Color;
 import android.widget.ToggleButton;
-
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -30,6 +29,7 @@ public class SignUpActivity extends AppCompatActivity {
     Button signupButn;
     FirebaseAuth authicate;
     ProgressBar pBar;
+    DBHandler dbHandler;
 
     public void onStart() {
         super.onStart();
@@ -53,6 +53,9 @@ public class SignUpActivity extends AppCompatActivity {
         AtoZ = findViewById(R.id.AtoZ);
         symbols = findViewById(R.id.symbol);
 
+
+
+
         //show password code
         ToggleButton showPasswordToggle = findViewById(R.id.showPasswordToggle);
         showPasswordToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -71,14 +74,9 @@ public class SignUpActivity extends AppCompatActivity {
             }
         });
 
-
         signupButn = findViewById(R.id.signupButton);
         pBar = findViewById(R.id.progressBar);
         authicate = FirebaseAuth.getInstance();
-
-        String mail = email.getText().toString().trim();
-        String pword = password.getText().toString().trim();
-        String fullN = userName.getText().toString();
 
         //check if user is already signed in
         loginN = findViewById(R.id.loginNow);
@@ -90,7 +88,6 @@ public class SignUpActivity extends AppCompatActivity {
                 finish();
             }
         });
-
 
         password.addTextChangedListener(new TextWatcher() {
             @Override
@@ -106,42 +103,63 @@ public class SignUpActivity extends AppCompatActivity {
             }
         });
 
-
         signupButn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                String mail = email.getText().toString().trim();
+                String pword = password.getText().toString().trim();
+                String userN = userName.getText().toString();
+
 
                 if (TextUtils.isEmpty(mail)) {
                     email.setError("Email Required");
                 }
+                if (TextUtils.isEmpty(userN)){
+                    userName.setError("User name required");
+                }
                 if (TextUtils.isEmpty(pword)) {
                     password.setError("Password Required");
-                }
-                if (TextUtils.isEmpty(fullN)){
-                    userName.setError("Full name required");
-                }
-                if (pword.length() < 8) {
+                }else if (pword.length() < 8) {
                     password.setError("Password length must be at least 8 characters");
                     return;
+                }else {
+                    pBar.setVisibility(View.VISIBLE);
+
+                    authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            pBar.setVisibility(View.GONE);
+                            if (task.isSuccessful()) {
+                                dbHandler = new DBHandler(SignUpActivity.this);
+                                dbHandler.addUser(userN,mail);
+                                Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
+                                Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
+                                startActivity(intent);
+                                //FirebaseUser user = authicate.getCurrentUser();
+                                //sendEmailVerification(user);
+                            } else {
+                                Toast.makeText(SignUpActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
                 }
 
-                pBar.setVisibility(View.VISIBLE);
-                authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        pBar.setVisibility(View.GONE);
-                        if (task.isSuccessful()) {
-                            Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(SignUpActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
             }
         });
     }
+
+    /*private void sendEmailVerification(FirebaseUser user) {
+        user.sendEmailVerification().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                Toast.makeText(SignUpActivity.this, "Verification email sent.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(SignUpActivity.this, "Error occurred.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }*/
+
     public void validatepass(String password) {
-        String specialC = ("[ \\\\s@  [\\\"]\\\\[\\\\]\\\\\\\0-9|^{#%'*/<()>}:`;,!& .?_$+-]+");
+        String specialC = ("[ \\\\@  [\\\"]\\\\[\\\\]\\\\\\|^{#%'*/<()>}:`;,!& .?_$+-]+");
         // check for pattern
         Pattern uppercase = Pattern.compile("[A-Z]");
         Pattern lowercase = Pattern.compile("[a-z]");

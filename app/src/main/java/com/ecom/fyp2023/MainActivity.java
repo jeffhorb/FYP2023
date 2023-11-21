@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -28,7 +29,17 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
-
+        /*
+        FirebaseUser verifiedUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (verifiedUser != null) {
+            boolean isEmailVerified = verifiedUser.isEmailVerified();
+            if (isEmailVerified) {
+                Toast.makeText(MainActivity.this, "User Verified.", Toast.LENGTH_SHORT).show();
+            } else {
+                    Toast.makeText(MainActivity.this, "Error occurred", Toast.LENGTH_SHORT).show();
+            }
+        }
+         */
         logoutBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

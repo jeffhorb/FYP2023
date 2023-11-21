@@ -67,8 +67,8 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="right"
                 android:checked="false"
-                android:textOff="Hide"
-                android:textOn="Show" />
+                android:textOff="Show"
+                android:textOn="Hide" />
 
             <Button
                 android:id="@+id/loginButton"

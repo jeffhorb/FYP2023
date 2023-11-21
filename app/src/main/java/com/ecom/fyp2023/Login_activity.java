@@ -22,6 +22,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.text.InputType;
 import android.widget.LinearLayout;
+import android.widget.ToggleButton;
 
 public class Login_activity extends AppCompatActivity {
 
@@ -60,6 +61,24 @@ public class Login_activity extends AppCompatActivity {
             }
         });
 
+        //show password code
+        ToggleButton showPasswordToggle = findViewById(R.id.showPasswordToggle);
+        showPasswordToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                Apassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            } else {
+                Apassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            }
+            // Move the cursor to the end of the text
+            Apassword.setSelection(Apassword.length());
+        });
+
+        Apassword.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                Apassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            }
+        });
+
        loginBtn.setOnClickListener(new View.OnClickListener() {
            @Override
            public void onClick(View v) {
@@ -68,7 +87,8 @@ public class Login_activity extends AppCompatActivity {
 
                if (TextUtils.isEmpty(mail)  ) {
                    Aemail.setError("Email Required");
-               } else if (TextUtils.isEmpty(pword)) {
+               }
+               if (TextUtils.isEmpty(pword)) {
                    Apassword.setError("Password Required");
                }else{
                    pBar.setVisibility(View.VISIBLE);
@@ -77,12 +97,12 @@ public class Login_activity extends AppCompatActivity {
                        public void onComplete(@NonNull Task<AuthResult> task) {
                            pBar.setVisibility(View.GONE);
                            if (task.isSuccessful()) {
-                               Toast.makeText(Login_activity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
-                               Intent intent = new Intent(Login_activity.this, MainActivity.class);
+                               //Toast.makeText(Login_activity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
+                               Intent intent = new Intent(Login_activity.this, ProjectActivity.class);
                                startActivity(intent);
                                finish();
                            } else {
-                               Toast.makeText(Login_activity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                               Toast.makeText(Login_activity.this, "Login failed.", Toast.LENGTH_SHORT).show();
                            }
                        }
                    });
