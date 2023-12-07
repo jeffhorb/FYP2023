@@ -17,30 +17,27 @@ import android.widget.Toast;
 import android.graphics.Color;
 import android.widget.ToggleButton;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.util.regex.Pattern;
 
 public class SignUpActivity extends AppCompatActivity {
     EditText userName, email, password;
-    TextView loginN, num,atoz,AtoZ,symbols;
+    TextView loginN, num, atoz, AtoZ, symbols;
     Button signupButn;
     FirebaseAuth authicate;
     ProgressBar pBar;
-    DBHandler dbHandler;
 
-    public void onStart() {
-        super.onStart();
-        // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = authicate.getCurrentUser();
-        if(currentUser != null){
-            Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
-            startActivity(intent);
-            finish();
-        }
-    }
+    FirebaseFirestore db;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,7 +50,7 @@ public class SignUpActivity extends AppCompatActivity {
         AtoZ = findViewById(R.id.AtoZ);
         symbols = findViewById(R.id.symbol);
 
-
+        db = FirebaseFirestore.getInstance();
 
 
         //show password code
@@ -78,9 +75,9 @@ public class SignUpActivity extends AppCompatActivity {
         pBar = findViewById(R.id.progressBar);
         authicate = FirebaseAuth.getInstance();
 
-        //check if user is already signed in
+        //check if user is already registered in
         loginN = findViewById(R.id.loginNow);
-            loginN.setOnClickListener(new View.OnClickListener() {
+        loginN.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
@@ -93,11 +90,13 @@ public class SignUpActivity extends AppCompatActivity {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
+
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String pword = password.getText().toString().trim();
                 validatepass(pword);
             }
+
             @Override
             public void afterTextChanged(Editable s) {
             }
@@ -114,15 +113,15 @@ public class SignUpActivity extends AppCompatActivity {
                 if (TextUtils.isEmpty(mail)) {
                     email.setError("Email Required");
                 }
-                if (TextUtils.isEmpty(userN)){
+                else if (TextUtils.isEmpty(userN)) {
                     userName.setError("User name required");
                 }
-                if (TextUtils.isEmpty(pword)) {
+                else if (TextUtils.isEmpty(pword)) {
                     password.setError("Password Required");
-                }else if (pword.length() < 8) {
+                } else if (pword.length() < 8) {
                     password.setError("Password length must be at least 8 characters");
                     return;
-                }else {
+                } else {
                     pBar.setVisibility(View.VISIBLE);
 
                     authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
@@ -130,8 +129,7 @@ public class SignUpActivity extends AppCompatActivity {
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             pBar.setVisibility(View.GONE);
                             if (task.isSuccessful()) {
-                                dbHandler = new DBHandler(SignUpActivity.this);
-                                dbHandler.addUser(userN,mail);
+                                addDataToFirestore(userN, mail);
                                 Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
                                 Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
                                 startActivity(intent);
@@ -158,13 +156,14 @@ public class SignUpActivity extends AppCompatActivity {
         });
     }*/
 
+
     public void validatepass(String password) {
         String specialC = ("[ \\\\@  [\\\"]\\\\[\\\\]\\\\\\|^{#%'*/<()>}:`;,!& .?_$+-]+");
         // check for pattern
         Pattern uppercase = Pattern.compile("[A-Z]");
         Pattern lowercase = Pattern.compile("[a-z]");
         Pattern digit = Pattern.compile("[0-9]");
-        Pattern specialChar  = Pattern.compile(specialC);
+        Pattern specialChar = Pattern.compile(specialC);
 
         // if lowercase character is not present
         if (!lowercase.matcher(password).find()) {
@@ -194,5 +193,46 @@ public class SignUpActivity extends AppCompatActivity {
         } else {
             symbols.setTextColor(Color.GREEN);
         }
+    }
+
+    /**
+     * public void onStart() {
+     * super.onStart();
+     * // Check if user is signed in (non-null) and update UI accordingly.
+     * // FirebaseUser currentUser = authicate.getCurrentUser();
+     * // if (currentUser != null) {
+     * //     Intent intent = new Intent(SignUpActivity.this, ProjectActivity.class);
+     * //      startActivity(intent);
+     * //     finish();
+     * //}
+     * <p>
+     * <p>
+     * }
+     **/
+
+    private void addDataToFirestore(String userName, String userEmail) {
+        // creating a collection reference
+        // for our Firebase Firestore database.
+        CollectionReference dbUsers = db.collection("Users");
+
+        // adding our data to our courses object class.
+        Users users = new Users(userName, userEmail);
+
+        // below method is use to add data to Firebase Firestore.
+        dbUsers.add(users).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+            @Override
+            public void onSuccess(DocumentReference documentReference) {
+                // after the data addition is successful
+                // we are displaying a success toast message.
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                // this method is called when the data addition process is failed.
+                // displaying a toast message when data addition is failed.
+                //Toast.makeText(MainActivity.this, "Fail to add course \n" + e, Toast.LENGTH_SHORT).show();
+            }
+        });
+
     }
 }

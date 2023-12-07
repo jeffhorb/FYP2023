@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -16,6 +17,12 @@
         android:theme="@style/status_bar_color"
         tools:targetApi="31">
         <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".HomeScreen"
+            android:exported="false" />
+        <activity
             android:name=".AddTask"
             android:exported="false" />
         <activity
@@ -27,7 +34,6 @@
             android:name=".ProjectActivity"
             android:exported="false"
             android:label="Projects" />
-
         <activity
             android:name=".Login_activity"
             android:exported="true">
@@ -37,9 +43,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
         <activity
             android:name=".SignUpActivity"
             android:exported="false" />

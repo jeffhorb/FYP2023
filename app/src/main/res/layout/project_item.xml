@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/idProjectItems"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp"
+    app:cardCornerRadius="6dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp"
+        android:orientation="horizontal"
+        android:padding="4dp">
+
+        <!--Textview for displaying our Course Name-->
+        <TextView
+            android:id="@+id/projectTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="2dp"
+            android:text="ProjectTitle"
+            android:textColor="@color/black"
+            android:textSize="20sp" />
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/buttonOptions"
+        android:layout_width="wrap_content"
+        android:layout_height="41dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginLeft="330dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/baseline_more_vert_24" />
+
+
+</androidx.cardview.widget.CardView>

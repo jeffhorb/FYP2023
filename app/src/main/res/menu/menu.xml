@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-
         android:id="@+id/home_menu_item"
         android:onClick="Home"
         android:title="Home"/>
@@ -13,4 +12,18 @@
         android:id="@+id/logout_menu_item"
         android:onClick="Logout"
         android:title="Log out"/>
+
+    <item android:title="search"
+        android:id="@+id/search"
+        android:onClick="Search"
+        android:orderInCategory="100"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_search_24"/>
+
+    <item android:title="Notification"
+        android:id="@+id/imageNotification"
+        android:onClick="Notification"
+        android:orderInCategory="100"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_notifications_none_24"/>
 </menu>

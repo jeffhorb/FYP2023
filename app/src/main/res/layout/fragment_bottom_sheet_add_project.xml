@@ -1,0 +1,88 @@
+<!-- fragment_bottom_sheet.xml -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+
+    <TextView
+        android:id="@+id/createPro"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="Create Project"
+        android:textAlignment="center"
+        android:textSize="20dp"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/proTitle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:drawablePadding="8dp"
+        android:hint="Title"
+        android:padding="8dp"
+        android:textColor="@color/black" />
+
+    <EditText
+        android:id="@+id/proDesc"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:drawablePadding="8dp"
+        android:inputType="textMultiLine"
+        android:hint="Description"
+        android:padding="8dp"
+        android:textColor="@color/black" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/startDate"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:drawablePadding="8dp"
+            android:hint="Start date"
+            android:inputType="date"
+            android:padding="8dp"
+            android:textColor="@color/black" />
+
+        <EditText
+            android:id="@+id/endDate"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:drawablePadding="8dp"
+            android:hint="End Date"
+            android:inputType="date"
+            android:padding="8dp"
+            android:textColor="@color/black" />
+
+
+    </LinearLayout>
+
+
+    <EditText
+        android:id="@+id/proPriority"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:drawablePadding="8dp"
+        android:hint="Priority Level"
+        android:inputType="number"
+        android:padding="8dp"
+        android:textColor="@color/black" />
+
+
+    <Button
+        android:id="@+id/addProButn"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:backgroundTint="@color/blue"
+        android:layout_gravity="center"
+        android:text="Add Task"
+        android:textSize="15sp"
+        android:background="@drawable/common_google_signin_btn_icon_dark"/>
+
+</LinearLayout>

@@ -98,7 +98,7 @@ public class Login_activity extends AppCompatActivity {
                            pBar.setVisibility(View.GONE);
                            if (task.isSuccessful()) {
                                //Toast.makeText(Login_activity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
-                               Intent intent = new Intent(Login_activity.this, ProjectActivity.class);
+                               Intent intent = new Intent(Login_activity.this, HomeScreen.class);
                                startActivity(intent);
                                finish();
                            } else {
