@@ -1,30 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ProjectActivity">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/Recyclerview"
-        android:layout_width="409dp"
-        android:layout_height="889dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/addProject"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="28dp"
-        android:layout_marginBottom="32dp"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/baseline_add_circle_outline_24" />
+        android:layout_marginTop="50dp"
+        android:orientation="horizontal">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="40sp"
+            android:textSize="20dp"
+            android:textStyle="bold"
+            android:text="projectTile" />
+
+        <ImageView
+            android:id="@+id/expandImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:contentDescription="Add Task"
+            android:focusable="true"
+            android:layout_alignParentEnd="true"
+            android:src="@drawable/baseline_expand_more_24" />
+
+        <TextView
+            android:id="@+id/myTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="20dp"
+            android:text="Add Tasks"
+            android:gravity="center"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/addTasksImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_gravity="center"
+            android:src="@drawable/baseline_add_circle_outline_24"/>
+
+
+
+        <ImageView
+            android:id="@+id/moreImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:layout_marginLeft="100sp"
+            android:layout_gravity="center"
+            android:focusable="true"
+            android:src="@drawable/baseline_more_vert_24"/>
+
+
+
+
+
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/fragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/white"/>
+
+
+    <EditText
+        android:id="@+id/commentEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="@android:color/transparent"
+        android:hint="Add a comment..."
+        android:layout_marginTop="500sp"
+        android:imeOptions="actionSend"
+        android:inputType="textMultiLine"
+        android:maxLines="3"
+        android:padding="16dp" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/addTasksFragment"
+        android:layout_width="match_parent"
+        android:layout_height="480dp"
+        android:layout_above="@+id/fragmentContainer"
+        android:layout_marginTop="307dp"
+        android:layout_marginBottom="15dp" />
+
+
+
+</RelativeLayout>

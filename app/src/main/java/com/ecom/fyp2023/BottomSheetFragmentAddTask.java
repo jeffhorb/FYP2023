@@ -1,64 +1,146 @@
 package com.ecom.fyp2023;
 
+import static com.ecom.fyp2023.ProjectActivity.projectId_key;
+
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link BottomSheetFragmentAddTask#newInstance} factory method to
- * create an instance of this fragment.
- */
-public class BottomSheetFragmentAddTask extends Fragment {
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+import java.util.HashMap;
+import java.util.Map;
 
-    public BottomSheetFragmentAddTask() {
-        // Required empty public constructor
+
+public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
+
+    EditText progress;
+    EditText estimatedTime;
+    EditText details;
+    EditText difficulty;
+    Button save;
+    String taskId, projectId;
+    FirebaseFirestore fb;
+
+    public static BottomSheetFragmentAddTask newInstance() {
+        return new BottomSheetFragmentAddTask();
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment BottomSheetFragmentAddTask.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static BottomSheetFragmentAddTask newInstance(String param1, String param2) {
-        BottomSheetFragmentAddTask fragment = new BottomSheetFragmentAddTask();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
 
+    @Nullable
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_bottom_sheet_add_task, container, false);
+
+        details = view.findViewById(R.id.taskDetails);
+        estimatedTime = view.findViewById(R.id.estimatedTime);
+        difficulty = view.findViewById(R.id.taskDif);
+        progress = view.findViewById(R.id.taskProgress);
+        save = view.findViewById(R.id.saveBtn);
+
+        fb = FirebaseFirestore.getInstance();
+
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+
+           projectId = arguments.getString(projectId_key);
+
         }
+
+        save.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                String detls = details.getText().toString();
+                String estTime = estimatedTime.getText().toString();
+                String diff = difficulty.getText().toString();
+                String progrs = progress.getText().toString();
+
+
+               /* if (TextUtils.isEmpty(detls)) {
+                    details.setError("Field required");
+                }
+                else if (TextUtils.isEmpty(estTime)) {
+                    estimatedTime.setError("Field required");
+                }
+                else if (TextUtils.isEmpty(progrs)) {
+                    progress.setError("Field required");
+                }
+                else if ( !diff.equalsIgnoreCase("low")|| !diff.equalsIgnoreCase("medium")||!!diff.equalsIgnoreCase("high")) {
+                    difficulty.setError("Difficulty can only be high, medium or low");
+                }
+                else {*/
+                    saveTasks(detls, diff, progrs, estTime);
+                //}
+
+                details.setText(null);
+                estimatedTime.setText(null);
+                difficulty.setText(null);
+                progress.setText(null);
+
+            }
+        });
+        return view;
+
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_bottom_sheet_add_task, container, false);
+
+    public void saveTasks(String d, String diff, String prog, String estT) {
+
+
+        CollectionReference dbTasks = fb.collection("Tasks");
+
+        Tasks tasks = new Tasks(d, diff, prog, estT);
+        dbTasks.add(tasks).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+            @Override
+            public void onSuccess(DocumentReference documentReference) {
+
+
+                Toast.makeText(getActivity(), "tasks saved", Toast.LENGTH_SHORT).show();
+                taskId = documentReference.getId();
+                addProjectTask(projectId, taskId);
+
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+
+                Toast.makeText(getActivity(), "Failed \n" + e, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
+    private void addProjectTask(String projectId, String taskId) {
+        // Creates a new userProjects document with an automatically generated ID
+        Map<String, Object> projectTasks = new HashMap<>();
+
+        projectTasks.put("projectId", projectId);
+        projectTasks.put("taskId", taskId);
+        fb.collection("projectTasks").add(projectTasks).addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentReference> task) {
+                if (task.isSuccessful()) {
+                    Log.d("projectTasks", "projectTasks added with ID: " + task.getResult().getId());
+                } else {
+                    Log.e("projectTasks", "Error adding userProject", task.getException());
+                }
+            }
+        });
+    }
+
 }

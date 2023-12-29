@@ -1,24 +1,25 @@
 <!-- fragment_bottom_sheet.xml -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/addProjectFrag"
+    android:id="@+id/updateProjectFrag"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:layout_gravity="bottom"
     android:padding="16dp">
 
 
     <TextView
-        android:id="@+id/createPro"
+        android:id="@+id/updateP"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Create Project"
+        android:text="Update Project"
         android:textAlignment="center"
-        android:textSize="20dp"
+        android:textSize="20sp"
         android:textStyle="bold" />
 
     <EditText
-        android:id="@+id/proTitle"
+        android:id="@+id/proT"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:drawablePadding="8dp"
@@ -27,7 +28,7 @@
         android:textColor="@color/black" />
 
     <EditText
-        android:id="@+id/proDesc"
+        android:id="@+id/proD"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:drawablePadding="8dp"
@@ -42,7 +43,7 @@
         android:orientation="horizontal">
 
         <EditText
-            android:id="@+id/startDate"
+            android:id="@+id/startD"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:drawablePadding="8dp"
@@ -52,7 +53,7 @@
             android:textColor="@color/black" />
 
         <EditText
-            android:id="@+id/endDate"
+            android:id="@+id/endD"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:drawablePadding="8dp"
@@ -66,7 +67,7 @@
 
 
     <EditText
-        android:id="@+id/proPriority"
+        android:id="@+id/proP"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:drawablePadding="8dp"
@@ -77,12 +78,12 @@
 
 
     <Button
-        android:id="@+id/addProButn"
+        android:id="@+id/updateProjectBt"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:backgroundTint="@color/blue"
         android:layout_gravity="center"
-        android:text="Add Task"
+        android:text="Update"
         android:textSize="15sp"
         android:background="@drawable/common_google_signin_btn_icon_dark"/>
 

@@ -1,12 +1,19 @@
 package com.ecom.fyp2023;
 
 
-public class Projects {
+import com.google.firebase.firestore.Exclude;
+
+import java.io.Serializable;
+
+public class Projects implements Serializable {
     private String title;
     private String description;
     private String priority;
     private String startDate;
     private String endDate;
+
+    private transient String projectId;
+
 
     // Default constructor
     public Projects() {
@@ -67,4 +74,12 @@ public class Projects {
         this.endDate = endDate;
     }
 
+    @Exclude
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
 }

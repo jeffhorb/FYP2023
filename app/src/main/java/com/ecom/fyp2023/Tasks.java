@@ -4,8 +4,8 @@ public class Tasks {
 
     private String taskDetails;
     private String difficulty;
-    private int progress;
-    private int estimatedTime;
+    private String progress;
+    private String estimatedTime;
 
     // Constructors, getters, and setters
 
@@ -13,7 +13,7 @@ public class Tasks {
         // Default constructor required for Firestore
     }
 
-    public Tasks( String taskDetails, String difficulty, int progress, int estimatedTime) {
+    public Tasks( String taskDetails, String difficulty, String progress, String estimatedTime) {
 
         this.taskDetails = taskDetails;
         this.difficulty = difficulty;
@@ -37,19 +37,19 @@ public class Tasks {
         this.difficulty = difficulty;
     }
 
-    public int getProgress() {
+    public String getProgress() {
         return progress;
     }
 
-    public void setProgress(int progress) {
+    public void setProgress(String progress) {
         this.progress = progress;
     }
 
-    public int getEstimatedTime() {
+    public String getEstimatedTime() {
         return estimatedTime;
     }
 
-    public void setEstimatedTime(int estimatedTime) {
+    public void setEstimatedTime(String estimatedTime) {
         this.estimatedTime = estimatedTime;
     }
 }

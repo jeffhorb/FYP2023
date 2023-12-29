@@ -1,30 +1,47 @@
 package com.ecom.fyp2023;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.text.InputType;
-import android.widget.LinearLayout;
-import android.widget.ToggleButton;
 
 public class Login_activity extends AppCompatActivity {
+
+
+  /*public void onStart() {
+  super.onStart();
+  //Check if user is signed in (non-null) and update UI accordingly.
+  FirebaseUser currentUser = authicate.getCurrentUser();
+  if (currentUser != null) {
+      Intent intent = new Intent(Login_activity.this, HomeScreen.class);
+       startActivity(intent);
+      finish();
+ }
+    }*/
+
+
+    private CheckBox checkBoxRememberMe;
 
     EditText Aemail, Apassword;
     Button loginBtn;
@@ -43,6 +60,8 @@ public class Login_activity extends AppCompatActivity {
         forgotpword = findViewById(R.id.forgotPassword);
         authicate = FirebaseAuth.getInstance();
         loginprogress=new ProgressDialog(this);
+        checkBoxRememberMe = findViewById(R.id.checkBoxRememberMe);
+
 
         forgotpword.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,6 +79,13 @@ public class Login_activity extends AppCompatActivity {
                 finish();
             }
         });
+
+        if (!new SharedPreferenceManager(this).isUserLogedOut()) {
+            //user's email and password both are saved in preferences
+            Intent intent = new Intent(Login_activity.this, HomeScreen.class);
+            startActivity(intent);
+            finish();
+        }
 
         //show password code
         ToggleButton showPasswordToggle = findViewById(R.id.showPasswordToggle);
@@ -97,7 +123,9 @@ public class Login_activity extends AppCompatActivity {
                        public void onComplete(@NonNull Task<AuthResult> task) {
                            pBar.setVisibility(View.GONE);
                            if (task.isSuccessful()) {
-                               //Toast.makeText(Login_activity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
+                               //
+                               if (checkBoxRememberMe.isChecked())
+                                   saveLoginDetails(mail, pword);
                                Intent intent = new Intent(Login_activity.this, HomeScreen.class);
                                startActivity(intent);
                                finish();
@@ -175,5 +203,10 @@ public class Login_activity extends AppCompatActivity {
             }
         });
     }
+    //sharepre to save user data
+    private void saveLoginDetails(String email, String password) {
+        new SharedPreferenceManager(this).saveLoginDetails(email, password);
+    }
+
 }
 
