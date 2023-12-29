@@ -1,14 +1,13 @@
 package com.ecom.fyp2023;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
-
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
-
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -40,6 +39,9 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
     EditText proPriority;
     Button addPro;
     String userId, projectId, role;
+
+    public static final String MESSAGE_KEY="projectId";
+
 
     FirebaseFirestore fb;
     private FirebaseAuth mAuth;
@@ -75,29 +77,25 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
                 String endDt = endDate.getText().toString();
                 String priority = proPriority.getText().toString();
 
-                /*if (TextUtils.isEmpty(proTitle)) {
+                if (TextUtils.isEmpty(proTitle)) {
                     pTitle.setError("Field required");
-                }
-                else if (TextUtils.isEmpty(proDesc)) {
+                } else if (TextUtils.isEmpty(proDesc)) {
                     pDesc.setError("Field required");
-                }
-                else if (TextUtils.isEmpty(startDt)) {
+                } else if (TextUtils.isEmpty(startDt)) {
                     startDate.setError("Field required");
+
                 } else if (TextUtils.isEmpty(endDt)) {
-                    endDate.setError("required");
-                    return;
-                }
-                else if ( !priority.equals("1")) {
-                    proPriority.setError("filed required");
-                }
-                else {
-                    addProjects(proTitle,proDesc,priority,startDt,endDt);
-                }*/
+                    endDate.setError("Field required");
 
-                addProjects(proTitle, proDesc, priority, startDt, endDt);
-
+               // } else if (!priority.equals("1")||!priority.equals("2")||!priority.equals("3")) {
+                  //  proPriority.setError("Priority Level can only 1 ,2 or 3");
+                } else {
+                    addProjects(proTitle, proDesc, priority, startDt, endDt);
+                }
             }
         });
+
+
 
         startDate.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -119,6 +117,9 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             }
         });
 
+
+
+
         endDate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -138,10 +139,13 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
                 datePickerDialog.show();
             }
         });
+
         return view;
+
+
     }
 
-    public void addProjects(String title, String description, String  priority, String startDate, String endDate) {
+    public void addProjects(String title, String description, String priority, String startDate, String endDate) {
 
         CollectionReference dbProjects = fb.collection("Projects");
 
@@ -150,12 +154,21 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             @Override
             public void onSuccess(DocumentReference documentReference) {
 
-                Toast.makeText(getActivity(), "Project created", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getActivity(), "Project created", Toast.LENGTH_SHORT).show();
 
                 userId = mAuth.getCurrentUser().getUid();
-                projectId =  documentReference.getId();
+                projectId = documentReference.getId();
                 role = "owner";
                 addUserProject(userId, projectId, role);
+
+                Projects pro = new Projects();
+                pro.setProjectId(projectId);
+
+
+                Intent intent = new Intent(getActivity(), ProjectActivity.class);
+                intent.putExtra(MESSAGE_KEY, projectId);
+                startActivity(intent);
+
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -165,11 +178,13 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             }
         });
     }
-    private void addUserProject(String userId, String projectId, String role) {
+
+
+    private void addUserProject(String userId, String project_id, String role) {
         // Creates a new userProjects document with an automatically generated ID
         Map<String, Object> userProject = new HashMap<>();
         userProject.put("userId", userId);
-        userProject.put("projectId", projectId);
+        userProject.put("projectId", project_id);
         userProject.put("role", role);
 
         fb.collection("userProjects").add(userProject).addOnCompleteListener(new OnCompleteListener<DocumentReference>() {

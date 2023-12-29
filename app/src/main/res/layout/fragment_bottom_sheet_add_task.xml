@@ -1,14 +1,82 @@
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- fragment_bottom_sheet.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/addTasksFragment"
+    tools:context=".BottomSheetFragmentAddTask"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".BottomSheetFragmentAddTask">
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <!-- TODO: Update blank fragment layout -->
+
     <TextView
+        android:id="@+id/addTasks"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:text="Add Task"
+        android:textAlignment="center"
+        android:textSize="20dp"
+        android:textStyle="bold" />
 
-</FrameLayout>
+    <EditText
+        android:id="@+id/taskDetails"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:drawablePadding="8dp"
+        android:hint="Task Details"
+        android:inputType="textMultiLine"
+        android:padding="8dp"
+        android:textColor="@color/black" />
+
+    <EditText
+        android:id="@+id/taskDif"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:drawablePadding="8dp"
+        android:inputType="text"
+        android:hint="Difficulty (Low, medium, high)"
+        android:padding="8dp"
+        android:textColor="@color/black" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/taskProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:drawablePadding="8dp"
+            android:hint="Progress"
+            android:inputType="text"
+            android:padding="8dp"
+            android:textColor="@color/black" />
+
+
+
+    </LinearLayout>
+
+
+    <EditText
+        android:id="@+id/estimatedTime"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:drawablePadding="8dp"
+        android:hint="Estimated Time (eg.2d,6w,3m)"
+        android:inputType="text"
+        android:padding="8dp"
+        android:textColor="@color/black" />
+
+
+    <Button
+        android:id="@+id/saveBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:backgroundTint="@color/blue"
+        android:layout_gravity="center"
+        android:text="Save"
+        android:textSize="15sp"
+        android:background="@drawable/common_google_signin_btn_icon_dark"/>
+
+</LinearLayout>

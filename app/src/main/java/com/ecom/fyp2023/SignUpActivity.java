@@ -195,20 +195,6 @@ public class SignUpActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * public void onStart() {
-     * super.onStart();
-     * // Check if user is signed in (non-null) and update UI accordingly.
-     * // FirebaseUser currentUser = authicate.getCurrentUser();
-     * // if (currentUser != null) {
-     * //     Intent intent = new Intent(SignUpActivity.this, ProjectActivity.class);
-     * //      startActivity(intent);
-     * //     finish();
-     * //}
-     * <p>
-     * <p>
-     * }
-     **/
 
     private void addDataToFirestore(String userName, String userEmail) {
         // creating a collection reference
@@ -222,15 +208,12 @@ public class SignUpActivity extends AppCompatActivity {
         dbUsers.add(users).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
             @Override
             public void onSuccess(DocumentReference documentReference) {
-                // after the data addition is successful
-                // we are displaying a success toast message.
+
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                // this method is called when the data addition process is failed.
-                // displaying a toast message when data addition is failed.
-                //Toast.makeText(MainActivity.this, "Fail to add course \n" + e, Toast.LENGTH_SHORT).show();
+
             }
         });
 
