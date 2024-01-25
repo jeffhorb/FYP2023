@@ -6,7 +6,19 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:layout_gravity="bottom"
-    android:padding="16dp">
+    android:padding="16dp"
+    >
+
+    <ImageView
+        android:id="@+id/closeImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_close_24"
+        android:layout_gravity="end"
+        android:layout_marginEnd="8dp"
+        android:clickable="true"
+        android:focusable="true"/>
+
 
 
     <TextView
@@ -24,6 +36,7 @@
         android:layout_height="match_parent"
         android:drawablePadding="8dp"
         android:hint="Title"
+        android:inputType="textMultiLine"
         android:padding="8dp"
         android:textColor="@color/black" />
 
@@ -65,17 +78,38 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/spinnerTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="Priority Level:"
+        android:textSize="16sp"
+        android:textStyle="bold" />
 
-    <EditText
+
+    <Spinner
         android:id="@+id/proP"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:drawablePadding="8dp"
-        android:hint="Priority Level"
-        android:inputType="number"
-        android:padding="8dp"
-        android:textColor="@color/black" />
+        android:layout_height="37dp"
+        android:entries="@array/projectPriority"
+        android:gravity="end" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="Progress Level:"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+
+    <Spinner
+        android:id="@+id/proPro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:entries="@array/tasksProgress"
+        android:gravity="end" />
 
     <Button
         android:id="@+id/updateProjectBt"

@@ -1,8 +1,9 @@
-package com.ecom.fyp2023;
+package com.ecom.fyp2023.Adapters;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -18,6 +19,11 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.ecom.fyp2023.AppManagers.FirestoreManager;
+import com.ecom.fyp2023.Fragments.UpdateProject;
+import com.ecom.fyp2023.ModelClasses.Projects;
+import com.ecom.fyp2023.ProjectActivity;
+import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -29,9 +35,8 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
     // creating variables for our ArrayList and context
     private List<Projects> projectsArrayList;
 
-    private Context context;
+    private final Context context;
 
-    private FirebaseFirestore db;
 
     // creating constructor for our adapter class
     public ProjectsRVAdapter(ArrayList<Projects> projectsArrayList, Context context) {
@@ -56,10 +61,9 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         // setting data to our text views from our modal class.
         Projects projects = projectsArrayList.get(position);
         holder.projectT.setText(projects.getTitle());
+        holder.projectP.setText(projects.getProgress());
 
         holder.buttonOptions.setOnClickListener(v -> showPopupMenu(holder.buttonOptions, holder.getAdapterPosition()));
-
-
     }
 
 
@@ -73,25 +77,22 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         PopupMenu popupMenu = new PopupMenu(context, view);
         popupMenu.getMenuInflater().inflate(R.menu.project_menu_option, popupMenu.getMenu());
         // Set up a click listener for the menu items
-        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                int id = item.getItemId();
+        popupMenu.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
 
-                if (id == R.id.deletePrject) {
-                    showRemoveConfirmationDialog(position);
-                    return true;
-                }else if(id == R.id.updateProject){
+            if (id == R.id.deletePrject) {
+                showRemoveConfirmationDialog(position);
+                return true;
+            }else if(id == R.id.updateProject){
 
-                    Projects project = projectsArrayList.get(position);
-                    showUpdateFragmrnt(project);
+                Projects project = projectsArrayList.get(position);
+                showUpdateFragmrnt(project);
 
-                    return true;
+                return true;
 
-                }
-
-                return false;
             }
+
+            return false;
         });
         popupMenu.show();
     }
@@ -99,7 +100,8 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView projectT;
+        private final TextView projectT;
+        private final TextView projectP;
 
         ImageButton buttonOptions;
 
@@ -108,14 +110,18 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
             // initializing our text views.
             projectT = itemView.findViewById(R.id.projectTitle);
             buttonOptions = itemView.findViewById(R.id.buttonOptions);
+            projectP = itemView.findViewById(R.id.proProgress);
 
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    // After clicking the item in the RecyclerView.
-                    // Retrieve data from the clicked item.
+            itemView.setOnClickListener(v -> {
 
-                }
+                Projects selectedProject = projectsArrayList.get(getAdapterPosition());
+
+                Intent intent = new Intent(itemView.getContext(), ProjectActivity.class);
+
+                // the selected project as an extra in the Intent
+                intent.putExtra("selectedProject", selectedProject);
+                itemView.getContext().startActivity(intent);
+
 
             });
 
@@ -146,17 +152,9 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
     private void showRemoveConfirmationDialog(final int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setMessage("Are you sure you want to remove this project and its tasks?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        removeProject(position);
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        // Do nothing, simply close the dialog
-                    }
+                .setPositiveButton("Yes", (dialogInterface, i) -> removeProject(position))
+                .setNegativeButton("No", (dialogInterface, i) -> {
+                    // Do nothing, simply close the dialog
                 });
 
         AlertDialog dialog = builder.create();
@@ -171,29 +169,19 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         notifyItemRemoved(position);
 
         FirestoreManager firestoreManager = new FirestoreManager();
-        firestoreManager.getDocumentId("Projects", "title", removedProject.getTitle(), new FirestoreManager.OnDocumentIdRetrievedListener() {
-            @Override
-            public void onDocumentIdRetrieved(String documentId) {
-                if (documentId != null) {
-                    removeItemFromFirestore(documentId);
-                } else {
-                    // Handle the case where the document ID couldn't be retrieved
-                }
-            }
+        firestoreManager.getDocumentId("Projects", "title", removedProject.getTitle(), documentId -> {
+            if (documentId != null) {
+                removeItemFromFirestore(documentId);
+            }  // Handle the case where the document ID couldn't be retrieved
 
         });
     }
 
     private void removeItemFromFirestore(String documentId) {
-        FirebaseFirestore.getInstance().collection("Projects").document(documentId).delete().addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(Task<Void> task) {
-                if (task.isSuccessful()) {
-                    // Document successfully removed from Firestore
-                } else {
-                    // Handle the error
-                }
-            }
+        FirebaseFirestore.getInstance().collection("Projects").document(documentId).delete().addOnCompleteListener(task -> {
+            task.isSuccessful();
+            // Document successfully removed from Firestore
+            // Handle the error
         });
 
     }

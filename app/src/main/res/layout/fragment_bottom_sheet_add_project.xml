@@ -7,6 +7,17 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <ImageView
+        android:id="@+id/closeImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_close_24"
+        android:layout_gravity="end"
+        android:layout_marginEnd="8dp"
+        android:clickable="true"
+        android:focusable="true"/>
+
+
 
     <TextView
         android:id="@+id/createPro"
@@ -14,7 +25,7 @@
         android:layout_height="match_parent"
         android:text="Create Project"
         android:textAlignment="center"
-        android:textSize="20dp"
+        android:textSize="20sp"
         android:textStyle="bold" />
 
     <EditText
@@ -23,6 +34,7 @@
         android:layout_height="match_parent"
         android:drawablePadding="8dp"
         android:hint="Title"
+        android:inputType="textMultiLine"
         android:padding="8dp"
         android:textColor="@color/black" />
 
@@ -64,16 +76,32 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/spinnerTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Priority Level:"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:padding="8dp" />
 
-    <EditText
+
+    <Spinner
         android:id="@+id/proPriority"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:drawablePadding="8dp"
-        android:hint="Priority Level"
-        android:inputType="number"
-        android:padding="8dp"
-        android:textColor="@color/black" />
+        android:layout_height="37dp"
+        android:entries="@array/projectPriority"
+        android:gravity="end" />
+
+
+
+    <Spinner
+        android:id="@+id/proProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="2dp"
+        android:entries="@array/tasksProgress"
+        android:gravity="end"
+        android:visibility="invisible" />
 
 
     <Button

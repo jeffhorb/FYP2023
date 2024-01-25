@@ -15,6 +15,10 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.ecom.fyp2023.Adapters.ProjectsRVAdapter;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
+import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
+import com.ecom.fyp2023.ModelClasses.Projects;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -32,11 +36,9 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     public DrawerLayout drawerLayout;
     public ActionBarDrawerToggle actionBarDrawerToggle;
 
-
-
     ProjectsRVAdapter recyclerAdapter;
 
-    ArrayList<Projects> projectsArrayList;
+    private ArrayList<Projects> projectsArrayList;
     RecyclerView recyclerView;
     FirebaseFirestore db;
     NavigationView navigationView;
@@ -72,35 +74,27 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         recyclerView.setAdapter(recyclerAdapter);
 
         db.collection("Projects").get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                .addOnSuccessListener(queryDocumentSnapshots -> {
 
-                        if (!queryDocumentSnapshots.isEmpty()) {
+                    if (!queryDocumentSnapshots.isEmpty()) {
 
-                            List<DocumentSnapshot> list = queryDocumentSnapshots.getDocuments();
-                            for (DocumentSnapshot d : list) {
+                        List<DocumentSnapshot> list = queryDocumentSnapshots.getDocuments();
+                        for (DocumentSnapshot d : list) {
 
-                                Projects project = d.toObject(Projects.class);
+                            Projects project = d.toObject(Projects.class);
 
-                                project.setProjectId(d.getId());
+                            project.setProjectId(d.getId());
 
-                                projectsArrayList.add(project);
-                            }
-
-                            recyclerAdapter.notifyDataSetChanged();
-                        } else {
-                            // if the snapshot is empty we are displaying a toast message.
-                            Toast.makeText(HomeScreen.this, "No data found in Database", Toast.LENGTH_SHORT).show();
+                            projectsArrayList.add(project);
                         }
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
 
-                        Toast.makeText(HomeScreen.this, "Fail to get the data.", Toast.LENGTH_SHORT).show();
+                        recyclerAdapter.notifyDataSetChanged();
+                        recyclerAdapter.updateList(projectsArrayList);
+                    } else {
+                        // if the snapshot is empty we are displaying a toast message.
+                        Toast.makeText(HomeScreen.this, "No data found in Database", Toast.LENGTH_SHORT).show();
                     }
-                });
+                }).addOnFailureListener(e -> Toast.makeText(HomeScreen.this, "Fail to get the data.", Toast.LENGTH_SHORT).show());
 
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
@@ -111,6 +105,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         navigationView = findViewById(R.id.nav_view);
 
         navigationView.setNavigationItemSelectedListener(this);
+        navigationView.bringToFront();
 
 
         actionBarDrawerToggle = new ActionBarDrawerToggle(
@@ -119,19 +114,10 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
             actionBarDrawerToggle.syncState();
     }
 
-
-    @Override
-    public void onBackPressed() {
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
     //bottom navigation
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -169,12 +155,18 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         recyclerAdapter.updateList(filteredList);
     }
 
+
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        int itemId = item.getItemId();
 
-        int id = item.getItemId();
-
-        if (id == R.id.nav_logout) {
+        if (itemId == R.id.nav_home) {
+            Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show();
+        } else if (itemId == R.id.nav_settings) {
+            Toast.makeText(HomeScreen.this, "Settings clicked", Toast.LENGTH_SHORT).show();
+        } else if (itemId == R.id.nav_about) {
+            Toast.makeText(this, "About Us clicked", Toast.LENGTH_SHORT).show();
+        } else if (itemId == R.id.nav_logout) {
 
             sharedPrefManager.clearSession();
             FirebaseAuth.getInstance().signOut();
@@ -182,15 +174,20 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
             Intent intent = new Intent(HomeScreen.this, Login_activity.class);
             startActivity(intent);
             finish();
-            return true;
 
-        } else if (id == R.id.nav_settings) {
-            // Intent intent = new Intent(HomeScreen.this, SettingsActivity.class);
-            // startActivity(intent);
-            //finish();
-            return true;
         }
 
-        return false;
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
     }
+
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
 }

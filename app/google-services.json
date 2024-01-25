@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1003410082593",
-    "project_id": "fyp23-database",
-    "storage_bucket": "fyp23-database.appspot.com"
+    "project_number": "1018123129343",
+    "project_id": "fyp2023-dac7c",
+    "storage_bucket": "fyp2023-dac7c.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1003410082593:android:1f26da63e2dddef0d94c60",
+        "mobilesdk_app_id": "1:1018123129343:android:bb385e3e94c9fe4ff097ca",
         "android_client_info": {
           "package_name": "com.ecom.fyp2023"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC1jPmrmsv0ufzXZQovqxbAYXO2GRKW9wo"
+          "current_key": "AIzaSyAmoZzOQX3hElWkIhyD_H7fKWiO-CtWSp4"
         }
       ],
       "services": {

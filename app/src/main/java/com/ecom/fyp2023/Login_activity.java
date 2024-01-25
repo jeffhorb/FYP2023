@@ -20,6 +20,7 @@ import android.widget.ToggleButton;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
@@ -63,21 +64,13 @@ public class Login_activity extends AppCompatActivity {
         checkBoxRememberMe = findViewById(R.id.checkBoxRememberMe);
 
 
-        forgotpword.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showRecoverPasswordDialog();
-            }
-        });
+        forgotpword.setOnClickListener(v -> showRecoverPasswordDialog());
 
         textView = findViewById(R.id.signupText);
-        textView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(Login_activity.this, SignUpActivity.class);
-                startActivity(intent);
-                finish();
-            }
+        textView.setOnClickListener(v -> {
+            Intent intent = new Intent(Login_activity.this, SignUpActivity.class);
+            startActivity(intent);
+            finish();
         });
 
         if (!new SharedPreferenceManager(this).isUserLogedOut()) {
@@ -105,36 +98,33 @@ public class Login_activity extends AppCompatActivity {
             }
         });
 
-       loginBtn.setOnClickListener(new View.OnClickListener() {
-           @Override
-           public void onClick(View v) {
-               String mail = Aemail.getText().toString().trim();
-               String pword = Apassword.getText().toString().trim();
+       loginBtn.setOnClickListener(v -> {
+           String mail = Aemail.getText().toString().trim();
+           String pword = Apassword.getText().toString().trim();
 
-               if (TextUtils.isEmpty(mail)  ) {
-                   Aemail.setError("Email Required");
-               }
-               if (TextUtils.isEmpty(pword)) {
-                   Apassword.setError("Password Required");
-               }else{
-                   pBar.setVisibility(View.VISIBLE);
-                   authicate.signInWithEmailAndPassword(mail, pword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                       @Override
-                       public void onComplete(@NonNull Task<AuthResult> task) {
-                           pBar.setVisibility(View.GONE);
-                           if (task.isSuccessful()) {
-                               //
-                               if (checkBoxRememberMe.isChecked())
-                                   saveLoginDetails(mail, pword);
-                               Intent intent = new Intent(Login_activity.this, HomeScreen.class);
-                               startActivity(intent);
-                               finish();
-                           } else {
-                               Toast.makeText(Login_activity.this, "Login failed.", Toast.LENGTH_SHORT).show();
-                           }
+           if (TextUtils.isEmpty(mail)  ) {
+               Aemail.setError("Email Required");
+           }
+           if (TextUtils.isEmpty(pword)) {
+               Apassword.setError("Password Required");
+           }else{
+               pBar.setVisibility(View.VISIBLE);
+               authicate.signInWithEmailAndPassword(mail, pword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                   @Override
+                   public void onComplete(@NonNull Task<AuthResult> task) {
+                       pBar.setVisibility(View.GONE);
+                       if (task.isSuccessful()) {
+                           //
+                           if (checkBoxRememberMe.isChecked())
+                               saveLoginDetails(mail, pword);
+                           Intent intent = new Intent(Login_activity.this, HomeScreen.class);
+                           startActivity(intent);
+                           finish();
+                       } else {
+                           Toast.makeText(Login_activity.this, "Login failed.", Toast.LENGTH_SHORT).show();
                        }
-                   });
-               }
+                   }
+               });
            }
        });
     }
@@ -154,23 +144,15 @@ public class Login_activity extends AppCompatActivity {
         builder.setView(linearLayout);
 
         // Click on Recover and a email will be sent to your registered email id
-        builder.setPositiveButton("Send Link", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String email = emailet.getText().toString().trim();
-                if (TextUtils.isEmpty(email)){
-                    emailet.setError("Enter Email");
-                }else {
-                    beginRecovery(email);
-                }
+        builder.setPositiveButton("Send Link", (dialog, which) -> {
+            String email = emailet.getText().toString().trim();
+            if (TextUtils.isEmpty(email)){
+                emailet.setError("Enter Email");
+            }else {
+                beginRecovery(email);
             }
         });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
         builder.create().show();
 
     }
@@ -183,24 +165,18 @@ public class Login_activity extends AppCompatActivity {
         // calling sendPasswordResetEmail
         // open your email and write the new
         // password and then you can login
-        authicate.sendPasswordResetEmail(email).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                loadingBar.dismiss();
-                if (task.isSuccessful()) {
-                    // if isSuccessful then done message will be shown
-                    // and you can change the password
-                    Toast.makeText(Login_activity.this, "Email sent", Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(Login_activity.this, "Error Occurred", Toast.LENGTH_LONG).show();
-                }
+        authicate.sendPasswordResetEmail(email).addOnCompleteListener(task -> {
+            loadingBar.dismiss();
+            if (task.isSuccessful()) {
+                // if isSuccessful then done message will be shown
+                // and you can change the password
+                Toast.makeText(Login_activity.this, "Email sent", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(Login_activity.this, "Error Occurred", Toast.LENGTH_LONG).show();
             }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                loadingBar.dismiss();
-                Toast.makeText(Login_activity.this, "Error Failed", Toast.LENGTH_LONG).show();
-            }
+        }).addOnFailureListener(e -> {
+            loadingBar.dismiss();
+            Toast.makeText(Login_activity.this, "Error Failed", Toast.LENGTH_LONG).show();
         });
     }
     //sharepre to save user data

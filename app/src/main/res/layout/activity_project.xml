@@ -3,42 +3,158 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ProjectActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/blue"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            android:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
+        android:orientation="horizontal"
+        android:id="@+id/linear1">
+
+        <TextView
+            android:id="@+id/titleTextveiw"
+            android:layout_width="348dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="projectTile"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+
+        <ImageView
+            android:id="@+id/moreImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:layout_gravity="end"
+            android:focusable="true"
+            android:src="@drawable/baseline_more_vert_24"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linear2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/linear1"
+        android:layout_marginTop="5dp"
+        android:orientation="vertical">
+
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Description:"
+            android:textStyle="bold"
+            android:layout_marginStart="10dp"/>
+
+        <TextView
+            android:id="@+id/descriptionTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:text="description"
+            android:clickable="true"
+            android:layout_marginStart="10dp"
+            android:focusable="true"
+            android:onClick="onDescriptionClick" />
 
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/textView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="40sp"
-            android:textSize="20dp"
-            android:textStyle="bold"
-            android:text="projectTile" />
-
-        <ImageView
-            android:id="@+id/expandImageView"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:clickable="true"
-            android:contentDescription="Add Task"
-            android:focusable="true"
-            android:layout_alignParentEnd="true"
-            android:src="@drawable/baseline_expand_more_24" />
+            android:text="Start Date:"
+            android:textStyle="bold"
+            android:layout_marginStart="10dp"/>
 
         <TextView
-            android:id="@+id/myTextView"
-            android:layout_width="wrap_content"
+            android:id="@+id/startDateTextView"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginStart="20dp"
-            android:text="Add Tasks"
-            android:gravity="center"
-            android:textStyle="bold" />
+            android:hint="stardate" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="End Date:"
+            android:textStyle="bold"
+            android:layout_marginStart="10sp"/>
+
+        <TextView
+            android:id="@+id/endDateTextView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:hint="enddate" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Priority:"
+            android:textStyle="bold"
+            android:layout_marginStart="10sp"/>
+
+        <TextView
+            android:id="@+id/priorityTextView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:hint="proirity" />
+
+
+    </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linear3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@+id/linear2"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="5dp">
+
+
+        <TextView
+            android:id="@+id/recyclerViewTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tasks"
+            android:layout_marginStart="30sp"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="start"/>
+
 
         <ImageView
             android:id="@+id/addTasksImageView"
@@ -47,58 +163,49 @@
             android:clickable="true"
             android:focusable="true"
             android:layout_gravity="center"
-            android:src="@drawable/baseline_add_circle_outline_24"/>
-
-
-
-        <ImageView
-            android:id="@+id/moreImageView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:layout_marginLeft="100sp"
-            android:layout_gravity="center"
-            android:focusable="true"
-            android:src="@drawable/baseline_more_vert_24"/>
-
-
-
-
+            android:layout_marginStart="-330dp"
+            android:src="@drawable/baseline_add_24"/>
 
 
     </LinearLayout>
 
-    <FrameLayout
-        android:id="@+id/fragmentContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="@android:color/white"/>
 
-
-    <EditText
-        android:id="@+id/commentEditText"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/tasksRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="@android:color/transparent"
-        android:hint="Add a comment..."
-        android:layout_marginTop="500sp"
-        android:imeOptions="actionSend"
-        android:inputType="textMultiLine"
-        android:maxLines="3"
-        android:padding="16dp" />
-
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/addTasksFragment"
-        android:layout_width="match_parent"
-        android:layout_height="480dp"
+        android:layout_height="600dp"
         android:layout_above="@+id/fragmentContainer"
-        android:layout_marginTop="307dp"
-        android:layout_marginBottom="15dp" />
+        android:layout_below="@+id/linear3"
+        android:layout_marginTop="-12dp"
+        android:layout_marginBottom="6dp"
+        android:padding="12dp"
+        android:scrollbars="vertical"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
+
+        <FrameLayout
+            android:id="@+id/fragmentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@android:color/white">
+
+            <TextView
+                android:id="@+id/commentEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="5dp"
+                android:background="@android:color/transparent"
+                android:hint="Add a comment..."
+                android:maxLines="3"
+                android:padding="16dp"
+                tools:ignore="TextViewEdits" />
+
+
+        </FrameLayout>
 
 
 </RelativeLayout>

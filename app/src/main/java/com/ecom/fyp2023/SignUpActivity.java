@@ -16,13 +16,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.graphics.Color;
 import android.widget.ToggleButton;
+
+import com.ecom.fyp2023.ModelClasses.Users;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -77,13 +78,10 @@ public class SignUpActivity extends AppCompatActivity {
 
         //check if user is already registered in
         loginN = findViewById(R.id.loginNow);
-        loginN.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
-                startActivity(intent);
-                finish();
-            }
+        loginN.setOnClickListener(v -> {
+            Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
+            startActivity(intent);
+            finish();
         });
 
         password.addTextChangedListener(new TextWatcher() {
@@ -102,47 +100,41 @@ public class SignUpActivity extends AppCompatActivity {
             }
         });
 
-        signupButn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String mail = email.getText().toString().trim();
-                String pword = password.getText().toString().trim();
-                String userN = userName.getText().toString();
+        signupButn.setOnClickListener(view -> {
+            String mail = email.getText().toString().trim();
+            String pword = password.getText().toString().trim();
+            String userN = userName.getText().toString();
 
 
-                if (TextUtils.isEmpty(mail)) {
-                    email.setError("Email Required");
-                }
-                else if (TextUtils.isEmpty(userN)) {
-                    userName.setError("User name required");
-                }
-                else if (TextUtils.isEmpty(pword)) {
-                    password.setError("Password Required");
-                } else if (pword.length() < 8) {
-                    password.setError("Password length must be at least 8 characters");
-                    return;
-                } else {
-                    pBar.setVisibility(View.VISIBLE);
-
-                    authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task<AuthResult> task) {
-                            pBar.setVisibility(View.GONE);
-                            if (task.isSuccessful()) {
-                                addDataToFirestore(userN, mail);
-                                Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
-                                startActivity(intent);
-                                //FirebaseUser user = authicate.getCurrentUser();
-                                //sendEmailVerification(user);
-                            } else {
-                                Toast.makeText(SignUpActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
-                }
-
+            if (TextUtils.isEmpty(mail)) {
+                email.setError("Email Required");
             }
+            else if (TextUtils.isEmpty(userN)) {
+                userName.setError("User name required");
+            }
+            else if (TextUtils.isEmpty(pword)) {
+                password.setError("Password Required");
+            } else if (pword.length() < 8) {
+                password.setError("Password length must be at least 8 characters");
+                return;
+            } else {
+                pBar.setVisibility(View.VISIBLE);
+
+                authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(task -> {
+                    pBar.setVisibility(View.GONE);
+                    if (task.isSuccessful()) {
+                        addDataToFirestore(userN, mail);
+                        Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
+                        startActivity(intent);
+                        //FirebaseUser user = authicate.getCurrentUser();
+                        //sendEmailVerification(user);
+                    } else {
+                        Toast.makeText(SignUpActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
         });
     }
 
@@ -205,16 +197,10 @@ public class SignUpActivity extends AppCompatActivity {
         Users users = new Users(userName, userEmail);
 
         // below method is use to add data to Firebase Firestore.
-        dbUsers.add(users).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-            @Override
-            public void onSuccess(DocumentReference documentReference) {
+        dbUsers.add(users).addOnSuccessListener(documentReference -> {
 
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
+        }).addOnFailureListener(e -> {
 
-            }
         });
 
     }

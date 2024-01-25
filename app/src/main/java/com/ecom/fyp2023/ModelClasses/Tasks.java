@@ -1,4 +1,4 @@
-package com.ecom.fyp2023;
+package com.ecom.fyp2023.ModelClasses;
 
 public class Tasks {
 
@@ -25,32 +25,17 @@ public class Tasks {
         return taskDetails;
     }
 
-    public void setTaskDetails(String taskDetails) {
-        this.taskDetails = taskDetails;
-    }
-
     public String getDifficulty() {
         return difficulty;
-    }
-
-    public void setDifficulty(String difficulty) {
-        this.difficulty = difficulty;
     }
 
     public String getProgress() {
         return progress;
     }
 
-    public void setProgress(String progress) {
-        this.progress = progress;
-    }
-
     public String getEstimatedTime() {
         return estimatedTime;
     }
 
-    public void setEstimatedTime(String estimatedTime) {
-        this.estimatedTime = estimatedTime;
-    }
 }
 
