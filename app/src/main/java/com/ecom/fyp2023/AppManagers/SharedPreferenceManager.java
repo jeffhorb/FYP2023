@@ -33,4 +33,16 @@ public class SharedPreferenceManager {
         editor.apply();
     }
 
+    public void saveTaskProgress(String taskDetails, boolean isComplete) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("TaskProgress", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(taskDetails, isComplete);
+        editor.apply();
+    }
+
+    public boolean getTaskProgress(String taskDetails, boolean defaultValue) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("TaskProgress", Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(taskDetails, defaultValue);
+    }
+
 }

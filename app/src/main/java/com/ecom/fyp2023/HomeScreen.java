@@ -29,6 +29,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class HomeScreen extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -46,6 +47,11 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     SharedPreferenceManager sharedPrefManager;
 
     private SearchView searchView;
+
+    public interface DataUpdateCallback {
+        void onDataUpdated(String newData);
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,32 +75,30 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         //search method
         setupSearchView();
 
-
         recyclerAdapter = new ProjectsRVAdapter(projectsArrayList,HomeScreen.this);
         recyclerView.setAdapter(recyclerAdapter);
 
-        db.collection("Projects").get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-
-                    if (!queryDocumentSnapshots.isEmpty()) {
-
-                        List<DocumentSnapshot> list = queryDocumentSnapshots.getDocuments();
-                        for (DocumentSnapshot d : list) {
-
-                            Projects project = d.toObject(Projects.class);
-
-                            project.setProjectId(d.getId());
-
-                            projectsArrayList.add(project);
-                        }
-
-                        recyclerAdapter.notifyDataSetChanged();
-                        recyclerAdapter.updateList(projectsArrayList);
-                    } else {
-                        // if the snapshot is empty we are displaying a toast message.
-                        Toast.makeText(HomeScreen.this, "No data found in Database", Toast.LENGTH_SHORT).show();
+        db.collection("Projects")
+                .whereIn("progress", Arrays.asList("In Progress", "Incomplete"))
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Toast.makeText(HomeScreen.this, "Error getting data: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        return;
                     }
-                }).addOnFailureListener(e -> Toast.makeText(HomeScreen.this, "Fail to get the data.", Toast.LENGTH_SHORT).show());
+
+                    if (value != null) {
+                        projectsArrayList.clear();
+                        for (DocumentSnapshot document : value) {
+                            Projects project = document.toObject(Projects.class);
+                            if (project != null) {
+                                project.setProjectId(document.getId());
+                                projectsArrayList.add(project);
+                            }
+                        }
+                        recyclerAdapter.notifyDataSetChanged();
+                    }
+                });
+
 
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
@@ -112,21 +116,45 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                 this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close);
         drawerLayout.addDrawerListener(actionBarDrawerToggle);
             actionBarDrawerToggle.syncState();
+
+
     }
 
-    //bottom navigation
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        //return super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int itemId = item.getItemId();
 
-        return super.onCreateOptionsMenu(menu);
+        if (itemId == R.id.completedP) {
+           Intent intent = new Intent(HomeScreen.this, CompletedProjects.class);
+           startActivity(intent);
+            return true;
+        } else if (itemId == R.id.imageNotification) {
+            // Handle the action for menu option 2
+            Toast.makeText(this, "Menu Option 2 clicked", Toast.LENGTH_SHORT).show();
+            // Add your custom logic here
+            return true;
+        }
+        // Add more if statements for additional menu options if needed
+
+        return super.onOptionsItemSelected(item);
     }
 
+
+
+    //bottom navigation
     public void addPro(MenuItem menuitem){
 
         BottomSheetDialogAddProject bottomSheetDialogFragment = BottomSheetDialogAddProject.newInstance();
         bottomSheetDialogFragment.show(getSupportFragmentManager(), bottomSheetDialogFragment.getTag());
 
     }
+
 
     private void setupSearchView() {
         searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {

@@ -1,11 +1,17 @@
 package com.ecom.fyp2023.ModelClasses;
 
-public class Tasks {
+import com.google.firebase.firestore.Exclude;
+
+import java.io.Serializable;
+
+public class Tasks implements Serializable {
 
     private String taskDetails;
     private String difficulty;
     private String progress;
     private String estimatedTime;
+
+    private transient String taskId;
 
     // Constructors, getters, and setters
 
@@ -37,5 +43,29 @@ public class Tasks {
         return estimatedTime;
     }
 
+    @Exclude
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
+
+    public void setProgress(String progress) {
+        this.progress = progress;
+    }
+
+    public void setTaskDetails(String taskDetails) {
+        this.taskDetails = taskDetails;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public void setEstimatedTime(String estimatedTime) {
+        this.estimatedTime = estimatedTime;
+    }
 }
 

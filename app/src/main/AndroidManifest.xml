@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
 
     <application
         android:allowBackup="true"
@@ -17,7 +19,7 @@
         android:theme="@style/status_bar_color"
         tools:targetApi="31">
         <activity
-            android:name=".unUsedClass.MainActivity"
+            android:name=".CompletedProjects"
             android:exported="false" />
         <activity
             android:name=".HomeScreen"

@@ -21,15 +21,14 @@ import androidx.annotation.Nullable;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.ecom.fyp2023.AppManagers.TimeConverter;
+
+import org.jetbrains.annotations.Contract;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -39,6 +38,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
 
@@ -57,6 +58,8 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
     FirebaseFirestore fb;
     private FirebaseAuth mAuth;
 
+    @NonNull
+    @Contract(" -> new")
     public static BottomSheetDialogAddProject newInstance() {
         return new BottomSheetDialogAddProject();
     }
@@ -154,7 +157,6 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
         return view;
 
     }
-
     public void addProjects(String title, String description, String priority, String startDate, String endDate, String progres) {
 
         CollectionReference dbProjects = fb.collection("Projects");

@@ -23,7 +23,7 @@
     <string-array name="tasksProgress">
         <item> Incomplete</item>
         <item> In progress</item>
-        <item> Done</item>
+        <item> Complete</item>
 
     </string-array>
 

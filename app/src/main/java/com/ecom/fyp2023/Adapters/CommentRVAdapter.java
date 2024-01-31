@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.ModelClasses.Comment;
+import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -24,7 +25,7 @@ import java.util.List;
 
 public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.ViewHolder> {
 
-    private final List<Comment> commentList;
+    private List<Comment> commentList;
 
     private final Context context;
 
@@ -55,7 +56,7 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
 
         holder.deleteComment.setOnClickListener(v -> {
             // Call a method to delete the item from Firestore
-            removeComment(holder.getAdapterPosition());
+            removeComment(position);
         });
 
         /*holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -92,6 +93,11 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
             comment = itemView.findViewById(R.id.commentText);
             deleteComment = itemView.findViewById(R.id.deleteComment);
         }
+    }
+    public void updateList(@NonNull List<Comment> itemList) {
+        this.commentList = itemList;
+        notifyDataSetChanged();
+
     }
 
     private void removeComment(int position) {

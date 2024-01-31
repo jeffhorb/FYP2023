@@ -37,8 +37,7 @@ public class UpdateProject extends BottomSheetDialogFragment {
     EditText pTitle;
     EditText pDesc;
     EditText startDate;
-    EditText endDate;
-    Spinner proPriority,progress;
+    Spinner proPriority;
 
     String proT, proDesc, stDate, eDate, pPriority,pProgress;
     private FirebaseFirestore db;
@@ -56,9 +55,8 @@ public class UpdateProject extends BottomSheetDialogFragment {
         pTitle = view.findViewById(R.id.proT);
         pDesc = view.findViewById(R.id.proD);
         startDate = view.findViewById(R.id.startD);
-        endDate = view.findViewById(R.id.endD);
         proPriority = view.findViewById(R.id.proP);
-        progress = view.findViewById(R.id.proPro);
+
 
         Button updateCourseBtn = view.findViewById(R.id.updateProjectBt);
 
@@ -70,17 +68,12 @@ public class UpdateProject extends BottomSheetDialogFragment {
         pTitle.setText(project.getTitle());
         pDesc.setText(project.getDescription());
         startDate.setText(project.getStartDate());
-        endDate.setText(project.getEndDate());
 
         String priorityValue = project.getPriority();
         String[] prioritySpinnerItems = getResources().getStringArray(R.array.projectPriority);
         int position = Arrays.asList(prioritySpinnerItems).indexOf(priorityValue);
         proPriority.setSelection(position);
 
-        String progressValue = project.getProgress();
-        String[] progressSpinnerItems = getResources().getStringArray(R.array.tasksProgress);
-        int p = Arrays.asList(progressSpinnerItems).indexOf(progressValue);
-        progress.setSelection(p);
 
         ImageView closeImageView = view.findViewById(R.id.closeImageView);
 
@@ -113,33 +106,13 @@ public class UpdateProject extends BottomSheetDialogFragment {
             }
         });
 
-        endDate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                final Calendar c = Calendar.getInstance();
-                int year = c.get(Calendar.YEAR);
-                int month = c.get(Calendar.MONTH);
-                int day = c.get(Calendar.DAY_OF_MONTH);
-
-                DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(), new DatePickerDialog.OnDateSetListener() {
-                    @Override
-                    public void onDateSet(DatePicker view, int year,
-                                          int monthOfYear, int dayOfMonth) {
-                        endDate.setText(dayOfMonth + "-" + (monthOfYear + 1) + "-" + year);
-                    }
-                },
-                        year, month, day);
-                datePickerDialog.show();
-            }
-        });
-
         updateCourseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 proT = pTitle.getText().toString();
                 proDesc = pDesc.getText().toString();
                 stDate = startDate.getText().toString();
-                eDate = endDate.getText().toString();
+                pPriority = proPriority.getSelectedItem().toString();
 
 
                 if (TextUtils.isEmpty(proT)) {
@@ -148,29 +121,26 @@ public class UpdateProject extends BottomSheetDialogFragment {
                     pDesc.setError("Field Required");
                 } else if (TextUtils.isEmpty(stDate)) {
                     startDate.setError("Field required");
-                } else if (TextUtils.isEmpty(eDate)) {
-                    endDate.setError("Field required");
-                } else if (!isBefore(stDate, eDate)) {
-                    // Check if end date is before start date
-                    endDate.setError("End date must be after start date");
                 } else {
                     // Your code to handle the valid input
                     updateProject(project, proT, proDesc,pPriority, stDate, eDate, pProgress);
+                    dismiss();
                 }
             }
         });
         return view;
     }
 
-    private void updateProject(Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres) {
+    private void updateProject(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres) {
 
-        Projects udpatedPorject = new Projects(proTitle, proD,priority, startDate,endDate,progres);
+        String existingProgress = projects.getProgress();
+        String existingEndDate = projects.getEndDate();
 
+        // Create the updated project with the existing progress value
+        Projects udpatedPorject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress);
 
         db.collection("Projects").
-
                         document(projects.getProjectId()).
-
                         set(udpatedPorject).
                         addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -198,29 +168,5 @@ public class UpdateProject extends BottomSheetDialogFragment {
             return false;
         }
     }
-
-    private boolean isAfter(String date1, String date2) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
-            Date startDate = sdf.parse(date1);
-            Date endDate = sdf.parse(date2);
-            return startDate != null && endDate != null && startDate.after(endDate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-
-    /*private String formatDateFromTimestamp(Timestamp timestamp) {
-        if (timestamp != null) {
-            Date date = timestamp.toDate();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
-            return sdf.format(date);
-        } else {
-            return ""; // Handle the case where Timestamp is null
-        }
-    }*/
-
 
 }

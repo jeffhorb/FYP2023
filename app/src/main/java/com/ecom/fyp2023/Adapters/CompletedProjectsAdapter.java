@@ -21,7 +21,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.Fragments.UpdateProject;
-import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
@@ -32,7 +31,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.ViewHolder> {
+public class CompletedProjectsAdapter extends RecyclerView.Adapter<CompletedProjectsAdapter.ViewHolder> {
     // creating variables for our ArrayList and context
     private List<Projects> projectsArrayList;
 
@@ -40,7 +39,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
 
 
     // creating constructor for our adapter class
-    public ProjectsRVAdapter(ArrayList<Projects> projectsArrayList, Context context) {
+    public CompletedProjectsAdapter(ArrayList<Projects> projectsArrayList, Context context) {
         this.projectsArrayList = projectsArrayList;
         this.context = context;
 
@@ -54,27 +53,28 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         // passing our layout file for displaying our card item
-        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.project_item, parent, false));
+        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.completed_projects_item, parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ProjectsRVAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+
         // setting data to our text views from our modal class.
         Projects projects = projectsArrayList.get(position);
 
-        if (projects.getProgress().equalsIgnoreCase("In Progress") ||
-                projects.getProgress().equalsIgnoreCase("Incomplete")) {
+        if (projects.getProgress().equalsIgnoreCase("Complete")) {
             holder.projectT.setText(projects.getTitle());
-            holder.projectP.setText(projects.getProgress());
+            holder.projectProgress.setText(projects.getProgress());
+            holder.startDate.setText(projects.getStartDate());
+            holder.endDate.setText(projects.getEndDate());
+
             holder.buttonOptions.setOnClickListener(v -> showPopupMenu(holder.buttonOptions, holder.getAdapterPosition()));
         } else {
-            // Hide the project with progress other than "In Progress" or "Incomplete"
+            // Hide the project with progress other than "Complete"
             holder.itemView.setVisibility(View.GONE);
             holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
         }
-
     }
-
 
     @Override
     public int getItemCount() {
@@ -98,41 +98,28 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
                 showUpdateFragmrnt(project);
 
                 return true;
-
             }
-
             return false;
         });
         popupMenu.show();
     }
 
-
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final TextView projectT;
-        private final TextView projectP;
+
+        TextView projectProgress, startDate,endDate;
 
         ImageButton buttonOptions;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             // initializing our text views.
-
-            buttonOptions = itemView.findViewById(R.id.buttonOptions);
-            projectP = itemView.findViewById(R.id.proProgress);
-            projectT = itemView.findViewById(R.id.projectTitle);
-            projectT.setMaxLines(1);
-            // Set an onClickListener for the TextView
-            projectP.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (projectP.getMaxLines() == 1) {
-                        projectP.setMaxLines(Integer.MAX_VALUE);
-                    } else {
-                        projectP.setMaxLines(1);
-                    }
-                }
-            });
+            projectT = itemView.findViewById(R.id.completedPTitle);
+            buttonOptions = itemView.findViewById(R.id.CompletedButtonOptions);
+            projectProgress = itemView.findViewById(R.id.completedPProgress);
+            startDate = itemView.findViewById(R.id.completedPStartDate);
+            endDate = itemView.findViewById(R.id.completedPEndDate);
 
             itemView.setOnClickListener(v -> {
 
@@ -143,7 +130,6 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
                 // the selected project as an extra in the Intent
                 intent.putExtra("selectedProject", selectedProject);
                 itemView.getContext().startActivity(intent);
-
 
             });
         }
@@ -157,6 +143,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         // Pass data to the fragment using Bundle.
         Bundle bundle = new Bundle();
         bundle.putSerializable("project",  project);
+
         updateFragment.setArguments(bundle);
 
         // Replace the existing fragment with the new fragment.
@@ -179,9 +166,6 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         AlertDialog dialog = builder.create();
         dialog.show();
     }
-
-
-
 
     private void removeProject(int position) {
         Projects removedProject = projectsArrayList.remove(position);

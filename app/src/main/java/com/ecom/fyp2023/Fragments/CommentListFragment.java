@@ -23,7 +23,6 @@ import com.ecom.fyp2023.Adapters.CommentRVAdapter;
 import com.ecom.fyp2023.ModelClasses.Comment;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
@@ -38,6 +37,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -55,7 +55,7 @@ public class CommentListFragment extends BottomSheetDialogFragment {
 
     ArrayList<Comment> commentList;
 
-    String commentId, projectId ,userId;
+    String commentId, projectId, userId;
     private FirebaseAuth mAuth;
 
 
@@ -73,15 +73,16 @@ public class CommentListFragment extends BottomSheetDialogFragment {
 
         commentList = new ArrayList<>();
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext(), RecyclerView.VERTICAL,false);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
-        commentRVAdapter = new CommentRVAdapter(commentList,requireContext());
+        commentRVAdapter = new CommentRVAdapter(commentList, requireContext());
         recyclerView.setAdapter(commentRVAdapter);
 
         Bundle args = getArguments();
         if (args != null && args.containsKey(projectId_key)) {
             projectId = args.getString(projectId_key);
+            fetchAndDisplayComments(projectId);
         }
 
         Bundle arguments = getArguments();
@@ -120,13 +121,10 @@ public class CommentListFragment extends BottomSheetDialogFragment {
             @Override
             public void onClick(View v) {
                 String comment = commentText.getText().toString();
-                if (TextUtils.isEmpty(comment)) {
-                    commentText.setError("Comment cannot be empty");
-                    return;
-                }
-
+                
                 AddComment(comment);
                 commentText.setText(null);
+
             }
         });
 
@@ -145,8 +143,6 @@ public class CommentListFragment extends BottomSheetDialogFragment {
 
     public void AddComment(String c) {
 
-
-
         CollectionReference dbComment = fb.collection("Comments");
 
         Comment comment = new Comment(c, com.google.firebase.Timestamp.now());
@@ -158,6 +154,9 @@ public class CommentListFragment extends BottomSheetDialogFragment {
                 commentId = documentReference.getId();
 
                 addProjectComment(projectId, commentId, userId);
+
+                //getActivity().runOnUiThread(() -> commentRVAdapter.updateList(commentList));
+
 
                 //Toast.makeText(getActivity(), "Sent ", Toast.LENGTH_SHORT).show();
                 //commentRVAdapter.notifyDataSetChanged();
@@ -185,6 +184,7 @@ public class CommentListFragment extends BottomSheetDialogFragment {
             }
         });
     }
+
     @NonNull
     public static CommentListFragment newInstance(String data) {
         CommentListFragment fragment = new CommentListFragment();
@@ -194,55 +194,57 @@ public class CommentListFragment extends BottomSheetDialogFragment {
         return fragment;
     }
 
-    private void fetchAndDisplayComments(String projectId) {
-        commentList.clear(); // Clear existing data
 
+    private void fetchAndDisplayComments(String projectId) {
         CollectionReference projectCommentsCollection = fb.collection("ProjectComments");
         Query query = projectCommentsCollection
                 .whereEqualTo("projectId", projectId)
                 .orderBy("timestamp", Query.Direction.DESCENDING);
 
-        query.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                if (task.isSuccessful()) {
-                    for (QueryDocumentSnapshot document : task.getResult()) {
-                        String commentId = document.getString("commentId");
-                        retrieveCommentDetails(commentId);
-
-                    }
-                    commentRVAdapter.notifyDataSetChanged();
-
-                } else {
-                    Log.e("CommentListFragment", "Error fetching comments", task.getException());
-                    Toast.makeText(getActivity(), "Error fetching comment", Toast.LENGTH_SHORT).show();
-                }
+        query.addSnapshotListener((value, error) -> {
+            if (error != null) {
+                Log.e("Firestore", "Error getting comments: " + error.getMessage());
+                Toast.makeText(getActivity(), "Error getting comments: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            if (value != null) {
+                List<Comment> commentList = new ArrayList<>();
+                for (QueryDocumentSnapshot document : value) {
+                    String commentId = document.getString("commentId");
+                    retrieveTaskCommentDetails(commentId, commentList);
+                }
+
+                // Update the adapter with the tasks list after all tasks are retrieved
+                Log.d("Firestore", "Comment List size: " + commentList.size());
+                commentRVAdapter.updateList(commentList);
+                //getActivity().runOnUiThread(() -> commentRVAdapter.updateList(commentList));
+            }
+
+            Log.d("Firestore", "Fetching comment for project: " + projectId);
         });
     }
 
-
-    private void retrieveCommentDetails(String commentId) {
+    private void retrieveTaskCommentDetails(String commentId, List<Comment> commentList) {
         CollectionReference commentsCollection = fb.collection("Comments");
         commentsCollection.document(commentId).get()
-                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if (task.isSuccessful()) {
-                            DocumentSnapshot document = task.getResult();
-                            if (document.exists()) {
-                                Comment commentData = document.toObject(Comment.class);
-                                commentList.add(commentData);
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        if (document.exists()) {
+                            Comment commentData = document.toObject(Comment.class);
+                            commentList.add(commentData);
 
-                                commentRVAdapter.notifyDataSetChanged();
+                            Log.d("Firestore", "Retrieved Comment Data: " + commentData);
 
-                            }  // Toast.makeText(getActivity(), "no comments", Toast.LENGTH_SHORT).show();
-
+                            commentRVAdapter.updateList(commentList);
                         } else {
-                            Toast.makeText(getContext(), "Error fetching the comments ", Toast.LENGTH_SHORT).show();
+                            Log.e("Firestore", "Document does not exist for commentId: " + commentId);
                         }
+                    } else {
+                        Log.e("Firestore", "Error fetching Comments: " + task.getException());
+                        Toast.makeText(getActivity(), "Error fetching Comments", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-
 }

@@ -1,9 +1,7 @@
 package com.ecom.fyp2023.Fragments;
 
 import android.os.Bundle;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,79 +14,73 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
+import com.ecom.fyp2023.Adapters.TasksRVAdapter;
 import com.ecom.fyp2023.AppManagers.TimeConverter;
 import com.ecom.fyp2023.ModelClasses.Tasks;
-import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import org.jetbrains.annotations.Contract;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
+public class UpdateTaskFragment extends BottomSheetDialogFragment implements BottomSheetFragmentAddTask.OnEndDateUpdateListener {
 
-    Spinner progress, difficulty;
-    EditText  details;
-    Button save;
-    String taskId, projectId;
-    FirebaseFirestore fb;
+    EditText taskDetails, taskEstTime;
 
-    @NonNull
-    @Contract(" -> new")
-    public static BottomSheetFragmentAddTask newInstance() {
-        return new BottomSheetFragmentAddTask();
-    }
+    Spinner taskDifficulty;
+    String  progress,proId;
+    private FirebaseFirestore fb;
+    Tasks tasks;
 
-    private OnEndDateUpdateListener endDateUpdateListener;
-
-    public interface OnEndDateUpdateListener {
-        void onEndDateUpdated(String updatedEndDate);
-
-    }
-
-    public void setOnEndDateUpdateListener(OnEndDateUpdateListener listener) {
-        this.endDateUpdateListener = listener;
-    }
+    private BottomSheetFragmentAddTask.OnEndDateUpdateListener endDateUpdateListener;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_bottom_sheet_add_task, container, false);
+        View view = inflater.inflate(R.layout.fragment_update_task, container, false);
+        view.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.white));
 
-        details = view.findViewById(R.id.taskDetails);
-        //estimatedTime = view.findViewById(R.id.estimatedTime);
-        TextInputEditText estimatedTime = (TextInputEditText) view.findViewById(R.id.estimatedTime);
-        difficulty = view.findViewById(R.id.taskDif);
-        progress = view.findViewById(R.id.taskProgress);
-        save = view.findViewById(R.id.saveBtn);
-
+        endDateUpdateListener = this;
 
         fb = FirebaseFirestore.getInstance();
 
+        taskDetails = view.findViewById(R.id.updateTaskDetails);
+        taskEstTime = view.findViewById(R.id.updateEstimatedTime);
+        taskDifficulty = view.findViewById(R.id.updateTaskDif);
+
+        Button updateTaskBtn = view.findViewById(R.id.updateBtn);
+
         Bundle args = getArguments();
-        if (args != null && args.containsKey(ProjectActivity.projectId_key)) {
-            projectId = args.getString(ProjectActivity.projectId_key);
+        if (args != null && args.containsKey("pId2")) {
+            proId = args.getString("pId2");
         }
 
         Bundle arguments = getArguments();
-        if (arguments != null && arguments.containsKey(ProjectActivity.p_key)) {
-            projectId = arguments.getString(ProjectActivity.p_key);
-
+        if (arguments != null && arguments.containsKey("pId")) {
+            proId = arguments.getString("pId");
         }
+
+        Bundle bundle = getArguments();
+        assert bundle != null;
+        tasks = (Tasks) bundle.getSerializable("tasks");
+
+        assert tasks != null;
+        taskDetails.setText(tasks.getTaskDetails());
+        taskEstTime.setText(tasks.getEstimatedTime());
+
+        String diffVal = tasks.getDifficulty();
+        String[] diffSpinnerItems = getResources().getStringArray(R.array.tasksDifficulty);
+        int position = Arrays.asList(diffSpinnerItems).indexOf(diffVal);
+        taskDifficulty.setSelection(position);
 
         ImageView closeImageView = view.findViewById(R.id.closeImageView);
 
@@ -98,24 +90,21 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
             dismiss();
         });
 
-        save.setOnClickListener(v -> {
-            String detls = details.getText().toString();
-            String estTime = estimatedTime.getText().toString();
-            String diff = difficulty.getSelectedItem().toString();
-            String progrs = progress.getSelectedItem().toString();
+        updateTaskBtn.setOnClickListener(v -> {
+            String detls = taskDetails.getText().toString();
+            String estTime = taskEstTime.getText().toString();
+            String diff = taskDifficulty.getSelectedItem().toString();
+
 
             if (TextUtils.isEmpty(detls)) {
-                details.setError("Field required");
-            } else if (TextUtils.isEmpty(estTime)) {
-                estimatedTime.setError("Field required");
+                taskDetails.setError("Field required");
             } else if (!isValidEstimationFormat(estTime)) {
-                estimatedTime.setError("Invalid format. Use a number followed by 'd' or 'w'.");
+                taskEstTime.setError("Invalid format. Use a number followed by 'd' or 'w'.");
             } else {
-                saveTasks(detls, diff, progrs, estTime);
-                // Clear the input fields after successful save
+                // Call the updateTask method
+                updateTask(tasks, detls, diff, progress, estTime);
 
-                details.setText(null);
-                estimatedTime.setText(null);
+                dismiss();
             }
         });
         return view;
@@ -127,40 +116,27 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
         return estTime.matches(regex);
     }
 
-    public void saveTasks(String d, String diff, String prog, String estT) {
+    private void updateTask(@NonNull Tasks task, String taskDetails, String tasksDiff, String progres, String taskEtime) {
 
-        CollectionReference dbTasks = fb.collection("Tasks");
+        String existingProgress = task.getProgress();
 
-        Tasks tasks = new Tasks(d, diff, prog, estT);
-        dbTasks.add(tasks).addOnSuccessListener(documentReference -> {
+        // Create the updated task with the existing progress value
+        Tasks updateTasks = new Tasks(taskDetails, tasksDiff, existingProgress, taskEtime);
 
-            Toast.makeText(getActivity(), "Task saved", Toast.LENGTH_SHORT).show();
-            taskId = documentReference.getId();
-            addProjectTask(projectId, taskId);
+        fb.collection("Tasks")
+                .document(task.getTaskId())
+                .set(updateTasks)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("projectid", "proid " +proId);
 
-            tasks.setTaskId(taskId);
+                    calculateTotalEstimatedTimeAndEndDate(proId);
+                    Toast.makeText(requireContext(), "Task has been updated.", Toast.LENGTH_SHORT).show();
 
-            // Calculate total estimated time for associated tasks
-            calculateTotalEstimatedTimeAndEndDate(projectId);
-
-        }).addOnFailureListener(e -> Toast.makeText(getActivity(), "Failed \n" + e, Toast.LENGTH_SHORT).show());
-    }
-
-    private void addProjectTask(String projectId, String taskId) {
-        // Creates a new userProjects document with an automatically generated ID
-        Map<String, Object> projectTasks = new HashMap<>();
-
-        projectTasks.put("projectId", projectId);
-        projectTasks.put("taskId", taskId);
-        projectTasks.put("timestamp", com.google.firebase.Timestamp.now());
-
-        fb.collection("projectTasks").add(projectTasks).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                Log.d("projectTasks", "projectTasks added with ID: " + task.getResult().getId());
-            } else {
-                Log.e("projectTasks", "Error adding userProject", task.getException());
-            }
-        });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to update the task.", Toast.LENGTH_SHORT).show();
+                    Log.e("UpdateTask", "Error updating task", e);
+                });
     }
 
     private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
@@ -174,6 +150,7 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
                         for (DocumentSnapshot document : task.getResult()) {
                             String taskId = document.getString("taskId");
 
+                            assert taskId != null;
                             fb.collection("Tasks")
                                     .document(taskId)
                                     .get()
@@ -219,6 +196,7 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
                     if (projectDocumentTask.isSuccessful()) {
                         DocumentSnapshot projectDocument = projectDocumentTask.getResult();
                         if (projectDocument.exists()) {
+
                             String startDate = projectDocument.getString("startDate");
                             String updatedEndDate = calculateEndDate(startDate, totalEstimatedTime);
 
@@ -262,5 +240,10 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
         }
 
         return null;
+    }
+
+    @Override
+    public void onEndDateUpdated(String updatedEndDate) {
+
     }
 }

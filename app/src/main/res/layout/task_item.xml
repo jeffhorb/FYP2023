@@ -6,34 +6,25 @@
     android:layout_height="wrap_content"
     android:layout_margin="5dp"
     app:cardCornerRadius="6dp"
-    app:cardElevation="4dp">
+    app:cardElevation="10dp">
 
-    <ImageButton
-        android:id="@+id/doneCheck"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_gravity="start"
-        android:layout_marginTop="3dp"
-        android:background="@android:color/transparent"
-        android:clickable="true"
-        android:focusable="true"
-        android:scaleType="fitCenter"
-        android:src="@drawable/baseline_radio_button_unchecked_24" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
         android:elevation="8dp"
-        android:layout_marginStart="25dp"
+        android:layout_marginEnd="25dp"
         android:orientation="vertical">
-
 
         <TextView
             android:id="@+id/taskDetails"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="start"
+            android:elevation="10dp"
             android:text="Description"
+            android:maxLines="2"
             android:textColor="@color/black"
             android:textSize="18sp" />
 
@@ -56,22 +47,52 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Estimated time"
                 android:layout_marginStart="50dp"
+                android:text="Estimated time"
                 android:textColor="@color/black"
                 android:textSize="16sp" />
 
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_gravity="start"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/doneCheck"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                android:contentDescription="taskCompleted"
+                android:focusable="true"
+                android:onClick="TaskComplete"
+                android:scaleType="fitCenter"
+                android:src="@drawable/baseline_radio_button_unchecked_24" />
+
+            <TextView
+                android:id="@+id/completedT"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Completed"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:textStyle="normal" />
 
         </LinearLayout>
 
     </LinearLayout>
 
-
     <ImageButton
         android:id="@+id/taskButtonOptions"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_gravity="end"
+        android:layout_gravity="end|center"
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
         android:src="@drawable/baseline_more_vert_24" />

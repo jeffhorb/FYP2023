@@ -25,7 +25,7 @@
                 android:padding="8dp"
                 android:text="ProjectTitle"
                 android:textColor="@color/black"
-                android:textSize="20sp" />
+                android:textSize="18sp" />
 
         </LinearLayout>
 

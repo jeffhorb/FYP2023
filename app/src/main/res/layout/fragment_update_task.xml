@@ -1,13 +1,12 @@
 <!-- fragment_bottom_sheet.xml -->
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/updateProjectFrag"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/addTasksFragment"
+    tools:context=".Fragments.UpdateTaskFragment"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_gravity="bottom"
-    android:padding="16dp"
-    >
+    android:padding="16dp">
 
     <ImageView
         android:id="@+id/closeImageView"
@@ -20,70 +19,60 @@
         android:focusable="true"/>
 
 
-
     <TextView
-        android:id="@+id/updateP"
+        android:id="@+id/updateTasks"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Update Project"
+        android:text="Update Task"
         android:textAlignment="center"
         android:textSize="20sp"
         android:textStyle="bold" />
 
     <EditText
-        android:id="@+id/proT"
+        android:id="@+id/updateTaskDetails"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:drawablePadding="8dp"
-        android:hint="Title"
+        android:hint="Task Details"
         android:inputType="textMultiLine"
         android:padding="8dp"
         android:textColor="@color/black" />
+
+
+
 
     <EditText
-        android:id="@+id/proD"
-        android:layout_width="match_parent"
+        android:id="@+id/updateEstimatedTime"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:drawablePadding="8dp"
-        android:inputType="textMultiLine"
-        android:hint="Description"
+        android:hint="Estimated Time(eg.2d,6w)"
+        android:inputType="text"
         android:padding="8dp"
         android:textColor="@color/black" />
 
-
-        <EditText
-            android:id="@+id/startD"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:drawablePadding="8dp"
-            android:hint="Start date"
-            android:inputType="date"
-            android:padding="8dp"
-            android:textColor="@color/black" />
-
-
     <TextView
-        android:id="@+id/spinnerTitle"
-        android:layout_width="wrap_content"
+        android:id="@+id/spinnerDifTitle"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:text="Priority Level:"
+        android:text="Select Difficulty:"
         android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:padding="8dp" />
 
 
     <Spinner
-        android:id="@+id/proP"
+        android:id="@+id/updateTaskDif"
         android:layout_width="wrap_content"
-        android:layout_height="37dp"
-        android:entries="@array/projectPriority"
+        android:layout_height="wrap_content"
+        android:entries="@array/tasksDifficulty"
         android:gravity="end" />
 
-  
+
     <Button
-        android:id="@+id/updateProjectBt"
+        android:id="@+id/updateBtn"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:backgroundTint="@color/blue"
         android:layout_gravity="center"
         android:text="Update"

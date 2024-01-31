@@ -21,8 +21,19 @@ public class Comment implements Serializable {
 
     }
 
+    public Timestamp getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Timestamp timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public String getComment() {
         return Comment;
     }
 
+    public void setComment(String comment) {
+        Comment = comment;
+    }
 }
