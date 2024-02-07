@@ -1,7 +1,10 @@
 package com.ecom.fyp2023.Adapters;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -25,8 +28,11 @@ import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.AppManagers.TimeConverter;
 import com.ecom.fyp2023.Fragments.BottomSheetFragmentAddTask;
 import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
+import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
+import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
+import com.ecom.fyp2023.TaskActivity;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -37,10 +43,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHolder> {
-
 
     private List<Tasks> tasksList;
 
@@ -49,7 +55,7 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     SharedPreferenceManager sharedPreferenceManager;
 
     private String proIdFromSelectedPro;
-
+    Tasks selectedTask;
     private String proIdFromAddTask;
 
     private OnEndDateUpdateListener endDateUpdateListener;
@@ -59,31 +65,27 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         void onEndDateUpdated(String updatedEndDate);
     }
 
+    //public interface OnTaskProgressUpdateListener {
+        //void onTaskProgressUpdated();
+    //}
 
-    public interface OnTaskProgressUpdateListener {
-        void onTaskProgressUpdated();
-    }
-    private OnTaskProgressUpdateListener taskProgressUpdateListener;
-
+    //private OnTaskProgressUpdateListener taskProgressUpdateListener;
 
     // Setter method to set the selected project
     public void setSelectedProject(String selectedProject) {
         this.proIdFromSelectedPro = selectedProject;
         this.proIdFromAddTask = selectedProject;
-        notifyDataSetChanged(); // Refresh the RecyclerView
     }
 
-    public TasksRVAdapter(List<Tasks> tasksList, Context context, OnTaskProgressUpdateListener listener, OnEndDateUpdateListener endDateUpdateListener) {
+    public TasksRVAdapter(List<Tasks> tasksList, Context context, OnEndDateUpdateListener endDateUpdateListener /*OnTaskProgressUpdateListener taskProgressUpdateListener*/) {
         this.tasksList = tasksList;
         this.context = context;
         this.sharedPreferenceManager = new SharedPreferenceManager(context);
-        this.taskProgressUpdateListener = listener;
+        //this.taskProgressUpdateListener = listener;
         this.fb = FirebaseFirestore.getInstance();
         this.endDateUpdateListener = endDateUpdateListener;
-
-
+       // this.taskProgressUpdateListener = taskProgressUpdateListener;
     }
-
 
     @NonNull
     @Override
@@ -92,91 +94,35 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         return new ViewHolder(view);
     }
 
-
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-
 
         Tasks tasks = tasksList.get(position);
 
         holder.taskDetails.setText(tasks.getTaskDetails());
         holder.taskDiff.setText(tasks.getDifficulty());
         holder.taskEstimatedTime.setText(tasks.getEstimatedTime());
+        holder.taskProgress.setText(tasks.getProgress());
         holder.option.setOnClickListener(v -> showPopupMenu(holder.option, holder.getAdapterPosition()));
 
-
-
-        /*holder.itemView.setOnClickListener(new View.OnClickListener() {
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Handle the item click event, you might want to open a detailed view or perform some action
-            }
-        });*/
+                selectedTask = tasksList.get(holder.getAdapterPosition());
 
+                //taskProgressUpdateListener.onTaskProgressUpdated();
 
-       /* //will used to code the done vector asset
-        holder.done.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Call a method to delete the item from Firestore
-                removeProject(holder.getAdapterPosition());
-            }
-        });*/
+                Intent intent = new Intent(context, TaskActivity.class);
 
-        boolean isComplete = sharedPreferenceManager.getTaskProgress(tasks.getTaskDetails(), false);
+                // the selected project as an extra in the Intent
+                intent.putExtra("selectedTask", selectedTask);
+                intent.putExtra("projectId1",proIdFromAddTask);
+                intent.putExtra("projectId2",proIdFromSelectedPro);
+                context.startActivity(intent);
 
-
-        if (isComplete) {
-            holder.done.setImageResource(R.drawable.baseline_check_circle_outline_24);
-
-        } else {
-            holder.done.setImageResource(R.drawable.baseline_radio_button_unchecked_24);
-        }
-
-        holder.updateTextColor(isComplete);
-
-        holder.done.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                boolean isComplete = !sharedPreferenceManager.getTaskProgress(tasks.getTaskDetails(), false);
-
-                FirestoreManager firestoreManager = new FirestoreManager();
-                firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), new FirestoreManager.OnDocumentIdRetrievedListener() {
-                    @Override
-                    public void onDocumentIdRetrieved(String documentId) {
-                        if (documentId != null) {
-                            // Update the task progress in Firestore
-                            updateTaskProgress(documentId, isComplete ? "Complete" : "Incomplete", isComplete ? "Task completed!" : "Task marked as incomplete!");
-                            notifyDataSetChanged();
-                            holder.updateTextColor(isComplete);
-
-                            // Save progress in SharedPreferences
-                            sharedPreferenceManager.saveTaskProgress(tasks.getTaskDetails(), isComplete);
-
-                            // Notify the listener that the task progress is updated
-                            if (taskProgressUpdateListener != null) {
-                                taskProgressUpdateListener.onTaskProgressUpdated();
-                            }
-                        } else {
-                            // Handle the case where the document ID couldn't be retrieved
-                            Toast.makeText(context, "Failed to retrieve document ID", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
             }
         });
-
-    }
-
-
-    private void updateTaskProgress(String taskId, String progress, String completionMessage) {
-        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
-        CollectionReference dbTasks = firestore.collection("Tasks");
-
-        // Update the "progress" field in Firestore
-        dbTasks.document(taskId).update("progress", progress)
-                .addOnSuccessListener(aVoid -> Toast.makeText(context, completionMessage, Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e -> Toast.makeText(context, "Failed to update task progress", Toast.LENGTH_SHORT).show());
     }
 
     @Override
@@ -187,7 +133,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     public void updateList(@NonNull List<Tasks> itemList) {
         this.tasksList = itemList;
         notifyDataSetChanged();
-
     }
 
     private void showPopupMenu(View view, int position) {
@@ -211,19 +156,17 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         popupMenu.show();
     }
 
-
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView taskDetails, taskEstimatedTime, taskDiff,completeT;
-        ImageView done, option;
+        TextView taskDetails, taskEstimatedTime, taskDiff,taskProgress;
+        ImageView  option;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             taskDetails = itemView.findViewById(R.id.taskDetails);
             taskEstimatedTime = itemView.findViewById(R.id.taskTime);
             taskDiff = itemView.findViewById(R.id.taskDifficulty);
-            done = itemView.findViewById(R.id.doneCheck);
             option = itemView.findViewById(R.id.taskButtonOptions);
-            completeT = itemView.findViewById(R.id.completedT);
+            taskProgress = itemView.findViewById(R.id.progressTask);
 
             taskDetails.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -235,30 +178,19 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                     }
                 }
             });
-
-        }
-
-        public void updateTextColor(boolean isComplete) {
-            if (isComplete) {
-                completeT.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.green)); // Assuming you have a color resource named "green"
-            } else {
-                // Set the default text color here
-                completeT.setTextColor(ContextCompat.getColor(itemView.getContext(), android.R.color.black));
-            }
-
         }
     }
+
     private void showUpdateFragmrnt(Tasks tasks) {
 
-        // Create an instance of your UpdateFragment.
         UpdateTaskFragment updateFragment = new UpdateTaskFragment();
 
         // Pass data to the fragment using Bundle.
         Bundle bundle = new Bundle();
         bundle.putSerializable("tasks",  tasks);
+
         bundle.putString("pId", proIdFromSelectedPro);
         bundle.putString("pId2", proIdFromAddTask);
-
 
         updateFragment.setArguments(bundle);
 
@@ -270,7 +202,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         transaction.commit();
 
     }
-
 
     private void showRemoveConfirmationDialog(final int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -284,7 +215,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         dialog.show();
     }
 
-
     private void removeTask(int position) {
         Tasks removeTask = tasksList.remove(position);
         notifyItemRemoved(position);
@@ -292,18 +222,19 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         FirestoreManager firestoreManager = new FirestoreManager();
         firestoreManager.getDocumentId("Tasks", "taskDetails", removeTask.getTaskDetails(), documentId -> {
             if (documentId != null) {
+
+                if (proIdFromSelectedPro != null) {
+                    //Set some data based on the selected project
+                    calculateTotalEstimatedTimeAndEndDate(proIdFromSelectedPro);
+                }
+                if (proIdFromAddTask != null) {
+                    //Set some data based on the selected project
+                    calculateTotalEstimatedTimeAndEndDate(proIdFromAddTask);
+                }
+                removeTaskFromProjectTasks(documentId);
                 removeItemFromFirestore(documentId);
             }  // Handle the case where the document ID couldn't be retrieved
         });
-        if (proIdFromSelectedPro != null) {
-            // Example: Set some data based on the selected project
-            calculateTotalEstimatedTimeAndEndDate(proIdFromSelectedPro);
-        }
-        if (proIdFromAddTask != null) {
-            // Example: Set some data based on the selected project
-            calculateTotalEstimatedTimeAndEndDate(proIdFromAddTask);
-        }
-
     }
 
     private void removeItemFromFirestore(String documentId) {
@@ -311,21 +242,49 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
             task.isSuccessful();
 
         });
+    }
 
+    private void removeTaskFromProjectTasks(String taskId) {
+        FirebaseFirestore.getInstance().collection("projectTasks")
+                .whereEqualTo("taskId", taskId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String projectTaskId = document.getId();
+                            removeItemFromProjectTasks(projectTaskId);
+                        }
+                    } else {
+                        // Handle failure in fetching projectTasks
+                        Log.e("RemoveProjectTask", "Error fetching projectTasks", task.getException());
+                    }
+                });
+    }
+
+    private void removeItemFromProjectTasks(String projectTaskId) {
+        FirebaseFirestore.getInstance().collection("projectTasks").document(projectTaskId)
+                .delete()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("RemoveProjectTask", "Task removed from projectTasks successfully");
+                    } else {
+                        Log.e("RemoveProjectTask", "Error removing task from projectTasks", task.getException());
+                    }
+                });
     }
 
     private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
-        Log.d("CalculateTime", "Calculating total estimated time and end date for project: " + projectId);
         fb.collection("projectTasks")
                 .whereEqualTo("projectId", projectId)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        AtomicLong totalEstimatedTime = new AtomicLong();
+                        AtomicLong highestEstimatedTime = new AtomicLong();
+                        AtomicInteger tasksProcessed = new AtomicInteger(0);
+                        int totalTasks = task.getResult().size();
 
                         for (DocumentSnapshot document : task.getResult()) {
                             String taskId = document.getString("taskId");
-                            Log.d("CalculateTime", "Processing task: " + taskId);
 
                             fb.collection("Tasks")
                                     .document(taskId)
@@ -339,12 +298,13 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
 
                                                 if (estimatedTime != null) {
                                                     long taskDays = TimeConverter.convertToDays(estimatedTime);
-                                                    totalEstimatedTime.addAndGet(taskDays);
 
-                                                    Log.d("CalculateTime", "Task processed. Total estimated time so far: " + totalEstimatedTime);
+                                                    // Update the highest estimated time
+                                                    highestEstimatedTime.updateAndGet(currentValue ->
+                                                            Math.max(currentValue, taskDays)
+                                                    );
 
-                                                    // Update the end date of the project based on the total estimated time
-                                                    updateProjectEndDate(projectId, totalEstimatedTime.get());
+                                                    Log.d("CalculateTime", "Task processed. Highest estimated time so far: " + highestEstimatedTime);
                                                 } else {
                                                     Log.e("CalculateTime", "Estimated time is null for task: " + taskId);
                                                 }
@@ -355,6 +315,15 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                                             // Handle failure in fetching task document
                                             Log.e("CalculateTime", "Error fetching task document", taskDocumentTask.getException());
                                         }
+
+                                        // Increment the counter for processed tasks
+                                        tasksProcessed.incrementAndGet();
+
+                                        // Check if all tasks have been processed
+                                        if (tasksProcessed.get() == totalTasks) {
+                                            // Update the project's end date based on the highest estimated time
+                                            updateProjectEndDate(projectId, highestEstimatedTime.get());
+                                        }
                                     });
                         }
                     } else {
@@ -363,7 +332,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                     }
                 });
     }
-
 
     private void updateProjectEndDate(String projectId, long totalEstimatedTime) {
         fb.collection("Projects")

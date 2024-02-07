@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="12dp">
 
     <ImageView
         android:id="@+id/closeImageView"
@@ -38,23 +38,44 @@
         android:inputType="textMultiLine"
         android:padding="8dp"
         android:textColor="@color/black" />
-
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="220dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Estimated Time(eg.2d,6w)"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:orientation="horizontal">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/estimatedTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="190dp"
+            android:layout_height="wrap_content"
+            android:hint="Estimated Time"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-    </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/estimatedTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:text="Duration:"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:gravity="top"
+            android:layout_gravity="top"/>
+
+        <Spinner
+            android:id="@+id/taskDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:entries="@array/duration"
+            android:gravity="end" />
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/spinnerDifTitle"

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,6 +28,7 @@ import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -180,9 +182,6 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         dialog.show();
     }
 
-
-
-
     private void removeProject(int position) {
         Projects removedProject = projectsArrayList.remove(position);
         notifyItemRemoved(position);
@@ -190,6 +189,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         FirestoreManager firestoreManager = new FirestoreManager();
         firestoreManager.getDocumentId("Projects", "title", removedProject.getTitle(), documentId -> {
             if (documentId != null) {
+                removeUserPorject(documentId);
                 removeItemFromFirestore(documentId);
             }  // Handle the case where the document ID couldn't be retrieved
 
@@ -203,6 +203,35 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
             // Handle the error
         });
 
+    }
+
+    private void removeUserPorject(String projectid) {
+        FirebaseFirestore.getInstance().collection("userProjects")
+                .whereEqualTo("projectId", projectid)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String userProjectId = document.getId();
+                            removeItemFromUserProject(userProjectId);
+                        }
+                    } else {
+                        // Handle failure in fetching projectTasks
+                        Log.e("RemoveProjectTask", "Error fetching projectTasks", task.getException());
+                    }
+                });
+    }
+
+    private void removeItemFromUserProject(String userProjectId) {
+        FirebaseFirestore.getInstance().collection("userProjects").document(userProjectId)
+                .delete()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("RemoveProjectTask", "Task removed from projectTasks successfully");
+                    } else {
+                        Log.e("RemoveProjectTask", "Error removing task from projectTasks", task.getException());
+                    }
+                });
     }
 
 }

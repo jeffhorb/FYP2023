@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/taskIncomplete"
+        android:title="Incomplete"/>
+    <item
+        android:id="@+id/taskInprogress"
+        android:title="In Progress"/>
+
+    <item
+        android:id="@+id/taskComplete"
+        android:title="Complete"/>
+
+</menu>

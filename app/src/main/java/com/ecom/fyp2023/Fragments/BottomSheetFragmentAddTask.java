@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -37,11 +38,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
 
-    Spinner progress, difficulty;
+    Spinner progress, difficulty,duration;
     EditText  details;
     Button save;
     String taskId, projectId;
@@ -70,11 +72,12 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
         View view = inflater.inflate(R.layout.fragment_bottom_sheet_add_task, container, false);
 
         details = view.findViewById(R.id.taskDetails);
-        //estimatedTime = view.findViewById(R.id.estimatedTime);
         TextInputEditText estimatedTime = (TextInputEditText) view.findViewById(R.id.estimatedTime);
         difficulty = view.findViewById(R.id.taskDif);
         progress = view.findViewById(R.id.taskProgress);
         save = view.findViewById(R.id.saveBtn);
+        duration = view.findViewById(R.id.taskDuration);
+
 
 
         fb = FirebaseFirestore.getInstance();
@@ -103,16 +106,23 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
             String estTime = estimatedTime.getText().toString();
             String diff = difficulty.getSelectedItem().toString();
             String progrs = progress.getSelectedItem().toString();
+            String selectedText = duration.getSelectedItem().toString();
+            String newText = estTime + selectedText;
+
+            estimatedTime.setText(newText);
+            estimatedTime.setSelection(estimatedTime.length());
 
             if (TextUtils.isEmpty(detls)) {
                 details.setError("Field required");
+                estimatedTime.setText(null);
             } else if (TextUtils.isEmpty(estTime)) {
                 estimatedTime.setError("Field required");
-            } else if (!isValidEstimationFormat(estTime)) {
-                estimatedTime.setError("Invalid format. Use a number followed by 'd' or 'w'.");
+            } else if (!isValidEstimationFormat(newText)) {
+                estimatedTime.setText(null);
+                estimatedTime.setError("Invalid format. Use a number followed by duration");
             } else {
-                saveTasks(detls, diff, progrs, estTime);
-                // Clear the input fields after successful save
+
+                saveTasks(detls, diff, progrs, newText);
 
                 details.setText(null);
                 estimatedTime.setText(null);
@@ -123,9 +133,10 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
 
     // Function to check if estTime has a valid format
     private boolean isValidEstimationFormat(@NonNull String estTime) {
-        String regex = "\\d+[dw]";
+        String regex = "\\d+(day|week)";
         return estTime.matches(regex);
     }
+
 
     public void saveTasks(String d, String diff, String prog, String estT) {
 
@@ -169,7 +180,9 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        AtomicLong totalEstimatedTime = new AtomicLong();
+                        AtomicLong highestEstimatedTime = new AtomicLong();
+                        AtomicInteger tasksProcessed = new AtomicInteger(0);
+                        int totalTasks = task.getResult().size();
 
                         for (DocumentSnapshot document : task.getResult()) {
                             String taskId = document.getString("taskId");
@@ -186,12 +199,13 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
 
                                                 if (estimatedTime != null) {
                                                     long taskDays = TimeConverter.convertToDays(estimatedTime);
-                                                    totalEstimatedTime.addAndGet(taskDays);
 
-                                                    Log.d("CalculateTime", "Task processed. Total estimated time so far: " + totalEstimatedTime);
+                                                    // Update the highest estimated time
+                                                    highestEstimatedTime.updateAndGet(currentValue ->
+                                                            Math.max(currentValue, taskDays)
+                                                    );
 
-                                                    // Update the end date of the project based on the total estimated time
-                                                    updateProjectEndDate(projectId, totalEstimatedTime.get());
+                                                    Log.d("CalculateTime", "Task processed. Highest estimated time so far: " + highestEstimatedTime);
                                                 } else {
                                                     Log.e("CalculateTime", "Estimated time is null for task: " + taskId);
                                                 }
@@ -202,6 +216,15 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
                                             // Handle failure in fetching task document
                                             Log.e("CalculateTime", "Error fetching task document", taskDocumentTask.getException());
                                         }
+
+                                        // Increment the counter for processed tasks
+                                        tasksProcessed.incrementAndGet();
+
+                                        // Check if all tasks have been processed
+                                        if (tasksProcessed.get() == totalTasks) {
+                                            // Update the project's end date based on the highest estimated time
+                                            updateProjectEndDate(projectId, highestEstimatedTime.get());
+                                        }
                                     });
                         }
                     } else {
@@ -210,6 +233,8 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
                     }
                 });
     }
+
+
 
     private void updateProjectEndDate(String projectId, long totalEstimatedTime) {
         fb.collection("Projects")
@@ -221,18 +246,19 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment {
                         if (projectDocument.exists()) {
                             String startDate = projectDocument.getString("startDate");
                             String updatedEndDate = calculateEndDate(startDate, totalEstimatedTime);
-
-                            fb.collection("Projects")
-                                    .document(projectId)
-                                    .update("endDate", updatedEndDate)
-                                    .addOnCompleteListener(updateTask -> {
-                                        if (updateTask.isSuccessful()) {
-                                            Log.d("UpdateProject", "Project end date updated successfully");
-                                            endDateUpdateListener.onEndDateUpdated(updatedEndDate);
-                                        } else {
-                                            Log.e("UpdateProject", "Error updating project end date", updateTask.getException());
-                                        }
-                                    });
+                            String endDate = projectDocument.getString("endDate");
+                            
+                                fb.collection("Projects")
+                                        .document(projectId)
+                                        .update("endDate", updatedEndDate)
+                                        .addOnCompleteListener(updateTask -> {
+                                            if (updateTask.isSuccessful()) {
+                                                Log.d("UpdateProject", "Project end date updated successfully");
+                                                endDateUpdateListener.onEndDateUpdated(updatedEndDate);
+                                            } else {
+                                                Log.e("UpdateProject", "Error updating project end date", updateTask.getException());
+                                            }
+                                        });
                         }
                     } else {
                         // Handle failure in fetching project document

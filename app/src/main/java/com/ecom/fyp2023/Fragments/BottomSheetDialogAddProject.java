@@ -108,13 +108,11 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
                 startDate.setError("Field required");
             } else if (TextUtils.isEmpty(endDt)) {
                 endDate.setError("Field required");
-
             } else if (!isBefore(startDt, endDt)) {
                 endDate.setError("End date must be after start date");
-            }
-
-            else{
-
+            } else if (!isStartDateValid(startDt)) {
+                startDate.setError("Invalid date");
+            } else{
                     addProjects(proTitle, proDesc, priority, startDt, endDt,progress);
                 }
             });
@@ -215,17 +213,17 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
         }
     }
 
-   /* private Timestamp getTimestampFromDate(String date) {
+    private boolean isStartDateValid(String startDate) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
-            Date parsedDate = sdf.parse(date);
-            if (parsedDate != null) {
-                return new Timestamp(parsedDate);
-            }
+            Date currentDate = Calendar.getInstance().getTime();
+            Date parsedStartDate = sdf.parse(startDate);
+
+            return parsedStartDate != null && !parsedStartDate.before(currentDate);
         } catch (ParseException e) {
             e.printStackTrace();
+            return false;
         }
-        return null;
-    */
+    }
 }
 

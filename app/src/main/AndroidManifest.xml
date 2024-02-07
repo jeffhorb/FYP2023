@@ -25,7 +25,7 @@
             android:name=".HomeScreen"
             android:exported="false" />
         <activity
-            android:name=".unUsedClass.AddTask"
+            android:name=".TaskActivity"
             android:exported="false" />
         <activity
             android:name=".unUsedClass.AddProject"

@@ -27,5 +27,12 @@
 
     </string-array>
 
+    <string-array name="duration">
+        <item> </item>
+        <item> day</item>
+        <item> week</item>
+
+    </string-array>
+
 
 </resources>

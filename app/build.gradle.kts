@@ -45,7 +45,6 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation ("com.google.android.material:material:1.12.0-alpha03")
     implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
-
-
+    implementation ("org.greenrobot:eventbus:3.3.1")
 
 }

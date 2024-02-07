@@ -21,8 +21,11 @@ import com.ecom.fyp2023.AppManagers.TimeConverter;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import org.jetbrains.annotations.Contract;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -30,16 +33,25 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class UpdateTaskFragment extends BottomSheetDialogFragment implements BottomSheetFragmentAddTask.OnEndDateUpdateListener {
 
-    EditText taskDetails, taskEstTime;
+    EditText taskDetails;
 
-    Spinner taskDifficulty;
+    Spinner taskDifficulty,duration;
     String  progress,proId;
     private FirebaseFirestore fb;
     Tasks tasks;
+
+    @NonNull
+    @Contract(" -> new")
+    public static UpdateTaskFragment newInstance() {
+
+        return new UpdateTaskFragment();
+    }
+
 
     private BottomSheetFragmentAddTask.OnEndDateUpdateListener endDateUpdateListener;
 
@@ -54,8 +66,9 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Bot
         fb = FirebaseFirestore.getInstance();
 
         taskDetails = view.findViewById(R.id.updateTaskDetails);
-        taskEstTime = view.findViewById(R.id.updateEstimatedTime);
+        TextInputEditText estimatedTime = (TextInputEditText) view.findViewById(R.id.updateEstimatedTime);
         taskDifficulty = view.findViewById(R.id.updateTaskDif);
+        duration = view.findViewById(R.id.upTaskDuration);
 
         Button updateTaskBtn = view.findViewById(R.id.updateBtn);
 
@@ -69,13 +82,25 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Bot
             proId = arguments.getString("pId");
         }
 
+        Bundle arguments1 = getArguments();
+        if (arguments1 != null && arguments1.containsKey("pro_key")) {
+            proId = arguments1.getString("pro_key");
+        }
+
         Bundle bundle = getArguments();
-        assert bundle != null;
+        if (bundle != null && bundle.containsKey("tasks")) {
         tasks = (Tasks) bundle.getSerializable("tasks");
+        }
+
+        //from TaskActivity
+        Bundle bundle1 = getArguments();
+        if (bundle1 != null && bundle1.containsKey("selectT")) {
+            tasks = (Tasks) bundle.getSerializable("selectT");
+        }
 
         assert tasks != null;
         taskDetails.setText(tasks.getTaskDetails());
-        taskEstTime.setText(tasks.getEstimatedTime());
+        //estimatedTime.setText(tasks.getEstimatedTime());
 
         String diffVal = tasks.getDifficulty();
         String[] diffSpinnerItems = getResources().getStringArray(R.array.tasksDifficulty);
@@ -92,27 +117,29 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Bot
 
         updateTaskBtn.setOnClickListener(v -> {
             String detls = taskDetails.getText().toString();
-            String estTime = taskEstTime.getText().toString();
+            String estTime = estimatedTime.getText().toString();
             String diff = taskDifficulty.getSelectedItem().toString();
+            String selectedText = duration.getSelectedItem().toString();
+            String newText = estTime + selectedText;
 
+            estimatedTime.setText(newText);
+            estimatedTime.setSelection(estimatedTime.length());
 
             if (TextUtils.isEmpty(detls)) {
                 taskDetails.setError("Field required");
-            } else if (!isValidEstimationFormat(estTime)) {
-                taskEstTime.setError("Invalid format. Use a number followed by 'd' or 'w'.");
+            } else if (!isValidEstimationFormat(newText)) {
+                estimatedTime.setError("Invalid format. Use a number followed by duration");
             } else {
                 // Call the updateTask method
-                updateTask(tasks, detls, diff, progress, estTime);
-
+                updateTask(tasks, detls, diff, progress, newText);
                 dismiss();
             }
         });
         return view;
     }
 
-    // Function to check if estTime has a valid format
     private boolean isValidEstimationFormat(@NonNull String estTime) {
-        String regex = "\\d+[dw]";
+        String regex = "\\d+(day|week)";
         return estTime.matches(regex);
     }
 
@@ -145,12 +172,13 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Bot
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        AtomicLong totalEstimatedTime = new AtomicLong();
+                        AtomicLong highestEstimatedTime = new AtomicLong();
+                        AtomicInteger tasksProcessed = new AtomicInteger(0);
+                        int totalTasks = task.getResult().size();
 
                         for (DocumentSnapshot document : task.getResult()) {
                             String taskId = document.getString("taskId");
 
-                            assert taskId != null;
                             fb.collection("Tasks")
                                     .document(taskId)
                                     .get()
@@ -163,12 +191,13 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Bot
 
                                                 if (estimatedTime != null) {
                                                     long taskDays = TimeConverter.convertToDays(estimatedTime);
-                                                    totalEstimatedTime.addAndGet(taskDays);
 
-                                                    Log.d("CalculateTime", "Task processed. Total estimated time so far: " + totalEstimatedTime);
+                                                    // Update the highest estimated time
+                                                    highestEstimatedTime.updateAndGet(currentValue ->
+                                                            Math.max(currentValue, taskDays)
+                                                    );
 
-                                                    // Update the end date of the project based on the total estimated time
-                                                    updateProjectEndDate(projectId, totalEstimatedTime.get());
+                                                    Log.d("CalculateTime", "Task processed. Highest estimated time so far: " + highestEstimatedTime);
                                                 } else {
                                                     Log.e("CalculateTime", "Estimated time is null for task: " + taskId);
                                                 }
@@ -178,6 +207,15 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Bot
                                         } else {
                                             // Handle failure in fetching task document
                                             Log.e("CalculateTime", "Error fetching task document", taskDocumentTask.getException());
+                                        }
+
+                                        // Increment the counter for processed tasks
+                                        tasksProcessed.incrementAndGet();
+
+                                        // Check if all tasks have been processed
+                                        if (tasksProcessed.get() == totalTasks) {
+                                            // Update the project's end date based on the highest estimated time
+                                            updateProjectEndDate(projectId, highestEstimatedTime.get());
                                         }
                                     });
                         }

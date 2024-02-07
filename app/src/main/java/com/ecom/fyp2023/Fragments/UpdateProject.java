@@ -1,6 +1,7 @@
 package com.ecom.fyp2023.Fragments;
 
 import android.app.DatePickerDialog;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -15,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 
 import com.ecom.fyp2023.ModelClasses.Projects;
@@ -24,8 +26,13 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.jetbrains.annotations.Contract;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -33,7 +40,12 @@ import java.util.Locale;
 
 public class UpdateProject extends BottomSheetDialogFragment {
 
-    // creating variables for our edit text
+    @NonNull
+    @Contract(" -> new")
+    public static UpdateProject newInstance() {
+            return new UpdateProject();
+    }
+
     EditText pTitle;
     EditText pDesc;
     EditText startDate;
@@ -121,14 +133,45 @@ public class UpdateProject extends BottomSheetDialogFragment {
                     pDesc.setError("Field Required");
                 } else if (TextUtils.isEmpty(stDate)) {
                     startDate.setError("Field required");
-                } else {
-                    // Your code to handle the valid input
-                    updateProject(project, proT, proDesc,pPriority, stDate, eDate, pProgress);
-                    dismiss();
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    if (!isValidStartDate(stDate)) {
+                        startDate.setError("Invalid start date.");
+                    } else {
+                        // Your code to handle the valid input
+                        updateProject(project, proT, proDesc,pPriority, stDate, eDate, pProgress);
+                        dismiss();
+                    }
                 }
             }
         });
         return view;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private boolean isValidStartDate(String startDate) {
+        try {
+            // Parse the start date
+            LocalDate parsedStartDate = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                parsedStartDate = LocalDate.parse(startDate, DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+            }
+
+            // Get today's date
+            LocalDate today = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                today = LocalDate.now();
+            }
+
+            // Check if the start date is equal to or after today's date
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                return !parsedStartDate.isBefore(today);
+            }
+        } catch (DateTimeParseException e) {
+            // Handle the case where the start date is not in the expected format
+            e.printStackTrace();
+            return false;
+        }
+        return false;
     }
 
     private void updateProject(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres) {
