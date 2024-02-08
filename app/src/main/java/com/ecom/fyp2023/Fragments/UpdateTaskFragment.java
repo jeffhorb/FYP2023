@@ -45,13 +45,21 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Bot
     private FirebaseFirestore fb;
     Tasks tasks;
 
+    public interface OnTaskUpdateListener {
+        void onTaskUpdated();
+    }
+    private OnTaskUpdateListener taskUpdateListener;
+
+    public void setOnTaskUpdateListener(OnTaskUpdateListener listener) {
+        this.taskUpdateListener = listener;
+    }
+
     @NonNull
     @Contract(" -> new")
     public static UpdateTaskFragment newInstance() {
 
         return new UpdateTaskFragment();
     }
-
 
     private BottomSheetFragmentAddTask.OnEndDateUpdateListener endDateUpdateListener;
 
@@ -158,6 +166,10 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Bot
 
                     calculateTotalEstimatedTimeAndEndDate(proId);
                     Toast.makeText(requireContext(), "Task has been updated.", Toast.LENGTH_SHORT).show();
+
+                    if (taskUpdateListener != null) {
+                        taskUpdateListener.onTaskUpdated();
+                    }
 
                 })
                 .addOnFailureListener(e -> {

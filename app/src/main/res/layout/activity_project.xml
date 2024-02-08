@@ -72,17 +72,6 @@
             android:textStyle="bold"
             android:layout_marginStart="10dp"/>
 
-        <ImageView
-            android:id="@+id/expandImageView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:layout_gravity="start"
-            android:layout_marginStart="10dp"
-            android:focusable="true"
-            android:onClick="ChangeProgress"
-            android:src="@drawable/baseline_expand_more_24"/>
-
         <TextView
             android:id="@+id/progressTextview"
             android:layout_width="wrap_content"
@@ -90,6 +79,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="progress"
+            android:layout_marginStart="10dp"
             android:textSize="16sp"
             android:textStyle="normal" />
 
@@ -247,7 +237,6 @@
                 android:id="@+id/updateTaskfra"
                 android:orientation="vertical"
                 android:gravity="bottom"/>
-
 
         </FrameLayout>
 

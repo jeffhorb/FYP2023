@@ -10,16 +10,14 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.Fragments.CommentListFragment;
 import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.ModelClasses.Tasks;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -29,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskActivity extends AppCompatActivity {
 
@@ -40,13 +37,6 @@ public class TaskActivity extends AppCompatActivity {
     //String username;
 
     FirebaseFirestore fb;
-
-    // Interface for progress updates
-    public interface OnTaskProgressUpdateListener {
-        void onTaskProgressUpdated(String projectId);
-    }
-
-    private OnTaskProgressUpdateListener taskProgressUpdateListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,7 +123,7 @@ public class TaskActivity extends AppCompatActivity {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
 
-                MenuItem unAssignTaskMenuItem = popupMenu.getMenu().findItem(R.id.UnAssignTask);
+                //MenuItem unAssignTaskMenuItem = popupMenu.getMenu().findItem(R.id.UnAssignTask);
 
                 if (menuItem.getItemId() == R.id.updateT) {
 
@@ -235,7 +225,8 @@ public class TaskActivity extends AppCompatActivity {
                                 tasks.setProgress(progress);
 
                                 // Automatically update project progress based on task progress
-                                updateProjectProgressAuto(projectId, "Incomplete");
+                               // updateProjectProgressAuto(projectId, "Incomplete");
+                                updateProjectProgressAuto(projectId);
 
                             })
                             .addOnFailureListener(e -> {
@@ -248,8 +239,7 @@ public class TaskActivity extends AppCompatActivity {
         }
     }
 
-    private void updateProjectProgressAuto(String projectId, String progress) {
-        // Query the projectTasks collection to check the progress of associated tasks
+    private void updateProjectProgressAuto(String projectId) {
         FirebaseFirestore.getInstance().collection("projectTasks")
                 .whereEqualTo("projectId", projectId)
                 .get()
@@ -257,14 +247,12 @@ public class TaskActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         AtomicBoolean anyTaskInProgress = new AtomicBoolean(false);
                         AtomicBoolean allTasksComplete = new AtomicBoolean(true);
-                        // List to store task IDs
                         List<String> taskIds = new ArrayList<>();
 
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             String taskId = document.getString("taskId");
                             taskIds.add(taskId);
 
-                            // Fetch the task document to get the progress
                             FirebaseFirestore.getInstance().collection("Tasks")
                                     .document(taskId)
                                     .get()
@@ -272,28 +260,23 @@ public class TaskActivity extends AppCompatActivity {
                                         if (taskDocument.isSuccessful()) {
                                             DocumentSnapshot taskSnapshot = taskDocument.getResult();
 
-                                            // Check if the task document exists and contains the "progress" field
                                             if (taskSnapshot.exists() && taskSnapshot.contains("progress")) {
                                                 String taskProgress = taskSnapshot.getString("progress");
-                                                // Check if any task is "In Progress"
                                                 if (taskProgress != null && taskProgress.equalsIgnoreCase("In Progress")) {
                                                     anyTaskInProgress.set(true);
                                                 }
-                                                // Check if taskProgress is null or not equal to "Complete"
                                                 if (taskProgress == null || !taskProgress.equalsIgnoreCase("Complete")) {
                                                     allTasksComplete.set(false);
                                                 }
                                             }
                                         }
-                                        // Check the flags after each task document fetch
+
                                         if (anyTaskInProgress.get()) {
-                                            // If any task is "In Progress," update the project progress to "In Progress"
                                             updateProjectProgressInFirestore(projectId, "In Progress");
                                         } else if (allTasksComplete.get()) {
-                                            // If all tasks are complete, update the project progress to "Complete"
                                             updateProjectProgressInFirestore(projectId, "Complete");
                                         } else {
-                                            // If none of the tasks are complete, update the project progress to "Incomplete"
+                                            // If any task is "In Progress" or some tasks are "Complete," set the project progress to "Incomplete"
                                             updateProjectProgressInFirestore(projectId, "Incomplete");
                                         }
                                     });
@@ -318,7 +301,6 @@ public class TaskActivity extends AppCompatActivity {
                     Log.e("Firestore", "Failed to update progress: " + e.getMessage());
                 });
     }
-
 
     private void loadUserAssigned(String taskId) {
         FirebaseFirestore.getInstance().collection("userTasks")

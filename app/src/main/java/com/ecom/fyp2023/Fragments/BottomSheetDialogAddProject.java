@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -24,9 +23,7 @@ import com.ecom.fyp2023.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.ecom.fyp2023.AppManagers.TimeConverter;
 
 import org.jetbrains.annotations.Contract;
 
@@ -38,8 +35,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
 
@@ -110,8 +105,6 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
                 endDate.setError("Field required");
             } else if (!isBefore(startDt, endDt)) {
                 endDate.setError("End date must be after start date");
-            } else if (!isStartDateValid(startDt)) {
-                startDate.setError("Invalid date");
             } else{
                     addProjects(proTitle, proDesc, priority, startDt, endDt,progress);
                 }
@@ -123,17 +116,14 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             int month = c.get(Calendar.MONTH);
             int day = c.get(Calendar.DAY_OF_MONTH);
 
-            DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(), new DatePickerDialog.OnDateSetListener() {
-                @Override
-                public void onDateSet(DatePicker view1, int year,
-                                      int monthOfYear, int dayOfMonth) {
-                    startDate.setText(dayOfMonth + "-" + (monthOfYear + 1) + "-" + year);
-                }
-            },
-                    year, month, day);
+            DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(), (view1, year1, monthOfYear, dayOfMonth) -> {
+                startDate.setText(dayOfMonth + "-" + (monthOfYear + 1) + "-" + year1);
+            }, year, month, day);
+
+            // Set minimum date to today
+            datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000); // -1000 to avoid issues with rounding to the nearest day
             datePickerDialog.show();
         });
-
 
         endDate.setOnClickListener(v -> {
             final Calendar c = Calendar.getInstance();
@@ -141,19 +131,16 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             int month = c.get(Calendar.MONTH);
             int day = c.get(Calendar.DAY_OF_MONTH);
 
-            DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(), new DatePickerDialog.OnDateSetListener() {
-                @Override
-                public void onDateSet(DatePicker view12, int year,
-                                      int monthOfYear, int dayOfMonth) {
-                    endDate.setText(dayOfMonth + "-" + (monthOfYear + 1) + "-" + year);
-                }
-            },
-                    year, month, day);
+            DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(), (view12, year12, monthOfYear, dayOfMonth) -> {
+                endDate.setText(dayOfMonth + "-" + (monthOfYear + 1) + "-" + year12);
+            }, year, month, day);
+
+            // Set minimum date to today
+            datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000); // -1000 to avoid issues with rounding to the nearest day
             datePickerDialog.show();
         });
 
         return view;
-
     }
     public void addProjects(String title, String description, String priority, String startDate, String endDate, String progres) {
 
@@ -184,7 +171,6 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
         }).addOnFailureListener(e -> Toast.makeText(getActivity(), "Failed \n" + e, Toast.LENGTH_SHORT).show());
     }
 
-
     private void addUserProject(String userId, String project_id, String role) {
         // Creates a new userProjects document with an automatically generated ID
         Map<String, Object> userProject = new HashMap<>();
@@ -207,19 +193,6 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             Date startDate = sdf.parse(date1);
             Date endDate = sdf.parse(date2);
             return startDate != null && endDate != null && startDate.before(endDate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private boolean isStartDateValid(String startDate) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
-            Date currentDate = Calendar.getInstance().getTime();
-            Date parsedStartDate = sdf.parse(startDate);
-
-            return parsedStartDate != null && !parsedStartDate.before(currentDate);
         } catch (ParseException e) {
             e.printStackTrace();
             return false;

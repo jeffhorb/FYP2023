@@ -1,10 +1,8 @@
 package com.ecom.fyp2023.Adapters;
 
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,12 +11,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.RecyclerView;
@@ -26,14 +22,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.AppManagers.TimeConverter;
-import com.ecom.fyp2023.Fragments.BottomSheetFragmentAddTask;
 import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
-import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
-import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
 import com.ecom.fyp2023.TaskActivity;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -60,16 +52,9 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
 
     private OnEndDateUpdateListener endDateUpdateListener;
 
-
     public interface OnEndDateUpdateListener {
         void onEndDateUpdated(String updatedEndDate);
     }
-
-    //public interface OnTaskProgressUpdateListener {
-        //void onTaskProgressUpdated();
-    //}
-
-    //private OnTaskProgressUpdateListener taskProgressUpdateListener;
 
     // Setter method to set the selected project
     public void setSelectedProject(String selectedProject) {
@@ -77,14 +62,12 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         this.proIdFromAddTask = selectedProject;
     }
 
-    public TasksRVAdapter(List<Tasks> tasksList, Context context, OnEndDateUpdateListener endDateUpdateListener /*OnTaskProgressUpdateListener taskProgressUpdateListener*/) {
+    public TasksRVAdapter(List<Tasks> tasksList, Context context, OnEndDateUpdateListener endDateUpdateListener ) {
         this.tasksList = tasksList;
         this.context = context;
         this.sharedPreferenceManager = new SharedPreferenceManager(context);
-        //this.taskProgressUpdateListener = listener;
         this.fb = FirebaseFirestore.getInstance();
         this.endDateUpdateListener = endDateUpdateListener;
-       // this.taskProgressUpdateListener = taskProgressUpdateListener;
     }
 
     @NonNull
@@ -110,8 +93,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
             public void onClick(View v) {
                 // Handle the item click event, you might want to open a detailed view or perform some action
                 selectedTask = tasksList.get(holder.getAdapterPosition());
-
-                //taskProgressUpdateListener.onTaskProgressUpdated();
 
                 Intent intent = new Intent(context, TaskActivity.class);
 
@@ -184,6 +165,9 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     private void showUpdateFragmrnt(Tasks tasks) {
 
         UpdateTaskFragment updateFragment = new UpdateTaskFragment();
+
+        // Set the OnTaskUpdateListener to receive callbacks in ProjectActivity to update recycerview with updated task details
+        updateFragment.setOnTaskUpdateListener((UpdateTaskFragment.OnTaskUpdateListener) context);
 
         // Pass data to the fragment using Bundle.
         Bundle bundle = new Bundle();
