@@ -29,15 +29,23 @@
         android:textSize="20sp"
         android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/taskDetails"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:drawablePadding="8dp"
+        android:layout_height="wrap_content"
         android:hint="Task Details"
-        android:inputType="textMultiLine"
-        android:padding="8dp"
-        android:textColor="@color/black" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/taskDetails"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:drawablePadding="8dp"
+            android:inputType="textMultiLine"
+            android:padding="8dp"
+            android:textColor="@color/black" />
+    </com.google.android.material.textfield.TextInputLayout>
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -102,6 +110,19 @@
         android:entries="@array/tasksProgress"
         android:gravity="end"
         android:visibility="invisible"/>
+
+    <TextView
+        android:id="@+id/textViewPrerequisite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select Prerequisite:"/>
+
+    <Spinner
+        android:id="@+id/spinnerPrerequisite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:entries="@array/nullprerequisite" />
 
     <Button
         android:id="@+id/saveBtn"

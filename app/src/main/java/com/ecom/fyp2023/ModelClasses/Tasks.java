@@ -3,6 +3,7 @@ package com.ecom.fyp2023.ModelClasses;
 import com.google.firebase.firestore.Exclude;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class Tasks implements Serializable {
 
@@ -10,6 +11,9 @@ public class Tasks implements Serializable {
     private String difficulty;
     private String progress;
     private String estimatedTime;
+
+    // New field for prerequisites
+    private List<String> prerequisites;
 
     private transient String taskId;
 
@@ -19,12 +23,12 @@ public class Tasks implements Serializable {
         // Default constructor required for Firestore
     }
 
-    public Tasks( String taskDetails, String difficulty, String progress, String estimatedTime) {
-
+    public Tasks(String taskDetails, String difficulty, String progress, String estimatedTime, List<String> prerequisites) {
         this.taskDetails = taskDetails;
         this.difficulty = difficulty;
         this.progress = progress;
         this.estimatedTime = estimatedTime;
+        this.prerequisites = prerequisites;
     }
 
     public String getTaskDetails() {
@@ -41,6 +45,10 @@ public class Tasks implements Serializable {
 
     public String getEstimatedTime() {
         return estimatedTime;
+    }
+
+    public List<String> getPrerequisites() {
+        return prerequisites;
     }
 
     @Exclude
@@ -67,5 +75,8 @@ public class Tasks implements Serializable {
     public void setEstimatedTime(String estimatedTime) {
         this.estimatedTime = estimatedTime;
     }
-}
 
+    public void setPrerequisites(List<String> prerequisites) {
+        this.prerequisites = prerequisites;
+    }
+}

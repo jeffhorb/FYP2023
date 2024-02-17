@@ -11,7 +11,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.Fragments.CommentListFragment;
@@ -27,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskActivity extends AppCompatActivity {
 
@@ -198,7 +198,8 @@ public class TaskActivity extends AppCompatActivity {
                 } else if (menuItem.getItemId() == R.id.taskInprogress) {
                     updateTaskProgress("In Progress");
                 } else if (menuItem.getItemId() == R.id.taskComplete) {
-                    updateTaskProgress("Complete");
+                    //updateTaskProgress("Complete");
+                    updateTaskProgressToComplete("Complete");
                 }
                 return true;
             }
@@ -239,6 +240,117 @@ public class TaskActivity extends AppCompatActivity {
         }
     }
 
+    private void updateTaskProgressToComplete(String progress) {
+        Intent intent = getIntent();
+        if (intent.hasExtra("selectedTask")) {
+            Tasks tasks = (Tasks) intent.getSerializableExtra("selectedTask");
+
+            FirestoreManager firestoreManager = new FirestoreManager();
+            assert tasks != null;
+            firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
+                if (documentId != null) {
+                    // Fetch the list of prerequisites for the current task
+                    List<String> prerequisites = tasks.getPrerequisites();
+
+                    // Check if all prerequisites are complete
+                    arePrerequisitesComplete(prerequisites, arePrerequisitesComplete -> {
+                        if (arePrerequisitesComplete) {
+                            FirebaseFirestore.getInstance().collection("Tasks")
+                                    .document(documentId)
+                                    .update("progress", progress)
+                                    .addOnSuccessListener(aVoid -> {
+                                        // Update successful
+                                        Toast.makeText(TaskActivity.this, "Progress updated to " + progress, Toast.LENGTH_SHORT).show();
+                                        taskPro.setText(progress);
+                                        tasks.setProgress(progress);
+
+                                        // Automatically update project progress based on task progress
+                                        updateProjectProgressAuto(projectId);
+
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        // Error updating progress
+                                        Log.e("updateTaskProgress", "Error updating progress", e);
+                                        Toast.makeText(TaskActivity.this, "Error updating progress", Toast.LENGTH_SHORT).show();
+                                    });
+                        } else {
+                            // Display a warning that prerequisites are not complete
+                            Toast.makeText(TaskActivity.this, "Prerequisites are not complete. " + tasks.getPrerequisites(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private void arePrerequisitesComplete(List<String> prerequisites, OnPrerequisitesCheckComplete callback) {
+        if (prerequisites != null && !prerequisites.isEmpty()) {
+            AtomicInteger count = new AtomicInteger(prerequisites.size());
+
+            for (String taskId : prerequisites) {
+                isTaskComplete(taskId, isComplete -> {
+                    if (!isComplete) {
+                        callback.onPrerequisitesCheckComplete(false);
+                    } else {
+                        if (count.decrementAndGet() == 0) {
+                            callback.onPrerequisitesCheckComplete(true);
+                        }
+                    }
+                });
+            }
+        } else {
+            // No prerequisites, consider them complete
+            callback.onPrerequisitesCheckComplete(true);
+        }
+    }
+
+    private interface OnPrerequisitesCheckComplete {
+        void onPrerequisitesCheckComplete(boolean arePrerequisitesComplete);
+    }
+
+    private void isTaskComplete(String taskId, OnTaskCompleteCallback callback) {
+        getTaskProgress(taskId, new OnTaskProgressCallback() {
+            @Override
+            public void onTaskProgressComplete(String progress) {
+                callback.onTaskComplete("Complete".equals(progress));
+            }
+
+            @Override
+            public void onTaskProgressError() {
+                // Handle error (you may consider treating it as incomplete)
+                callback.onTaskComplete(false);
+            }
+        });
+    }
+
+    private interface OnTaskCompleteCallback {
+        void onTaskComplete(boolean isComplete);
+    }
+
+    private void getTaskProgress(String taskId, OnTaskProgressCallback callback) {
+        // Fetch the task progress from Firestore based on taskId
+        // Replace "Tasks" with your actual Firestore collection name
+        // Replace "progress" with the actual field name where progress is stored
+        FirebaseFirestore.getInstance().collection("Tasks")
+                .document(taskId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        String progress = task.getResult().getString("progress");
+                        callback.onTaskProgressComplete(progress);
+                    } else {
+                        // Handle errors or non-existent task
+                        callback.onTaskProgressError();
+                    }
+                });
+    }
+
+    private interface OnTaskProgressCallback {
+        void onTaskProgressComplete(String progress);
+
+        void onTaskProgressError();
+    }
+
     private void updateProjectProgressAuto(String projectId) {
         FirebaseFirestore.getInstance().collection("projectTasks")
                 .whereEqualTo("projectId", projectId)
@@ -253,6 +365,7 @@ public class TaskActivity extends AppCompatActivity {
                             String taskId = document.getString("taskId");
                             taskIds.add(taskId);
 
+                            assert taskId != null;
                             FirebaseFirestore.getInstance().collection("Tasks")
                                     .document(taskId)
                                     .get()

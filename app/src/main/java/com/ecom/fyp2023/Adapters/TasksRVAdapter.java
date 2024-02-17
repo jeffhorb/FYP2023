@@ -50,7 +50,7 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     Tasks selectedTask;
     private String proIdFromAddTask;
 
-    private OnEndDateUpdateListener endDateUpdateListener;
+    private final OnEndDateUpdateListener endDateUpdateListener;
 
     public interface OnEndDateUpdateListener {
         void onEndDateUpdated(String updatedEndDate);

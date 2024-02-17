@@ -38,7 +38,7 @@ import java.util.Objects;
 
 public class ProjectActivity extends AppCompatActivity implements
         TasksRVAdapter.OnEndDateUpdateListener,
-        BottomSheetFragmentAddTask.OnEndDateUpdateListener, UpdateTaskFragment.OnTaskUpdateListener {
+        BottomSheetFragmentAddTask.OnEndDateUpdateListener, UpdateTaskFragment.OnTaskUpdateListener,UpdateTaskFragment.OnEndDateUpdateListener {
 
     private RecyclerView recyclerView;
     private ArrayList<Tasks> tasksArrayList;
@@ -150,9 +150,11 @@ public class ProjectActivity extends AppCompatActivity implements
                     CommentListFragment bottomSheetFragment = CommentListFragment.newInstance(documentId);
                     bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
 
+                    UpdateTaskFragment fragment = UpdateTaskFragment.newInstance();
+
                     Bundle bundle = new Bundle();
                     bundle.putString("pId", documentId);
-                    UpdateTaskFragment fragment = new UpdateTaskFragment();
+                    fragment.setOnEndDateUpdateListener(ProjectActivity.this);
                     fragment.setArguments(bundle);
 
                     db.collection("projectTasks")

@@ -4,9 +4,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -33,7 +33,6 @@ public class UsersListFragment extends BottomSheetDialogFragment {
         return new UsersListFragment();
     }
 
-    private RecyclerView recyclerView;
     private UserRVAdapter userAdapter;
     private List<Users> userList;
 
@@ -49,7 +48,7 @@ public class UsersListFragment extends BottomSheetDialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_users_list, container, false);
 
-        recyclerView = view.findViewById(R.id.userRecyclerview);
+        RecyclerView recyclerView = view.findViewById(R.id.userRecyclerview);
         userList = new ArrayList<>();
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false);
@@ -60,6 +59,14 @@ public class UsersListFragment extends BottomSheetDialogFragment {
 
         // Fetch user data from Firestore
         fetchUserData();
+
+        ImageView closeImageView = view.findViewById(R.id.closeImageView);
+
+        // Set an OnClickListener to handle the close action
+        closeImageView.setOnClickListener(v -> {
+            // Close the BottomSheetDialogFragment when the close icon is clicked
+            dismiss();
+        });
 
         Bundle arguments = getArguments();
         if (arguments != null && arguments.containsKey("proID")) {
@@ -90,9 +97,8 @@ public class UsersListFragment extends BottomSheetDialogFragment {
                                 userList.add(user);
                             }
                             userAdapter.notifyDataSetChanged();
-                        } else {
-                            // Handle errors
-                        }
+                        }  // Handle errors
+
                     }
                 });
     }
