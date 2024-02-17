@@ -47,7 +47,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
     TextInputEditText taskDetails;
 
     Spinner taskDifficulty,duration;
-    Spinner spinnerPrerequisite;
+
     String  progress,proId;
     private FirebaseFirestore fb;
     Tasks tasks;

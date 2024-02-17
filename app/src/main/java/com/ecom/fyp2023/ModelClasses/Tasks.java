@@ -6,29 +6,36 @@ import java.io.Serializable;
 import java.util.List;
 
 public class Tasks implements Serializable {
-
+    private String tasksName;
     private String taskDetails;
     private String difficulty;
     private String progress;
     private String estimatedTime;
 
-    // New field for prerequisites
     private List<String> prerequisites;
 
     private transient String taskId;
 
-    // Constructors, getters, and setters
 
     public Tasks() {
         // Default constructor required for Firestore
     }
 
     public Tasks(String taskDetails, String difficulty, String progress, String estimatedTime, List<String> prerequisites) {
+        //this.tasksName = taskName;
         this.taskDetails = taskDetails;
         this.difficulty = difficulty;
         this.progress = progress;
         this.estimatedTime = estimatedTime;
         this.prerequisites = prerequisites;
+    }
+
+    public String getTasksName() {
+        return tasksName;
+    }
+
+    public void setTasksName(String tasksName) {
+        this.tasksName = tasksName;
     }
 
     public String getTaskDetails() {

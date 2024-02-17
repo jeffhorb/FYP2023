@@ -1,5 +1,6 @@
 package com.ecom.fyp2023;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,6 +11,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
@@ -30,8 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskActivity extends AppCompatActivity {
 
-    TextView tasksDetails,endDate,estTime,taskPro, commentFrag, userAssigned;
-    ImageView expandMore,progressExpand;
+    TextView tasksDetails, endDate, estTime, taskPro, commentFrag, userAssigned;
+    ImageView expandMore, progressExpand, prerequisiteList;
 
     String projectId;
     //String username;
@@ -51,6 +53,7 @@ public class TaskActivity extends AppCompatActivity {
         expandMore = findViewById(R.id.moreImageView);
         userAssigned = findViewById(R.id.userAssigned);
         progressExpand = findViewById(R.id.expandImageView);
+        prerequisiteList = findViewById(R.id.prerequisiteList);
 
         fb = FirebaseFirestore.getInstance();
 
@@ -65,6 +68,7 @@ public class TaskActivity extends AppCompatActivity {
                 showPopupMenuForOption(view);
             }
         });
+
 
         progressExpand.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -86,6 +90,11 @@ public class TaskActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent.hasExtra("selectedTask")) {
             Tasks tasks = (Tasks) intent.getSerializableExtra("selectedTask");
+
+            prerequisiteList.setOnClickListener(v -> {
+                // Show the prerequisites dialog
+                showPrerequisitesDialog(tasks.getPrerequisites());
+            });
 
             assert tasks != null;
             tasksDetails.setText(tasks.getTaskDetails());
@@ -115,7 +124,7 @@ public class TaskActivity extends AppCompatActivity {
         });
     }
 
-   private void showPopupMenuForOption(View view) {
+    private void showPopupMenuForOption(View view) {
         PopupMenu popupMenu = new PopupMenu(this, view);
         popupMenu.inflate(R.menu.task_menu);
 
@@ -133,12 +142,12 @@ public class TaskActivity extends AppCompatActivity {
 
                         UpdateTaskFragment updateTaskFragment = UpdateTaskFragment.newInstance();
                         Bundle bundle = new Bundle();
-                        bundle.putSerializable("selectT",tasks);
+                        bundle.putSerializable("selectT", tasks);
                         bundle.putString("pro_key", projectId);
                         updateTaskFragment.setArguments(bundle);
                         updateTaskFragment.show(getSupportFragmentManager(), updateTaskFragment.getTag());
                     }
-                }else if (menuItem.getItemId() == R.id.assignTask){
+                } else if (menuItem.getItemId() == R.id.assignTask) {
 
                     Intent intent = getIntent();
                     if (intent.hasExtra("selectedTask")) {
@@ -157,13 +166,13 @@ public class TaskActivity extends AppCompatActivity {
                                 //try to make the unassign menu item visible only when task is assigned to user
                                 //username = userAssigned.getText().toString();
                                 //if (!username.equalsIgnoreCase("Unassigned")) {
-                                 //   unAssignTaskMenuItem.setVisible(true);
+                                //   unAssignTaskMenuItem.setVisible(true);
                                 //}
                             }
                         });
                     }
 
-                }else if(menuItem.getItemId() == R.id.UnAssignTask){
+                } else if (menuItem.getItemId() == R.id.UnAssignTask) {
 
                     Intent intent = getIntent();
                     if (intent.hasExtra("selectedTask")) {
@@ -207,6 +216,7 @@ public class TaskActivity extends AppCompatActivity {
         // Show the popup menu
         popupMenu.show();
     }
+
     private void updateTaskProgress(String progress) {
         Intent intent = getIntent();
         if (intent.hasExtra("selectedTask")) {
@@ -226,7 +236,7 @@ public class TaskActivity extends AppCompatActivity {
                                 tasks.setProgress(progress);
 
                                 // Automatically update project progress based on task progress
-                               // updateProjectProgressAuto(projectId, "Incomplete");
+                                // updateProjectProgressAuto(projectId, "Incomplete");
                                 updateProjectProgressAuto(projectId);
 
                             })
@@ -475,5 +485,56 @@ public class TaskActivity extends AppCompatActivity {
                         Toast.makeText(TaskActivity.this, "Task already Unassigned", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void showPrerequisitesDialog(List<String> prerequisites) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Prerequisites");
+
+        StringBuilder prerequisitesText = new StringBuilder();
+
+        if (prerequisites != null && !prerequisites.isEmpty()) {
+            for (String prerequisiteId : prerequisites) {
+                // Fetch the task details based on the prerequisite ID
+                getTaskDetails(prerequisiteId, taskDetails -> {
+                    if (taskDetails != null) {
+                        prerequisitesText.append("- ").append(taskDetails).append("\n");
+
+                        // If this is the last prerequisite, set the message and show the dialog
+                        if (prerequisiteId.equals(prerequisites.get(prerequisites.size() - 1))) {
+                            builder.setMessage(prerequisitesText.toString());
+                            builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
+                        }
+                    }
+                });
+            }
+        } else {
+            builder.setMessage("No prerequisites");
+            builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+    }
+
+    private void getTaskDetails(String taskId, @NonNull TaskDetailsCallback callback) {
+        FirebaseFirestore.getInstance().collection("Tasks")
+                .document(taskId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        // Assuming "taskDetails" is the field storing task details
+                        String taskDetails = task.getResult().getString("taskDetails");
+                        callback.onCallback(taskDetails);
+                    } else {
+                        callback.onCallback(null);
+                    }
+                });
+    }
+
+    // Callback interface to handle asynchronous result
+    public interface TaskDetailsCallback {
+        void onCallback(String taskDetails);
     }
 }
