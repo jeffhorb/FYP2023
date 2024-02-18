@@ -10,7 +10,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -48,12 +47,12 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implements CustomArrayAdapter.TaskIdProvider{
 
     Spinner progress, difficulty, duration;
-    TextInputEditText details;
+    TextInputEditText details,taskName;
     Button save;
     String taskId, projectId;
     FirebaseFirestore fb;
     ArrayAdapter<String> prerequisitesAdapter;
-    private List<String> selectedPrerequisites = new ArrayList<>();
+    private final List<String> selectedPrerequisites = new ArrayList<>();
 
     @NonNull
     @Contract(" -> new")
@@ -83,6 +82,7 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         View view = inflater.inflate(R.layout.fragment_bottom_sheet_add_task, container, false);
 
         details = view.findViewById(R.id.taskDetails);
+        taskName = view.findViewById(R.id.taskName);
         TextInputEditText estimatedTime = (TextInputEditText) view.findViewById(R.id.estimatedTime);
         difficulty = view.findViewById(R.id.taskDif);
         progress = view.findViewById(R.id.taskProgress);
@@ -137,10 +137,9 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
 
                             // Highlight selected items in the Spinner
                             highlightSelectedItems(spinnerPrerequisite, selectedPrerequisites);
-                        } else {
-                            // Handle the case where the task ID is not found
-                            // (e.g., display an error message or take appropriate action)
-                        }
+                        }  // Handle the case where the task ID is not found
+                        // (e.g., display an error message or take appropriate action)
+
                     }
                 });
             }
@@ -154,6 +153,7 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
 
         save.setOnClickListener(v -> {
             String detls = details.getText().toString();
+            String taskN = taskName.getText().toString();
             String estTime = estimatedTime.getText().toString();
             String diff = difficulty.getSelectedItem().toString();
             String progrs = progress.getSelectedItem().toString();
@@ -168,12 +168,14 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
                 estimatedTime.setText(null);
             } else if (TextUtils.isEmpty(estTime)) {
                 estimatedTime.setError("Field required");
+            }else if(TextUtils.isEmpty(taskN)){
+                taskName.setError("Field required");
             } else if (!isValidEstimationFormat(newText)) {
                 estimatedTime.setText(null);
                 estimatedTime.setError("Invalid format. Use a number followed by duration");
             } else {
 
-                saveTasks(detls, diff, progrs, newText, selectedPrerequisites);
+                saveTasks(taskN,detls, diff, progrs, newText, selectedPrerequisites);
                 selectedPrerequisites.clear();
 
                 details.setText(null);
@@ -189,11 +191,11 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         return estTime.matches(regex);
     }
 
-    public void saveTasks(String d, String diff, String prog, String estT, List<String> prerequisites) {
+    public void saveTasks(String tN,String d, String diff, String prog, String estT, List<String> prerequisites) {
 
         CollectionReference dbTasks = fb.collection("Tasks");
 
-        Tasks tasks = new Tasks(d, diff, prog, estT, prerequisites);
+        Tasks tasks = new Tasks(tN,d, diff, prog, estT, prerequisites);
         dbTasks.add(tasks).addOnSuccessListener(documentReference -> {
 
             Toast.makeText(getActivity(), "Task saved", Toast.LENGTH_SHORT).show();
@@ -210,7 +212,7 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
     }
 
     private void addProjectTask(String projectId, String taskId) {
-        // Creates a new userProjects document with an automatically generated ID
+        // Creates a new projectTask document with an automatically generated ID
         Map<String, Object> projectTasks = new HashMap<>();
 
         projectTasks.put("projectId", projectId);
@@ -297,7 +299,6 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
                         if (projectDocument.exists()) {
                             String startDate = projectDocument.getString("startDate");
                             String updatedEndDate = calculateEndDate(startDate, totalEstimatedTime);
-                            //String endDate = projectDocument.getString("endDate");
 
                             fb.collection("Projects")
                                     .document(projectId)
@@ -346,7 +347,7 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
     private List<String> getTaskNamesFromFirestore() {
         List<String> taskNames = new ArrayList<>();
 
-        taskNames.add("");
+        taskNames.add("   ");
 
         // Replace "Tasks" with the actual name of your collection
         FirebaseFirestore.getInstance().collection("Tasks")
@@ -354,11 +355,9 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Assuming you have a "taskDetails" field in your document
-                            String taskName = document.getString("taskDetails");
+                            String taskName = document.getString("taskName");
                             taskNames.add(taskName);
                         }
-
                         // Notify the adapter that the data set has changed
                         prerequisitesAdapter.notifyDataSetChanged();
                     } else {
@@ -366,15 +365,14 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
                         Toast.makeText(getActivity(), "Failed to fetch task names", Toast.LENGTH_SHORT).show();
                     }
                 });
-
         return taskNames;
     }
 
     // Fetch task ID from Firestore based on task name
     public void getTaskIdFromName(String selectedTaskName, OnTaskIdFetchedListener listener) {
         FirebaseFirestore.getInstance().collection("Tasks")
-                .whereEqualTo("taskDetails", selectedTaskName) // Assuming "taskDetails" is the field containing the task name
-                .limit(1) // Limit to 1 document (assuming task names are unique)
+                .whereEqualTo("taskName", selectedTaskName)
+                .limit(1)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {

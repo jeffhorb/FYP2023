@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class UpdateTaskFragment extends BottomSheetDialogFragment implements CustomArrayAdapter.TaskIdProvider {
 
-    TextInputEditText taskDetails;
+    TextInputEditText taskDetails,taskName;
 
     Spinner taskDifficulty,duration;
 
@@ -53,7 +53,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
     Tasks tasks;
 
     ArrayAdapter<String> prerequisitesAdapter;
-    private List<String> selectedPrerequisites = new ArrayList<>();
+    private final List<String> selectedPrerequisites = new ArrayList<>();
 
     @Override
     public void provideTaskId(String taskName, BottomSheetFragmentAddTask.OnTaskIdFetchedListener listener) {
@@ -97,6 +97,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
         fb = FirebaseFirestore.getInstance();
 
         taskDetails = view.findViewById(R.id.updateTaskDetails);
+        taskName = view.findViewById(R.id.taskName);
         TextInputEditText estimatedTime = (TextInputEditText) view.findViewById(R.id.updateEstimatedTime);
         taskDifficulty = view.findViewById(R.id.updateTaskDif);
         duration = view.findViewById(R.id.upTaskDuration);
@@ -200,6 +201,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
         updateTaskBtn.setOnClickListener(v -> {
             String detls = taskDetails.getText().toString();
+            String taskN = taskName.getText().toString();
             String estTime = estimatedTime.getText().toString();
             String diff = taskDifficulty.getSelectedItem().toString();
             String selectedText = duration.getSelectedItem().toString();
@@ -210,11 +212,13 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
             if (TextUtils.isEmpty(detls)) {
                 taskDetails.setError("Field required");
+            } else if (TextUtils.isEmpty(taskN)) {
+                taskName.setError("Field require");
             } else if (!isValidEstimationFormat(newText)) {
                 estimatedTime.setError("Invalid format. Use a number followed by duration");
             } else {
                 // Call the updateTask method
-                updateTask(tasks, detls, diff, progress, newText,selectedPrerequisites);
+                updateTask(tasks, taskN, detls, diff, progress, newText,selectedPrerequisites);
                 dismiss();
             }
         });
@@ -226,12 +230,12 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
         return estTime.matches(regex);
     }
 
-    private void updateTask(@NonNull Tasks task, String taskDetails, String tasksDiff, String progres, String taskEtime,List<String> prerequisite) {
+    private void updateTask(@NonNull Tasks task, String taskN, String taskDetails, String tasksDiff, String progres, String taskEtime,List<String> prerequisite) {
 
         String existingProgress = task.getProgress();
 
         // Create the updated task with the existing progress value
-        Tasks updateTasks = new Tasks(taskDetails, tasksDiff, existingProgress, taskEtime,prerequisite);
+        Tasks updateTasks = new Tasks(taskN,taskDetails, tasksDiff, existingProgress, taskEtime,prerequisite);
 
         fb.collection("Tasks")
                 .document(task.getTaskId())
@@ -368,7 +372,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
     @NonNull
     private List<String> getTaskNamesFromFirestore() {
         List<String> taskNames = new ArrayList<>();
-        taskNames.add("");
+        taskNames.add("     ");
         // Replace "Tasks" with the actual name of your collection
         FirebaseFirestore.getInstance().collection("Tasks")
                 .get()
@@ -376,7 +380,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             // Assuming you have a "taskDetails" field in your document
-                            String taskName = document.getString("taskDetails");
+                            String taskName = document.getString("taskName");
                             if(!tasks.getTaskDetails().equalsIgnoreCase(taskName)){
                                 taskNames.add(taskName);
 
@@ -385,7 +389,6 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                         // Notify the adapter that the data set has changed
                         prerequisitesAdapter.notifyDataSetChanged();
                     } else {
-                        // Handle errors
                         Toast.makeText(getActivity(), "Failed to fetch task names", Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -415,7 +418,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
     // Fetch task ID from Firestore based on task name
     private void getTaskIdFromName(String selectedTaskName, BottomSheetFragmentAddTask.OnTaskIdFetchedListener listener) {
         FirebaseFirestore.getInstance().collection("Tasks")
-                .whereEqualTo("taskDetails", selectedTaskName) // Assuming "taskDetails" is the field containing the task name
+                .whereEqualTo("taskName", selectedTaskName) // Assuming "taskDetails" is the field containing the task name
                 .limit(1) // Limit to 1 document (assuming task names are unique)
                 .get()
                 .addOnCompleteListener(task -> {

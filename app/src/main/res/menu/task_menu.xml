@@ -13,7 +13,7 @@
     <item
         android:id="@+id/UnAssignTask"
         android:title="UnAssign Task"
-        android:visible="false" />
+        android:visible="true" />
 
 
 </menu>

@@ -82,7 +82,7 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
 
         Tasks tasks = tasksList.get(position);
 
-        holder.taskDetails.setText(tasks.getTaskDetails());
+        holder.taskName.setText(tasks.getTaskName());
         holder.taskDiff.setText(tasks.getDifficulty());
         holder.taskEstimatedTime.setText(tasks.getEstimatedTime());
         holder.taskProgress.setText(tasks.getProgress());
@@ -138,24 +138,24 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView taskDetails, taskEstimatedTime, taskDiff,taskProgress;
+        TextView taskName, taskEstimatedTime, taskDiff,taskProgress;
         ImageView  option;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            taskDetails = itemView.findViewById(R.id.taskDetails);
+            taskName = itemView.findViewById(R.id.taskN);
             taskEstimatedTime = itemView.findViewById(R.id.taskTime);
             taskDiff = itemView.findViewById(R.id.taskDifficulty);
             option = itemView.findViewById(R.id.taskButtonOptions);
             taskProgress = itemView.findViewById(R.id.progressTask);
 
-            taskDetails.setOnClickListener(new View.OnClickListener() {
+            taskName.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (taskDetails.getMaxLines() == 2) {
-                        taskDetails.setMaxLines(Integer.MAX_VALUE);
+                    if (taskName.getMaxLines() == 1) {
+                        taskName.setMaxLines(Integer.MAX_VALUE);
                     } else {
-                        taskDetails.setMaxLines(2);
+                        taskName.setMaxLines(1);
                     }
                 }
             });
@@ -192,7 +192,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         builder.setMessage("Are you sure you want to remove this project and its tasks?")
                 .setPositiveButton("Yes", (dialogInterface, i) -> removeTask(position))
                 .setNegativeButton("No", (dialogInterface, i) -> {
-                    // Do nothing, simply close the dialog
                 });
 
         AlertDialog dialog = builder.create();
@@ -217,14 +216,13 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                 }
                 removeTaskFromProjectTasks(documentId);
                 removeItemFromFirestore(documentId);
-            }  // Handle the case where the document ID couldn't be retrieved
+            }
         });
     }
 
     private void removeItemFromFirestore(String documentId) {
         FirebaseFirestore.getInstance().collection("Tasks").document(documentId).delete().addOnCompleteListener(task -> {
             task.isSuccessful();
-
         });
     }
 
@@ -311,7 +309,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                                     });
                         }
                     } else {
-                        // Handle failure in fetching project tasks
                         Log.e("CalculateTime", "Error fetching project tasks", task.getException());
                     }
                 });
@@ -344,7 +341,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                                     });
                         }
                     } else {
-                        // Handle failure in fetching project document
                         Log.e("UpdateProject", "Error fetching project document", projectDocumentTask.getException());
                     }
                 });

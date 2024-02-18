@@ -3,9 +3,14 @@ package com.ecom.fyp2023;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -15,30 +20,38 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.CommentListFragment;
 import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.Fragments.UsersListFragment;
+import com.ecom.fyp2023.ModelClasses.Notes;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskActivity extends AppCompatActivity {
 
-    TextView tasksDetails, endDate, estTime, taskPro, commentFrag, userAssigned;
+    TextView tasksDetails, endDate, estTime, taskPro, commentFrag, userAssigned,taskName;
     ImageView expandMore, progressExpand, prerequisiteList;
 
-    String projectId;
-    //String username;
+    EditText notes;
+    String projectId,notesId;
+    Button save, clear,view;
 
     FirebaseFirestore fb;
+
+    SharedPreferenceManager sharedPreferenceManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +59,7 @@ public class TaskActivity extends AppCompatActivity {
         setContentView(R.layout.activty_task);
 
         taskPro = findViewById(R.id.taskPro);
+        taskName = findViewById(R.id.taskName);
         tasksDetails = findViewById(R.id.taskDetails);
         endDate = findViewById(R.id.endDate);
         estTime = findViewById(R.id.eTime);
@@ -54,8 +68,14 @@ public class TaskActivity extends AppCompatActivity {
         userAssigned = findViewById(R.id.userAssigned);
         progressExpand = findViewById(R.id.expandImageView);
         prerequisiteList = findViewById(R.id.prerequisiteList);
+        notes = findViewById(R.id.notesEditText);
+        save = findViewById(R.id.saveNote);
+        clear = findViewById(R.id.clearNote);
+        view = findViewById(R.id.viewNote);
 
         fb = FirebaseFirestore.getInstance();
+
+        sharedPreferenceManager = new SharedPreferenceManager(this);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -68,7 +88,6 @@ public class TaskActivity extends AppCompatActivity {
                 showPopupMenuForOption(view);
             }
         });
-
 
         progressExpand.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -87,6 +106,23 @@ public class TaskActivity extends AppCompatActivity {
             projectId = i.getStringExtra("projectId2");
         }
 
+        // Set a TextWatcher to update shared preferences in real-time
+        notes.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int start, int before, int count) {
+                // Not needed for this case
+            }
+            @Override
+            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                // Save the note to SharedPreferences as the text changes
+                String note = charSequence.toString();
+                saveNoteToSharedPreferences(note);
+            }
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+
         Intent intent = getIntent();
         if (intent.hasExtra("selectedTask")) {
             Tasks tasks = (Tasks) intent.getSerializableExtra("selectedTask");
@@ -97,6 +133,7 @@ public class TaskActivity extends AppCompatActivity {
             });
 
             assert tasks != null;
+            taskName.setText(tasks.getTaskName());
             tasksDetails.setText(tasks.getTaskDetails());
             taskPro.setText(tasks.getProgress());
             estTime.setText(tasks.getEstimatedTime());
@@ -112,15 +149,39 @@ public class TaskActivity extends AppCompatActivity {
                     UpdateTaskFragment fragment = new UpdateTaskFragment();
                     fragment.setArguments(bundle);
                 }
+
+                // Set an OnClickListener for the save notes button
+                save.setOnClickListener(v -> {
+                    // Get the text from the EditText
+                    String note = notes.getText().toString();
+
+                    if (TextUtils.isEmpty(note)){
+                        notes.setError("Add notes");
+                    }else {
+                        saveNotes(note, documentId);
+                    }
+                });
+                // Retrieve and set the stored note in EditText when the activity starts
+                String storedNote = sharedPreferenceManager.getStoredNoteForTask(documentId);
+                notes.setText(storedNote);
             });
         }
 
+        //open comments fragment
         commentFrag.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 CommentListFragment bottomSheetFragment = CommentListFragment.newInstance(projectId);
                 bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
             }
+        });
+
+
+        // Set OnClickListener for the clear notes button
+        clear.setOnClickListener(v -> {
+
+            sharedPreferenceManager.clearStoredNote();
+            notes.setText("");
         });
     }
 
@@ -178,6 +239,7 @@ public class TaskActivity extends AppCompatActivity {
                     if (intent.hasExtra("selectedTask")) {
                         Tasks tasks = (Tasks) intent.getSerializableExtra("selectedTask");
                         FirestoreManager firestoreManager = new FirestoreManager();
+                        assert tasks != null;
                         firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
                             if (documentId != null) {
                                 unAssignTask(documentId);
@@ -496,9 +558,9 @@ public class TaskActivity extends AppCompatActivity {
         if (prerequisites != null && !prerequisites.isEmpty()) {
             for (String prerequisiteId : prerequisites) {
                 // Fetch the task details based on the prerequisite ID
-                getTaskDetails(prerequisiteId, taskDetails -> {
-                    if (taskDetails != null) {
-                        prerequisitesText.append("- ").append(taskDetails).append("\n");
+                getTaskName(prerequisiteId, taskName -> {
+                    if (taskName != null) {
+                        prerequisitesText.append("- ").append(taskName).append("\n");
 
                         // If this is the last prerequisite, set the message and show the dialog
                         if (prerequisiteId.equals(prerequisites.get(prerequisites.size() - 1))) {
@@ -518,15 +580,15 @@ public class TaskActivity extends AppCompatActivity {
         }
     }
 
-    private void getTaskDetails(String taskId, @NonNull TaskDetailsCallback callback) {
+    private void getTaskName(String taskId, @NonNull TaskDetailsCallback callback) {
         FirebaseFirestore.getInstance().collection("Tasks")
                 .document(taskId)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
                         // Assuming "taskDetails" is the field storing task details
-                        String taskDetails = task.getResult().getString("taskDetails");
-                        callback.onCallback(taskDetails);
+                        String taskName = task.getResult().getString("taskName");
+                        callback.onCallback(taskName);
                     } else {
                         callback.onCallback(null);
                     }
@@ -536,5 +598,49 @@ public class TaskActivity extends AppCompatActivity {
     // Callback interface to handle asynchronous result
     public interface TaskDetailsCallback {
         void onCallback(String taskDetails);
+    }
+
+    public void saveNotes(String note, String taskId) {
+        sharedPreferenceManager.saveNoteToSharedPreferencesForTask(note, taskId);
+
+        CollectionReference dbTasks = fb.collection("Notes");
+
+        Notes notes = new Notes(note);
+        dbTasks.add(notes).addOnSuccessListener(documentReference -> {
+            Toast.makeText(TaskActivity.this, "Notes saved", Toast.LENGTH_SHORT).show();
+            notesId = documentReference.getId();
+            addTaskNotes(taskId, notesId);
+        }).addOnFailureListener(e -> Toast.makeText(TaskActivity.this, "Failed \n" + e, Toast.LENGTH_SHORT).show());
+    }
+
+    private void addTaskNotes(String taskId, String noteId) {
+        // Creates a new projectTask document with an automatically generated ID
+        Map<String, Object> taskNotes = new HashMap<>();
+
+        taskNotes.put("taskId", taskId);
+        taskNotes.put("noteId", noteId);  // Corrected: use "noteId" instead of "taskId"
+
+        fb.collection("taskNotes").add(taskNotes).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                Log.d("TaskNotes", "taskNotes added with ID: " + task.getResult().getId());
+            } else {
+                Log.e("TaskNote", "Error adding userProject", task.getException());
+            }
+        });
+    }
+
+    private void saveNoteToSharedPreferences(String note) {
+
+        Intent intent = getIntent();
+        if (intent.hasExtra("selectedTask")) {
+            Tasks tasks = (Tasks) intent.getSerializableExtra("selectedTask");
+
+            FirestoreManager firestoreManager = new FirestoreManager();
+            firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
+                if (documentId != null) {
+                    sharedPreferenceManager.saveNoteToSharedPreferencesForTask(note, documentId);
+                }
+            });
+        }
     }
 }

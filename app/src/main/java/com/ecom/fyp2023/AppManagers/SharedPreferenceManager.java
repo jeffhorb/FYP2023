@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 
 public class SharedPreferenceManager {
 
-
     Context context;
 
     public SharedPreferenceManager(Context context) {
@@ -33,7 +32,7 @@ public class SharedPreferenceManager {
         editor.apply();
     }
 
-    public void saveTaskProgress(String taskDetails, boolean isComplete) {
+   /* public void saveTaskProgress(String taskDetails, boolean isComplete) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("TaskProgress", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean(taskDetails, isComplete);
@@ -43,6 +42,25 @@ public class SharedPreferenceManager {
     public boolean getTaskProgress(String taskDetails, boolean defaultValue) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("TaskProgress", Context.MODE_PRIVATE);
         return sharedPreferences.getBoolean(taskDetails, defaultValue);
+    }*/
+
+    public void saveNoteToSharedPreferencesForTask(String note, String taskId) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("Notes", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("Task-" + taskId, note);
+        editor.apply();
+    }
+
+    public String getStoredNoteForTask(String taskId) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("Notes", Context.MODE_PRIVATE);
+        return sharedPreferences.getString("Task-" + taskId, "");
+    }
+
+    public void clearStoredNote() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("Notes", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove("Note");
+        editor.apply();
     }
 
 }

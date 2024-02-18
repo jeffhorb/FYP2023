@@ -2,12 +2,10 @@ package com.ecom.fyp2023.Adapters;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -22,12 +20,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.Fragments.UpdateProject;
-import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -35,13 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.ViewHolder> {
-    // creating variables for our ArrayList and context
+
     private List<Projects> projectsArrayList;
 
     private final Context context;
 
-
-    // creating constructor for our adapter class
     public ProjectsRVAdapter(ArrayList<Projects> projectsArrayList, Context context) {
         this.projectsArrayList = projectsArrayList;
         this.context = context;
@@ -74,9 +67,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
             holder.itemView.setVisibility(View.GONE);
             holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
         }
-
     }
-
 
     @Override
     public int getItemCount() {
@@ -100,14 +91,12 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
                 showUpdateFragmrnt(project);
 
                 return true;
-
             }
 
             return false;
         });
         popupMenu.show();
     }
-
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
@@ -145,8 +134,6 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
                 // the selected project as an extra in the Intent
                 intent.putExtra("selectedProject", selectedProject);
                 itemView.getContext().startActivity(intent);
-
-
             });
         }
     }
@@ -175,7 +162,6 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         builder.setMessage("Are you sure you want to remove this project and its tasks?")
                 .setPositiveButton("Yes", (dialogInterface, i) -> removeProject(position))
                 .setNegativeButton("No", (dialogInterface, i) -> {
-                    // Do nothing, simply close the dialog
                 });
 
         AlertDialog dialog = builder.create();
@@ -191,6 +177,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
             if (documentId != null) {
                 removeUserPorject(documentId);
                 removeItemFromFirestore(documentId);
+                removeProjectTasks(documentId);
             }  // Handle the case where the document ID couldn't be retrieved
 
         });
@@ -199,8 +186,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
     private void removeItemFromFirestore(String documentId) {
         FirebaseFirestore.getInstance().collection("Projects").document(documentId).delete().addOnCompleteListener(task -> {
             task.isSuccessful();
-            // Document successfully removed from Firestore
-            // Handle the error
+
         });
 
     }
@@ -232,6 +218,35 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
                         Log.e("RemoveProjectTask", "Error removing task from projectTasks", task.getException());
                     }
                 });
+    }
+
+    private void removeProjectTasks(String projectId) {
+        FirebaseFirestore.getInstance().collection("projectTasks")
+                .whereEqualTo("projectId", projectId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String taskDocumentId = document.getString("taskId");
+                            if (taskDocumentId != null) {
+                                removeTask(taskDocumentId);
+                            }
+                            // After removing tasks from projectTasks, you may want to remove the projectTasks entry as well
+                            document.getReference().delete()
+                                    .addOnSuccessListener(aVoid -> Log.d("RemoveProjectTask", "Task removed from projectTasks successfully"))
+                                    .addOnFailureListener(e -> Log.e("RemoveProjectTask", "Error removing task from projectTasks", e));
+                        }
+                    } else {
+                        Log.e("RemoveProjectTask", "Error fetching projectTasks", task.getException());
+                    }
+                });
+    }
+
+    private void removeTask(String taskId) {
+        FirebaseFirestore.getInstance().collection("Tasks").document(taskId)
+                .delete()
+                .addOnSuccessListener(aVoid -> Log.d("RemoveTask", "Task removed successfully"))
+                .addOnFailureListener(e -> Log.e("RemoveTask", "Error removing task", e));
     }
 
 }

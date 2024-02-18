@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.List;
 
 public class Tasks implements Serializable {
-    private String tasksName;
+    private String taskName;
     private String taskDetails;
     private String difficulty;
     private String progress;
@@ -21,8 +21,8 @@ public class Tasks implements Serializable {
         // Default constructor required for Firestore
     }
 
-    public Tasks(String taskDetails, String difficulty, String progress, String estimatedTime, List<String> prerequisites) {
-        //this.tasksName = taskName;
+    public Tasks(String taskName,String taskDetails, String difficulty, String progress, String estimatedTime, List<String> prerequisites) {
+        this.taskName = taskName;
         this.taskDetails = taskDetails;
         this.difficulty = difficulty;
         this.progress = progress;
@@ -30,12 +30,12 @@ public class Tasks implements Serializable {
         this.prerequisites = prerequisites;
     }
 
-    public String getTasksName() {
-        return tasksName;
+    public String getTaskName() {
+        return taskName;
     }
 
-    public void setTasksName(String tasksName) {
-        this.tasksName = tasksName;
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
     }
 
     public String getTaskDetails() {

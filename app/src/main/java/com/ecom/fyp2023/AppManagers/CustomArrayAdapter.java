@@ -28,6 +28,7 @@ public class CustomArrayAdapter extends ArrayAdapter<String> {
         this.taskIdProvider = taskIdProvider;
     }
 
+
     @NonNull
     @Override
     public View getView(int position, View convertView, @NonNull ViewGroup parent) {
@@ -61,5 +62,10 @@ public class CustomArrayAdapter extends ArrayAdapter<String> {
                 });
             }
        }
+    }
+    public void setData(List<String> newData) {
+        clear();
+        addAll(newData);
+        notifyDataSetChanged();
     }
 }

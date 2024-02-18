@@ -31,6 +31,23 @@ android:padding="12dp">
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:hint="Task Name"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/taskName"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:drawablePadding="8dp"
+            android:padding="8dp"
+            android:textColor="@color/black" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:hint="Task Details"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -47,12 +64,12 @@ android:padding="12dp">
     </com.google.android.material.textfield.TextInputLayout>
     
     <LinearLayout
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal">
 
     <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="190dp"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:hint="Estimated Time"
         app:layout_constraintEnd_toEndOf="parent"
@@ -78,28 +95,36 @@ android:padding="12dp">
 
     <Spinner
         android:id="@+id/upTaskDuration"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:entries="@array/duration"
         android:gravity="end" />
 
 </LinearLayout>
 
-<TextView
-    android:id="@+id/spinnerDifTitle"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="Select Difficulty:"
-    android:textStyle="bold"
-    android:padding="4dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/spinnerDifTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Difficulty:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="8dp" />
 
 
-<Spinner
-    android:id="@+id/updateTaskDif"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:entries="@array/tasksDifficulty"
-    android:gravity="end" />
+        <Spinner
+            android:id="@+id/updateTaskDif"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/tasksDifficulty"
+            android:layout_marginStart="15dp"
+            android:gravity="end" />
+    </LinearLayout>
 
 
 <Spinner
@@ -116,13 +141,14 @@ android:padding="12dp">
         android:layout_height="wrap_content"
         android:text="Select Prerequisite:"
         android:textStyle="bold"
-        android:padding="4dp"/>
+        android:padding="8dp"
+        android:textSize="16sp"/>
 
     <Spinner
         android:id="@+id/spinnerPrerequisite"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="end"/>
+        android:gravity="end" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -138,7 +164,7 @@ android:padding="12dp">
         android:layout_gravity="center"
         android:text="Update"
         android:textSize="15sp"
-        android:background="@drawable/common_google_signin_btn_icon_dark"/>
+        android:background="@drawable/round_button"/>
 
 </LinearLayout>
 
