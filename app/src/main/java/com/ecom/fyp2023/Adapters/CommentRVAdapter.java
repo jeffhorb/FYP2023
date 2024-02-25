@@ -1,6 +1,7 @@
 package com.ecom.fyp2023.Adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
@@ -65,16 +67,6 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
                 // Handle the item click event, you might want to open a detailed view or perform some action
             }
         });*/
-
-
-       /* //will used to code the done vector asset
-        holder.done.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Call a method to delete the item from Firestore
-                removeProject(holder.getAdapterPosition());
-            }
-        });*/
     }
 
     @Override
@@ -108,6 +100,7 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
         firestoreManager.getDocumentId("Comments", "comment", removeComment.getComment(), documentId -> {
             if (documentId != null) {
                 removeItemFromFirestore(documentId);
+                removeCommentFromProjectComment(documentId);
             } else {
                 // Handle the case where the document ID couldn't be retrieved
                 Toast.makeText(context, "Document does not exist", Toast.LENGTH_SHORT).show();
@@ -125,5 +118,34 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
             }
         });
 
+    }
+
+    private void removeCommentFromProjectComment(String commentId) {
+        FirebaseFirestore.getInstance().collection("projectComments")
+                .whereEqualTo("commentId", commentId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String projectCommentId = document.getId();
+                            removeItemFromProjectComments(projectCommentId);
+                        }
+                    } else {
+                        // Handle failure in fetching projectTasks
+                        Log.e("RemoveProjectTask", "Error fetching projectTasks", task.getException());
+                    }
+                });
+    }
+
+    private void removeItemFromProjectComments(String projectCommentId) {
+        FirebaseFirestore.getInstance().collection("projectComments").document(projectCommentId)
+                .delete()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("removefromprojectCommment", "comment removed from projectComments successfully");
+                    } else {
+                        Log.e("removefromprojectCommment", "Error removing comment from projectComments", task.getException());
+                    }
+                });
     }
 }

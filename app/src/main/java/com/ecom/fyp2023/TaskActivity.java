@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.CommentListFragment;
+import com.ecom.fyp2023.Fragments.NotesFragment;
 import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.ModelClasses.Notes;
@@ -32,7 +33,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -161,6 +162,15 @@ public class TaskActivity extends AppCompatActivity {
                         saveNotes(note, documentId);
                     }
                 });
+
+                view.setOnClickListener(v -> {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("taskID", documentId);
+                    NotesFragment fragment = new NotesFragment();
+                    fragment.setArguments(bundle);
+                    fragment.show(getSupportFragmentManager(), fragment.getTag());
+
+                });
                 // Retrieve and set the stored note in EditText when the activity starts
                 String storedNote = sharedPreferenceManager.getStoredNoteForTask(documentId);
                 notes.setText(storedNote);
@@ -201,12 +211,23 @@ public class TaskActivity extends AppCompatActivity {
                     if (intent.hasExtra("selectedTask")) {
                         Tasks tasks = (Tasks) intent.getSerializableExtra("selectedTask");
 
-                        UpdateTaskFragment updateTaskFragment = UpdateTaskFragment.newInstance();
-                        Bundle bundle = new Bundle();
-                        bundle.putSerializable("selectT", tasks);
-                        bundle.putString("pro_key", projectId);
-                        updateTaskFragment.setArguments(bundle);
-                        updateTaskFragment.show(getSupportFragmentManager(), updateTaskFragment.getTag());
+                        FirestoreManager firestoreManager = new FirestoreManager();
+                        assert tasks != null;
+                        firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
+                            if (documentId != null) {
+
+                                tasks.setTaskId(documentId);
+
+                                UpdateTaskFragment updateTaskFragment = UpdateTaskFragment.newInstance();
+                                updateTaskFragment.setOnTaskUpdateListener((UpdateTaskFragment.OnTaskUpdateListener) TaskActivity.this);
+                                Bundle bundle = new Bundle();
+                                bundle.putSerializable("selectT", tasks);
+                                bundle.putString("pro_key", projectId);
+                                updateTaskFragment.setArguments(bundle);
+                                updateTaskFragment.show(getSupportFragmentManager(), updateTaskFragment.getTag());
+
+                            }
+                        });
                     }
                 } else if (menuItem.getItemId() == R.id.assignTask) {
 
@@ -298,9 +319,13 @@ public class TaskActivity extends AppCompatActivity {
                                 tasks.setProgress(progress);
 
                                 // Automatically update project progress based on task progress
-                                // updateProjectProgressAuto(projectId, "Incomplete");
-                                updateProjectProgressAuto(projectId);
-
+                                if ("Complete".equals(progress)) {
+                                    // Record timestamp when progress is set to Complete
+                                    updateProjectProgressAuto(projectId, "Complete");
+                                } else {
+                                    // Handle the case when progress is changed from Complete
+                                    updateProjectProgressAuto(projectId,progress);
+                                }
                             })
                             .addOnFailureListener(e -> {
                                 // Error updating progress
@@ -337,7 +362,7 @@ public class TaskActivity extends AppCompatActivity {
                                         tasks.setProgress(progress);
 
                                         // Automatically update project progress based on task progress
-                                        updateProjectProgressAuto(projectId);
+                                        updateProjectProgressAuto(projectId,"Complete");
 
                                     })
                                     .addOnFailureListener(e -> {
@@ -401,8 +426,6 @@ public class TaskActivity extends AppCompatActivity {
 
     private void getTaskProgress(String taskId, OnTaskProgressCallback callback) {
         // Fetch the task progress from Firestore based on taskId
-        // Replace "Tasks" with your actual Firestore collection name
-        // Replace "progress" with the actual field name where progress is stored
         FirebaseFirestore.getInstance().collection("Tasks")
                 .document(taskId)
                 .get()
@@ -422,8 +445,7 @@ public class TaskActivity extends AppCompatActivity {
 
         void onTaskProgressError();
     }
-
-    private void updateProjectProgressAuto(String projectId) {
+    private void updateProjectProgressAuto(String projectId, String progress) {
         FirebaseFirestore.getInstance().collection("projectTasks")
                 .whereEqualTo("projectId", projectId)
                 .get()
@@ -431,11 +453,9 @@ public class TaskActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         AtomicBoolean anyTaskInProgress = new AtomicBoolean(false);
                         AtomicBoolean allTasksComplete = new AtomicBoolean(true);
-                        List<String> taskIds = new ArrayList<>();
 
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             String taskId = document.getString("taskId");
-                            taskIds.add(taskId);
 
                             assert taskId != null;
                             FirebaseFirestore.getInstance().collection("Tasks")
@@ -458,17 +478,64 @@ public class TaskActivity extends AppCompatActivity {
 
                                         if (anyTaskInProgress.get()) {
                                             updateProjectProgressInFirestore(projectId, "In Progress");
+
+                                            // Set actualEndDate to null if progress is In Progress
+                                            if ("In Progress".equals(progress)) {
+                                                updateActualEndDateInFirestoreToNull(projectId);
+                                            }
                                         } else if (allTasksComplete.get()) {
                                             updateProjectProgressInFirestore(projectId, "Complete");
+
+                                            // Record timestamp when project progress is set to Complete
+                                            if ("Complete".equals(progress)) {
+                                                updateActualEndDateInFirestore(projectId);
+                                            } else {
+                                                // Handle the case when progress is changed from Complete
+                                                updateActualEndDateInFirestoreToNull(projectId);
+                                            }
                                         } else {
                                             // If any task is "In Progress" or some tasks are "Complete," set the project progress to "Incomplete"
                                             updateProjectProgressInFirestore(projectId, "Incomplete");
+
+                                            // Set actualEndDate to null if progress is In Progress or Incomplete
+                                            if (!"Complete".equals(progress)) {
+                                                updateActualEndDateInFirestoreToNull(projectId);
+                                            }
                                         }
                                     });
                         }
                     } else {
                         Log.e("Firestore", "Error getting tasks: " + task.getException());
                     }
+                });
+    }
+
+    private void updateActualEndDateInFirestore(String projectId) {
+        // Record timestamp in the 'actualEndDate' field in the 'Projects' collection
+        Date currentDate = new Date();
+        FirebaseFirestore.getInstance().collection("Projects")
+                .document(projectId)
+                .update("actualEndDate", currentDate)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("Firestore", "Actual End Date updated successfully");
+
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Failed to update Actual End Date: " + e.getMessage());
+                });
+    }
+
+    private void updateActualEndDateInFirestoreToNull(String projectId) {
+        // Set 'actualEndDate' field to null in the 'Projects' collection
+        FirebaseFirestore.getInstance().collection("Projects")
+                .document(projectId)
+                .update("actualEndDate", null) // Set to null
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("Firestore", "Actual End Date set to null successfully");
+
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Failed to set Actual End Date to null: " + e.getMessage());
                 });
     }
 
@@ -570,6 +637,10 @@ public class TaskActivity extends AppCompatActivity {
                             dialog.show();
                         }
                     }
+                    builder.setMessage("No prerequisites");
+                    builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
                 });
             }
         } else {
@@ -618,7 +689,8 @@ public class TaskActivity extends AppCompatActivity {
         Map<String, Object> taskNotes = new HashMap<>();
 
         taskNotes.put("taskId", taskId);
-        taskNotes.put("noteId", noteId);  // Corrected: use "noteId" instead of "taskId"
+        taskNotes.put("noteId", noteId);
+        taskNotes.put("timestamp", com.google.firebase.Timestamp.now());
 
         fb.collection("taskNotes").add(taskNotes).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {

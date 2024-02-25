@@ -4,6 +4,7 @@ package com.ecom.fyp2023.ModelClasses;
 import com.google.firebase.firestore.Exclude;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class Projects implements Serializable {
     private String title;
@@ -12,6 +13,7 @@ public class Projects implements Serializable {
     private String priority;
     private String startDate;
     private String endDate;
+    private Date actualEndDate;
 
     private transient String projectId;
 
@@ -22,13 +24,14 @@ public class Projects implements Serializable {
     }
 
     // Parameterized constructor
-    public Projects(String title, String description, String  priority, String startDate, String endDate,String progress) {
+    public Projects(String title, String description, String  priority, String startDate, String endDate,String progress, Date timestamp) {
         this.title = title;
         this.description = description;
         this.priority = priority;
         this.startDate = startDate;
         this.endDate = endDate;
         this.progress = progress;
+        this.actualEndDate = timestamp;
     }
 
     // Getter and Setter methods for title
@@ -91,5 +94,13 @@ public class Projects implements Serializable {
 
     public void setEndDate(String endDate) {
         this.endDate = endDate;
+    }
+
+    public Date getActualEndDate() {
+        return actualEndDate;
+    }
+
+    public void setActualEndDate(Date actualEndDate) {
+        this.actualEndDate = actualEndDate;
     }
 }

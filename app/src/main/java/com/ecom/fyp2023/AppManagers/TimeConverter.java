@@ -34,21 +34,6 @@ public class TimeConverter {
         System.out.println("End date with weeks: " + endDateWithWeeks);
     }
 
-   /* public static long convertToDays(@NonNull String timeValue) {
-        // Extract the numeric value and the time unit
-        int numericValue = Integer.parseInt(timeValue.substring(0, timeValue.length() - 1));
-        String timeUnit = timeValue.substring(timeValue.length() - 1).toLowerCase();
-
-        // Convert to days
-        switch (timeUnit) {
-            case "day":
-                return numericValue;
-            case "week":
-                return numericValue * 7; // Convert weeks to days
-            default:
-                throw new IllegalArgumentException("Invalid time unit");
-        }
-    }*/
    public static long convertToDays(@NonNull String timeValue) {
        // Extract the numeric value and the time unit
        int numericValue = Integer.parseInt(timeValue.replaceAll("[^\\d]", ""));

@@ -158,9 +158,11 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
             String diff = difficulty.getSelectedItem().toString();
             String progrs = progress.getSelectedItem().toString();
             String selectedText = duration.getSelectedItem().toString();
-            String newText = estTime + selectedText;
+            String timeEstimate = estTime + selectedText;
+            Calendar calendar = Calendar.getInstance();
+            Date startDate = calendar.getTime();
 
-            estimatedTime.setText(newText);
+            estimatedTime.setText(timeEstimate);
             estimatedTime.setSelection(estimatedTime.length());
 
             if (TextUtils.isEmpty(detls)) {
@@ -170,16 +172,17 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
                 estimatedTime.setError("Field required");
             }else if(TextUtils.isEmpty(taskN)){
                 taskName.setError("Field required");
-            } else if (!isValidEstimationFormat(newText)) {
+            } else if (!isValidEstimationFormat(timeEstimate)) {
                 estimatedTime.setText(null);
                 estimatedTime.setError("Invalid format. Use a number followed by duration");
             } else {
 
-                saveTasks(taskN,detls, diff, progrs, newText, selectedPrerequisites);
+                saveTasks(taskN,detls, diff, progrs, timeEstimate, selectedPrerequisites,null,startDate,null);
                 selectedPrerequisites.clear();
 
                 details.setText(null);
                 estimatedTime.setText(null);
+                taskName.setText(null);
             }
         });
         return view;
@@ -191,11 +194,11 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         return estTime.matches(regex);
     }
 
-    public void saveTasks(String tN,String d, String diff, String prog, String estT, List<String> prerequisites) {
+    public void saveTasks(String tN,String d, String diff, String prog, String estT, List<String> prerequisites,String completedTime,Date startDate,Date endDate) {
 
         CollectionReference dbTasks = fb.collection("Tasks");
 
-        Tasks tasks = new Tasks(tN,d, diff, prog, estT, prerequisites);
+        Tasks tasks = new Tasks(tN,d, diff, prog, estT, prerequisites,completedTime,startDate,endDate);
         dbTasks.add(tasks).addOnSuccessListener(documentReference -> {
 
             Toast.makeText(getActivity(), "Task saved", Toast.LENGTH_SHORT).show();

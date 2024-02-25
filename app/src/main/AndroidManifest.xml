@@ -19,14 +19,29 @@
         android:theme="@style/status_bar_color"
         tools:targetApi="31">
         <activity
+            android:name=".Analysis.CompletedProjectsAnalysis"
+            android:exported="false"
+            android:label="Project Analysis"/>
+        <activity
+            android:name=".Analysis.TasksProgressAnalysis"
+            android:exported="false"
+            android:label="Task Analysis"/>
+        <activity
+            android:name=".Analysis.ProjectProgressAnalysis"
+            android:exported="false"
+            android:label="Project Analysis" />
+        <activity
             android:name=".CompletedProjects"
-            android:exported="false" />
+            android:exported="false"
+            android:label="Completed Projects" />
         <activity
             android:name=".HomeScreen"
-            android:exported="false" />
+            android:exported="false"
+            android:label="Home" />
         <activity
             android:name=".TaskActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:label="Tasks" />
         <activity
             android:name=".unUsedClass.AddProject"
             android:exported="false"
@@ -38,7 +53,8 @@
             android:label="Projects" />
         <activity
             android:name=".Login_activity"
-            android:exported="true">
+            android:exported="true"
+            android:label="Sign In">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -47,7 +63,8 @@
         </activity>
         <activity
             android:name=".SignUpActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:label="Sign Up" />
     </application>
 
 </manifest>

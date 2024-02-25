@@ -5,20 +5,26 @@ import static com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject.MESSAGE_KEY
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.TasksRVAdapter;
+import com.ecom.fyp2023.Analysis.TasksProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.Fragments.BottomSheetFragmentAddTask;
 import com.ecom.fyp2023.Fragments.CommentListFragment;
+import com.ecom.fyp2023.Fragments.UpdateProject;
 import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
@@ -71,6 +77,7 @@ public class ProjectActivity extends AppCompatActivity implements
         progress = findViewById(R.id.progressTextview);
         recyclerView = findViewById(R.id.tasksRecyclerView);
         commentFrag = findViewById(R.id.commentEditText);
+        ImageView expandMore = findViewById(R.id.moreImageView);
 
         //expand Max line
         proDes.setMaxLines(3);
@@ -103,6 +110,13 @@ public class ProjectActivity extends AppCompatActivity implements
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
+
+        expandMore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showPopupMenu(view);
+            }
+        });
 
         //onclick for project in recyclerview
         Intent intent = getIntent();
@@ -303,6 +317,91 @@ public class ProjectActivity extends AppCompatActivity implements
                 }
             }
         });
+    }
+
+    private void showPopupMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(this, view);
+        popupMenu.inflate(R.menu.project_option2);
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+
+                if (menuItem.getItemId() == R.id.tasksProgressAnalysis) {
+                    Intent intent = new Intent(ProjectActivity.this, TasksProgressAnalysis.class);
+                    startActivity(intent);
+                    finish();
+
+                }//update project in the projectActivity activity
+                else if (menuItem.getItemId() == R.id.UpdateProject) {
+
+                    /*Intent i1 = getIntent();
+                    if (i1.hasExtra("proJT")) {
+                        Projects project = (Projects) i1.getSerializableExtra("proJT");
+
+                        FirestoreManager firestoreManager = new FirestoreManager();
+
+                        firestoreManager.getDocumentId("Projects", "title", project.getTitle(), documentId -> {
+                            if (documentId != null) {
+                                project.setProjectId(documentId);
+
+
+                                // Create an instance of your UpdateFragment.
+                                UpdateProject updateFragment = new UpdateProject();
+
+                                // Pass data to the fragment using Bundle.
+                                Bundle bundle = new Bundle();
+                                bundle.putSerializable("proT", project);
+                                updateFragment.setArguments(bundle);
+
+                                // Replace the existing fragment with the new fragment.
+                                FragmentManager fragmentManager = ProjectActivity.this.getSupportFragmentManager();
+                                FragmentTransaction transaction = fragmentManager.beginTransaction();
+                                transaction.replace(R.id.updatePfra, updateFragment);
+                                transaction.addToBackStack(null);
+                                transaction.commit();
+                            }
+                            });*/
+
+                    //}
+
+
+                    Intent intent1 = getIntent();
+                    if (intent1.hasExtra("selectedProject")) {
+                        Projects projects = (Projects) intent1.getSerializableExtra("selectedProject");
+
+                    FirestoreManager firestoreManager = new FirestoreManager();
+                    assert projects != null;
+                    firestoreManager.getDocumentId("Projects", "title", projects.getTitle(), documentId -> {
+                        if (documentId != null) {
+                            projects.setProjectId(documentId);
+
+
+                            // Create an instance of your UpdateFragment.
+                            UpdateProject updateFragment = new UpdateProject();
+
+                            // Pass data to the fragment using Bundle.
+                            Bundle bundle = new Bundle();
+                            bundle.putSerializable("proJ",  projects);
+                            updateFragment.setArguments(bundle);
+
+                            // Replace the existing fragment with the new fragment.
+                            FragmentManager fragmentManager =ProjectActivity.this.getSupportFragmentManager();
+                            FragmentTransaction transaction = fragmentManager.beginTransaction();
+                            transaction.replace(R.id.updatePfra, updateFragment);
+                            transaction.addToBackStack(null);
+                            transaction.commit();
+
+
+                        }  // Handle the case where the document ID couldn't be retrieved
+                    });
+                    }
+
+                }
+                return true;
+            }
+        });
+        // Show the popup menu
+        popupMenu.show();
     }
     @Override
     public void onTaskUpdated() {

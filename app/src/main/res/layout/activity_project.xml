@@ -237,6 +237,12 @@
                 android:id="@+id/updateTaskfra"
                 android:orientation="vertical"
                 android:gravity="bottom"/>
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/updatePfra"
+                android:orientation="vertical"
+                android:gravity="bottom"/>
 
         </FrameLayout>
 

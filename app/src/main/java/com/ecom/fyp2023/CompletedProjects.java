@@ -36,7 +36,6 @@ public class CompletedProjects extends AppCompatActivity {
 
         projectsArrayList = new ArrayList<>();
 
-
         recyclerView = findViewById(R.id.CompletedRecyclerView);
 
         searchView = findViewById(R.id.CompletedSearchView);

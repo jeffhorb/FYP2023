@@ -16,21 +16,18 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.ProjectsRVAdapter;
+import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
 import com.ecom.fyp2023.ModelClasses.Projects;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class HomeScreen extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -155,6 +152,11 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
     }
 
+    public void analysePro(MenuItem menuitem){
+        Intent intent = new Intent(HomeScreen.this, ProjectProgressAnalysis.class);
+        startActivity(intent);
+        finish();
+    }
 
     private void setupSearchView() {
         searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {

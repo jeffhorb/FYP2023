@@ -106,7 +106,7 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             } else if (!isBefore(startDt, endDt)) {
                 endDate.setError("End date must be after start date");
             } else{
-                    addProjects(proTitle, proDesc, priority, startDt, endDt,progress);
+                    addProjects(proTitle, proDesc, priority, startDt, endDt,progress,null);
                 }
             });
 
@@ -142,11 +142,11 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
 
         return view;
     }
-    public void addProjects(String title, String description, String priority, String startDate, String endDate, String progres) {
+    public void addProjects(String title, String description, String priority, String startDate, String endDate, String progres, Date actualEDate) {
 
         CollectionReference dbProjects = fb.collection("Projects");
 
-        Projects projs = new Projects(title, description, priority, startDate, endDate,progres);
+        Projects projs = new Projects(title, description, priority, startDate, endDate,progres,actualEDate);
         dbProjects.add(projs).addOnSuccessListener(documentReference -> {
 
             userId = Objects.requireNonNull(mAuth.getCurrentUser()).getUid();
@@ -165,6 +165,7 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             intent.putExtra("endDt", endDt);
             intent.putExtra("priority", priority);
             intent.putExtra("progress", progres);
+
 
             startActivity(intent);
 

@@ -1,8 +1,7 @@
 package com.ecom.fyp2023;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
@@ -14,19 +13,16 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.graphics.Color;
 import android.widget.ToggleButton;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.ecom.fyp2023.ModelClasses.Users;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.regex.Pattern;
 
@@ -120,10 +116,13 @@ public class SignUpActivity extends AppCompatActivity {
             } else {
                 pBar.setVisibility(View.VISIBLE);
 
-                authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(task -> {
+                // Check if the username already exists in Firestore
+                checkUsernameExistence(userN, mail, pword);
+
+                /*authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(task -> {
                     pBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
-                        addDataToFirestore(userN, mail);
+                        addUserToFirestore(userN, mail);
                         Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
                         startActivity(intent);
@@ -132,7 +131,7 @@ public class SignUpActivity extends AppCompatActivity {
                     } else {
                         Toast.makeText(SignUpActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
-                });
+                });*/
             }
 
         });
@@ -147,6 +146,41 @@ public class SignUpActivity extends AppCompatActivity {
             }
         });
     }*/
+
+    private void checkUsernameExistence(String userName, String email, String password) {
+        CollectionReference dbUsers = db.collection("Users");
+        Query query = dbUsers.whereEqualTo("userName", userName);
+
+        query.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                QuerySnapshot querySnapshot = task.getResult();
+                if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                    // Username already exists, show an error message or take appropriate action
+                    pBar.setVisibility(View.GONE);
+                    Toast.makeText(SignUpActivity.this, "Username already exists. Please use a different one.", Toast.LENGTH_SHORT).show();
+                } else {
+                    // Username does not exist, proceed with user authentication
+                    authicate.createUserWithEmailAndPassword(email, password).addOnCompleteListener(authTask -> {
+                        pBar.setVisibility(View.GONE);
+                        if (authTask.isSuccessful()) {
+                            addUserToFirestore(userName, email);
+                            Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
+                            startActivity(intent);
+                            // FirebaseUser user = authicate.getCurrentUser();
+                            // sendEmailVerification(user);
+                        } else {
+                            Toast.makeText(SignUpActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } else {
+                // Handle the case where checking for username existence fails
+                pBar.setVisibility(View.GONE);
+                Toast.makeText(SignUpActivity.this, "Error checking username existence.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
 
     public void validatepass(String password) {
@@ -188,7 +222,7 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
 
-    private void addDataToFirestore(String userName, String userEmail) {
+    private void addUserToFirestore(String userName, String userEmail) {
         // creating a collection reference
         // for our Firebase Firestore database.
         CollectionReference dbUsers = db.collection("Users");

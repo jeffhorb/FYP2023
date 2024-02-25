@@ -48,9 +48,10 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
     Spinner taskDifficulty,duration;
 
-    String  progress,proId;
+    String  progress,taskId,completedTime;
     private FirebaseFirestore fb;
     Tasks tasks;
+    Date startDate,endDate;
 
     ArrayAdapter<String> prerequisitesAdapter;
     private final List<String> selectedPrerequisites = new ArrayList<>();
@@ -112,45 +113,35 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
         Bundle args = getArguments();
         if (args != null && args.containsKey("pId2")) {
-            proId = args.getString("pId2");
+            taskId = args.getString("pId2");
         }
 
         Bundle arguments = getArguments();
-        if (arguments != null && arguments.containsKey("pId")) {
-            proId = arguments.getString("pId");
+        if (arguments != null && arguments.containsKey("tId")) {
+            taskId = arguments.getString("pId");
         }
 
         Bundle arguments1 = getArguments();
         if (arguments1 != null && arguments1.containsKey("pro_key")) {
-            proId = arguments1.getString("pro_key");
+            taskId = arguments1.getString("pro_key");
         }
 
         Bundle bundle = getArguments();
         if (bundle != null && bundle.containsKey("tasks")) {
         tasks = (Tasks) bundle.getSerializable("tasks");
-
-            // Assuming tasks.getPrerequisites() returns the list of prerequisites.set already existing prerequisites
-            //assert tasks != null;
-            //List <String> p = tasks.getPrerequisites();
-            // Set selected prerequisites in the spinner
-            //setPrerequisitesInSpinner(p);
         }
 
         //from TaskActivity
         Bundle bundle1 = getArguments();
         if (bundle1 != null && bundle1.containsKey("selectT")) {
             tasks = (Tasks) bundle.getSerializable("selectT");
-
-            //assert tasks != null;
-            //List <String> p = tasks.getPrerequisites();
-
-            // Set selected prerequisites in the spinner
-            //setPrerequisitesInSpinner(p);
+            tasks.getTaskId();
         }
 
         assert tasks != null;
         taskDetails.setText(tasks.getTaskDetails());
-        //estimatedTime.setText(tasks.getEstimatedTime());
+        taskName.setText(tasks.getTaskName());
+        estimatedTime.setText(tasks.getEstimatedTime());
 
         String diffVal = tasks.getDifficulty();
         String[] diffSpinnerItems = getResources().getStringArray(R.array.tasksDifficulty);
@@ -161,7 +152,6 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
         // Set an OnClickListener to handle the close action
         closeImageView.setOnClickListener(v -> {
-            // Close the BottomSheetDialogFragment when the close icon is clicked
             dismiss();
         });
 
@@ -195,7 +185,6 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
             }
             @Override
             public void onNothingSelected(AdapterView<?> parentView) {
-                // Do nothing when nothing is selected
             }
         });
 
@@ -205,20 +194,21 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
             String estTime = estimatedTime.getText().toString();
             String diff = taskDifficulty.getSelectedItem().toString();
             String selectedText = duration.getSelectedItem().toString();
-            String newText = estTime + selectedText;
+            String timeEstimate = estTime + selectedText;
 
-            estimatedTime.setText(newText);
+
+            estimatedTime.setText(timeEstimate);
             estimatedTime.setSelection(estimatedTime.length());
 
             if (TextUtils.isEmpty(detls)) {
                 taskDetails.setError("Field required");
             } else if (TextUtils.isEmpty(taskN)) {
                 taskName.setError("Field require");
-            } else if (!isValidEstimationFormat(newText)) {
+            } else if (!isValidEstimationFormat(timeEstimate)) {
                 estimatedTime.setError("Invalid format. Use a number followed by duration");
             } else {
                 // Call the updateTask method
-                updateTask(tasks, taskN, detls, diff, progress, newText,selectedPrerequisites);
+                updateTask(tasks, taskN, detls, diff, progress, timeEstimate,selectedPrerequisites,completedTime,startDate,endDate);
                 dismiss();
             }
         });
@@ -230,20 +220,23 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
         return estTime.matches(regex);
     }
 
-    private void updateTask(@NonNull Tasks task, String taskN, String taskDetails, String tasksDiff, String progres, String taskEtime,List<String> prerequisite) {
+    private void updateTask(@NonNull Tasks task, String taskN, String taskDetails, String tasksDiff, String progres, String taskEtime,List<String> prerequisite,String completeT,Date sD,Date eD) {
 
         String existingProgress = task.getProgress();
+        String existingCompletedTime = task.getCompletedTime();
+        Date existingStartDate = task.getStartDate();
+        Date existingEndDate = task.getEndDate();
 
         // Create the updated task with the existing progress value
-        Tasks updateTasks = new Tasks(taskN,taskDetails, tasksDiff, existingProgress, taskEtime,prerequisite);
+        Tasks updateTasks = new Tasks(taskN,taskDetails, tasksDiff, existingProgress, taskEtime,prerequisite,existingCompletedTime,existingStartDate,existingEndDate);
 
         fb.collection("Tasks")
                 .document(task.getTaskId())
                 .set(updateTasks)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("projectid", "proid " +proId);
+                    Log.d("taskid", "teakid " +taskId);
 
-                    calculateTotalEstimatedTimeAndEndDate(proId);
+                    calculateTotalEstimatedTimeAndEndDate(taskId);
                     Toast.makeText(requireContext(), "Task has been updated.", Toast.LENGTH_SHORT).show();
                     if (taskUpdateListener != null) {
                         taskUpdateListener.onTaskUpdated();
@@ -383,7 +376,6 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                             String taskName = document.getString("taskName");
                             if(!tasks.getTaskDetails().equalsIgnoreCase(taskName)){
                                 taskNames.add(taskName);
-
                             }
                         }
                         // Notify the adapter that the data set has changed
@@ -394,26 +386,6 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                 });
         return taskNames;
     }
-
-    //tryign to get existing prerequisite of task i am updating the spinner
-   /* private void setPrerequisitesInSpinner(List<String> selectedPrerequisites) {
-        for (int i = 0; i < prerequisitesAdapter.getCount(); i++) {
-            String taskName = prerequisitesAdapter.getItem(i);
-            // Assuming getTaskIdFromName returns the ID based on the task name
-            int finalI = i;
-            getTaskIdFromName(taskName, new BottomSheetFragmentAddTask.OnTaskIdFetchedListener() {
-                @Override
-                public void onTaskIdFetched(String taskId) {
-                    if (taskId != null && selectedPrerequisites.contains(taskId)) {
-                        // Highlight the selected item
-                        spinnerPrerequisite.setSelection(finalI);
-                        highlightSelectedItems(spinnerPrerequisite, tasks.getPrerequisites());
-                        // Exit the loop after finding and highlighting the first match
-                    }
-                }
-            });
-        }
-    }*/
 
     // Fetch task ID from Firestore based on task name
     private void getTaskIdFromName(String selectedTaskName, BottomSheetFragmentAddTask.OnTaskIdFetchedListener listener) {
