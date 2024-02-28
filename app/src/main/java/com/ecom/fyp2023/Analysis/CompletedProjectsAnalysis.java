@@ -12,7 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.AppManagers.DateValueFormatter;
-import com.ecom.fyp2023.AppManagers.SwipeGestureListener;
+import com.ecom.fyp2023.AppManagers.SwipeGestureListenerProjectAnalysis;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.R;
 import com.github.mikephil.charting.charts.LineChart;
@@ -50,7 +50,7 @@ public class CompletedProjectsAnalysis extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_completed_projects_analysis);
 
-        gestureDetector = new GestureDetector(this, new SwipeGestureListener(this));
+        gestureDetector = new GestureDetector(this, new SwipeGestureListenerProjectAnalysis(this));
 
         lineChart = findViewById(R.id.lineChart);
 
@@ -93,8 +93,9 @@ public class CompletedProjectsAnalysis extends AppCompatActivity {
 
         if (projects.isEmpty()) {
             // Handle the case where there are no projects
-            TextView textView = findViewById(R.id.noData);
-            textView.setText("No projects to display.");
+            TextView textView = findViewById(R.id.dataNotAvailable);
+            textView.setText("No Completed projects to display.");
+            textView.setTextSize(20);
             lineChart.setVisibility(View.GONE);
         }
         List<Entry> estimatedEntries = new ArrayList<>();

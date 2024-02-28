@@ -4,9 +4,12 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
+import com.ecom.fyp2023.AppManagers.SwipeGestureListenerTasksAnalysis;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
@@ -26,6 +29,7 @@ import java.util.Objects;
 public class TasksProgressAnalysis extends AppCompatActivity {
 
     PieChart pieChart;
+    GestureDetector gestureDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +37,8 @@ public class TasksProgressAnalysis extends AppCompatActivity {
         setContentView(R.layout.activity_tasks_progress_analysis);
 
         pieChart = findViewById(R.id.pieChartTask);
+
+        gestureDetector = new GestureDetector(this, new SwipeGestureListenerTasksAnalysis(this));
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -58,6 +64,12 @@ public class TasksProgressAnalysis extends AppCompatActivity {
                     }
                 });
     }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event);
+    }
+
 
     private void updatePieChart(@NonNull List<Tasks> tasksList) {
         List<PieEntry> entries = new ArrayList<>();
@@ -100,6 +112,8 @@ public class TasksProgressAnalysis extends AppCompatActivity {
             dataSet.setColors(ColorTemplate.COLORFUL_COLORS);
 
             PieData data = new PieData(dataSet);
+
+            pieChart.setTouchEnabled(false);
 
             pieChart.setData(data);
             pieChart.setVisibility(View.VISIBLE); // Show the PieChart

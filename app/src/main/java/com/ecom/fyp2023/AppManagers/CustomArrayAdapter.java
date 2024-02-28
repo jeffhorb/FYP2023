@@ -19,6 +19,12 @@ public class CustomArrayAdapter extends ArrayAdapter<String> {
         void provideTaskId(String taskName, BottomSheetFragmentAddTask.OnTaskIdFetchedListener listener);
     }
 
+    public void setData(List<String> newData) {
+        clear();
+        addAll(newData);
+        notifyDataSetChanged();
+    }
+
     private final TaskIdProvider taskIdProvider;
     private final List<String> selectedPrerequisites;
 
@@ -63,9 +69,5 @@ public class CustomArrayAdapter extends ArrayAdapter<String> {
             }
        }
     }
-    public void setData(List<String> newData) {
-        clear();
-        addAll(newData);
-        notifyDataSetChanged();
-    }
+
 }

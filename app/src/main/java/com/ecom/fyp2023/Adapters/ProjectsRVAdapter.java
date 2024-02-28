@@ -228,6 +228,8 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
                             String taskDocumentId = document.getString("taskId");
                             if (taskDocumentId != null) {
                                 removeTask(taskDocumentId);
+                                removeTaskNotes(taskDocumentId);
+                                removeTaskUser(taskDocumentId);
                             }
                             // After removing tasks from projectTasks, you may want to remove the projectTasks entry as well
                             document.getReference().delete()
@@ -245,6 +247,51 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
                 .delete()
                 .addOnSuccessListener(aVoid -> Log.d("RemoveTask", "Task removed successfully"))
                 .addOnFailureListener(e -> Log.e("RemoveTask", "Error removing task", e));
+    }
+
+    private void removeTaskNotes(String taskId) {
+        FirebaseFirestore.getInstance().collection("taskNotes")
+                .whereEqualTo("taskId", taskId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String noteId = document.getString("noteId");
+                            if (noteId != null) {
+                                removeNote(noteId); // Remove note from "Notes" collection
+                            }
+                            document.getReference().delete()
+                                    .addOnSuccessListener(aVoid -> Log.d("RemoveTaskNote", "Note removed successfully"))
+                                    .addOnFailureListener(e -> Log.e("RemoveTaskNote", "Error removing note", e));
+                        }
+                    } else {
+                        Log.e("RemoveTaskNote", "Error fetching taskNotes", task.getException());
+                    }
+                });
+    }
+
+    private void removeTaskUser(String taskId) {
+        FirebaseFirestore.getInstance().collection("userTasks")
+                .whereEqualTo("taskId", taskId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (DocumentSnapshot document : task.getResult()) {
+                            document.getReference().delete()
+                                    .addOnSuccessListener(aVoid -> Log.d("RemoveTaskNote", "Note removed successfully"))
+                                    .addOnFailureListener(e -> Log.e("RemoveTaskNote", "Error removing note", e));
+                        }
+                    } else {
+                        Log.e("RemoveTaskNote", "Error fetching taskNotes", task.getException());
+                    }
+                });
+    }
+
+    private void removeNote(String noteId) {
+        FirebaseFirestore.getInstance().collection("Notes").document(noteId)
+                .delete()
+                .addOnSuccessListener(aVoid -> Log.d("RemoveNote", "Note removed successfully"))
+                .addOnFailureListener(e -> Log.e("RemoveNote", "Error removing note", e));
     }
 
     private void removeProjectComments(String projectId) {
@@ -275,69 +322,4 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
                 .addOnSuccessListener(aVoid -> Log.d("RemoveComment", "Comment removed successfully"))
                 .addOnFailureListener(e -> Log.e("RemoveComent", "Error removing comment", e));
     }
-
-
-    //tryingh to remove all collection linked to project from firestore
-   /*
-    private void removeT(String taskId) {
-        FirebaseFirestore.getInstance().collection("Tasks")
-                .whereEqualTo("taskId", taskId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        for (DocumentSnapshot document : task.getResult()) {
-                            String taskDocumentId = document.getString("taskId");
-                            if (taskDocumentId != null) {
-                                removeUserTasks(taskDocumentId);
-                                removeTaskNotes(taskDocumentId);
-
-                            }
-                            // After removing tasks from projectTasks, you may want to remove the projectTasks entry as well
-                            document.getReference().delete()
-                                    .addOnSuccessListener(aVoid -> Log.d("RemoveProjectTask", "Task removed from projectTasks successfully"))
-                                    .addOnFailureListener(e -> Log.e("RemoveProjectTask", "Error removing task from projectTasks", e));
-                        }
-                    } else {
-                        Log.e("RemoveProjectTask", "Error fetching projectTasks", task.getException());
-                    }
-                });
-    }
-
-
-
-     private void removeTaskNotes(String taskId) {
-        FirebaseFirestore.getInstance().collection("taskNotes")
-                .whereEqualTo("taskId", taskId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        for (DocumentSnapshot document : task.getResult()) {
-                            String taskDocumentId = document.getString("noteId");
-                            if (taskDocumentId != null) {
-                                removeNotes(taskDocumentId);
-                            }
-                            // After removing tasks from projectTasks, you may want to remove the projectTasks entry as well
-                            document.getReference().delete()
-                                    .addOnSuccessListener(aVoid -> Log.d("RemoveProjectTask", "Task removed from projectTasks successfully"))
-                                    .addOnFailureListener(e -> Log.e("RemoveProjectTask", "Error removing task from projectTasks", e));
-                        }
-                    } else {
-                        Log.e("RemoveProjectTask", "Error fetching projectTasks", task.getException());
-                    }
-                });
-    }
-
-    private void removeUserTasks(String taskId) {
-        FirebaseFirestore.getInstance().collection("userTasks").document(taskId)
-                .delete()
-                .addOnSuccessListener(aVoid -> Log.d("RemoveNotes", "notes removed successfully"))
-                .addOnFailureListener(e -> Log.e("RemoveNotes", "Error removing notes", e));
-    }
-
-    private void removeNotes(String notesId) {
-        FirebaseFirestore.getInstance().collection("Notes").document(notesId)
-                .delete()
-                .addOnSuccessListener(aVoid -> Log.d("RemoveNotes", "notes removed successfully"))
-                .addOnFailureListener(e -> Log.e("RemoveNotes", "Error removing notes", e));
-    }*/
 }

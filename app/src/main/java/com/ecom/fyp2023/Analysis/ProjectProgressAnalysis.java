@@ -9,7 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.ecom.fyp2023.AppManagers.SwipeGestureListener;
+import com.ecom.fyp2023.AppManagers.SwipeGestureListenerProjectAnalysis;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.R;
 import com.github.mikephil.charting.charts.PieChart;
@@ -38,7 +38,7 @@ public class ProjectProgressAnalysis extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_project_progress_analysis);
 
-        gestureDetector = new GestureDetector(this, new SwipeGestureListener(this));
+        gestureDetector = new GestureDetector(this, new SwipeGestureListenerProjectAnalysis(this));
 
         pieChart = findViewById(R.id.pieChart);
 

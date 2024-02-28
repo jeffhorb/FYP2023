@@ -52,6 +52,13 @@
             android:scrollbars="vertical"/>
     </LinearLayout>
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/updatefragmentCom"
+        android:orientation="vertical"
+        android:gravity="bottom"
+        />
 
 
 </RelativeLayout>

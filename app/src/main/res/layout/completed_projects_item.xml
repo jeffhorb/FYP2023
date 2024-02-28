@@ -4,44 +4,87 @@
     android:id="@+id/idProjectItems"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="5dp"
-    app:cardCornerRadius="6dp"
-    app:cardElevation="4dp">
+    android:layout_margin="2dp"
+    app:cardCornerRadius="5dp"
+    app:cardElevation="2dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:elevation="8dp">
+        android:padding="2dp"
+        android:layout_marginStart="3dp">
 
         <TextView
             android:id="@+id/completedPTitle"
-            android:layout_width="246dp"
+            android:layout_width="365dp"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:ellipsize="end"
             android:maxLines="1"
-            android:layout_marginStart="3dp"
-            android:padding="8dp"
+            android:clickable="true"
             android:text="ProjectTitle"
             android:textColor="@color/black"
-            android:textSize="18sp" />
+            android:textSize="15sp" />
 
     </LinearLayout>
-
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="35dp">
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="40dp">
+        <TextView
+            android:id="@+id/completedPProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:text="progress"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/completedEndDateTitle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Completetion Date:"
+            android:layout_gravity="center"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:visibility="invisible"
+            android:layout_marginStart="60dp"/>
+
+        <TextView
+            android:id="@+id/CompletedActualPEndDate"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:textStyle="bold"
+            android:inputType="date"
+            android:layout_marginStart="5dp"
+            android:visibility="invisible"
+            android:hint="enddate" />
 
 
+    </LinearLayout>
+
+
+
+
+    <LinearLayout
+        android:id="@+id/linear1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="21dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Start Date:"
+            android:textStyle="bold"
+            android:textColor="@color/black"
             android:layout_gravity="center"
-            android:layout_marginStart="10dp"/>
+            android:layout_marginStart="5dp"/>
 
         <TextView
             android:id="@+id/completedPStartDate"
@@ -49,14 +92,17 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:textStyle="bold"
+            android:layout_marginStart="2dp"
             android:hint="stardate" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="End Date:"
+            android:text="Estimated EndDate:"
             android:layout_gravity="center"
-            android:layout_marginStart="10sp"/>
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_marginStart="6dp"/>
 
         <TextView
             android:id="@+id/completedPEndDate"
@@ -64,24 +110,15 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:textStyle="bold"
+            android:layout_marginStart="2dp"
             android:hint="enddate" />
 
     </LinearLayout>
-    <TextView
-        android:id="@+id/completedPProgress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="start"
-        android:text="progress"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="50dp"
-        android:textStyle="bold"
-        android:textColor="@color/black"
-        android:textSize="15sp" />
+
 
     <ImageButton
         android:id="@+id/CompletedButtonOptions"
-        android:layout_width="wrap_content"
+        android:layout_width="20dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
         android:background="@android:color/transparent"

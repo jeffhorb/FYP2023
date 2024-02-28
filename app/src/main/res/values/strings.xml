@@ -7,6 +7,7 @@
 
 
     <string-array name="projectPriority">
+        <item> </item>
         <item> Level 1</item>
         <item> Level 2</item>
         <item> Level 3</item>
@@ -14,13 +15,14 @@
     </string-array>
 
     <string-array name="tasksDifficulty">
+        <item> </item>
         <item> High</item>
         <item> Medium</item>
         <item> Low</item>
 
     </string-array>
 
-    <string-array name="tasksProgress">
+    <string-array name="progress">
         <item> Incomplete</item>
         <item> In progress</item>
         <item> Complete</item>

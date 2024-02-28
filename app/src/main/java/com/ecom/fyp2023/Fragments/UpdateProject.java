@@ -1,8 +1,10 @@
 package com.ecom.fyp2023.Fragments;
 
+import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,25 +18,35 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.ecom.fyp2023.AppManagers.TimeConverter;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import org.jetbrains.annotations.Contract;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class UpdateProject extends BottomSheetDialogFragment {
 
     @NonNull
     @Contract(" -> new")
     public static UpdateProject newInstance() {
-            return new UpdateProject();
+        return new UpdateProject();
     }
 
     EditText pTitle;
@@ -42,10 +54,9 @@ public class UpdateProject extends BottomSheetDialogFragment {
     EditText startDate;
     Spinner proPriority;
 
+    String pProgress, eDate;
 
     Projects project;
-
-    String proT, proDesc, stDate, eDate, pPriority,pProgress;
 
     Date actualEndD;
     private FirebaseFirestore fb;
@@ -67,34 +78,54 @@ public class UpdateProject extends BottomSheetDialogFragment {
 
         Bundle bundle = getArguments();
         if (bundle != null && bundle.containsKey("project")) {
-             project = (Projects) bundle.getSerializable("project");
+            project = (Projects) bundle.getSerializable("project");
+            pTitle.setText(project.getTitle());
+            pDesc.setText(project.getDescription());
+            startDate.setText(project.getStartDate());
+            String priorityValue = project.getPriority();
+            String[] prioritySpinnerItems = getResources().getStringArray(R.array.projectPriority);
+            int position = Arrays.asList(prioritySpinnerItems).indexOf(priorityValue);
+            proPriority.setSelection(position);
         }
 
         //Received from projectActivity
-        Bundle bundle1= getArguments();
+        Bundle bundle1 = getArguments();
         if (bundle1 != null && bundle1.containsKey("proJ")) {
             project = (Projects) bundle1.getSerializable("proJ");
             project.getProjectId();
+            pTitle.setText(project.getTitle());
+            pDesc.setText(project.getDescription());
+            startDate.setText(project.getStartDate());
+            String priorityValue = project.getPriority();
+            String[] prioritySpinnerItems = getResources().getStringArray(R.array.projectPriority);
+            int position = Arrays.asList(prioritySpinnerItems).indexOf(priorityValue);
+            proPriority.setSelection(position);
         }
 
-        //updating project from add project fragment
-        //Bundle bundle2 = getArguments();
-        //if (bundle2 != null && bundle2.containsKey("proT")) {
-          //  project = (Projects) bundle2.getSerializable("proT");
-          //  assert project != null;
-          //  project.getProjectId();
+        Bundle bundle2 = getArguments();
+        if (bundle2 != null && bundle2.containsKey("proTid")) {
+            String projectId = bundle2.getString("proTid");
+            DocumentReference projectRef = fb.collection("Projects").document(projectId);
+            projectRef.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        // Document exists, retrieve existing values
+                        String existingTitle = document.getString("title");
+                        pTitle.setText(existingTitle);
+                        String existingProD = document.getString("description");
+                        pDesc.setText(existingProD);
+                        String existingPriority = document.getString("priority");
+                        String[] prioritySpinnerItems = getResources().getStringArray(R.array.projectPriority);
+                        int position = Arrays.asList(prioritySpinnerItems).indexOf(existingPriority);
+                        proPriority.setSelection(position);
+                        String existingStartDate = document.getString("startDate");
+                        startDate.setText(existingStartDate);
+                    }
+                }
+            });
 
-        //}
-
-        assert project != null;
-        pTitle.setText(project.getTitle());
-        pDesc.setText(project.getDescription());
-        startDate.setText(project.getStartDate());
-
-        String priorityValue = project.getPriority();
-        String[] prioritySpinnerItems = getResources().getStringArray(R.array.projectPriority);
-        int position = Arrays.asList(prioritySpinnerItems).indexOf(priorityValue);
-        proPriority.setSelection(position);
+        }
 
         ImageView closeImageView = view.findViewById(R.id.closeImageView);
 
@@ -113,7 +144,7 @@ public class UpdateProject extends BottomSheetDialogFragment {
             int month = c.get(Calendar.MONTH);
             int day = c.get(Calendar.DAY_OF_MONTH);
 
-            DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(), (view1, year1, monthOfYear, dayOfMonth) -> {
+            @SuppressLint("SetTextI18n") DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(), (view1, year1, monthOfYear, dayOfMonth) -> {
                 startDate.setText(dayOfMonth + "-" + (monthOfYear + 1) + "-" + year1);
             }, year, month, day);
 
@@ -125,24 +156,56 @@ public class UpdateProject extends BottomSheetDialogFragment {
         updateCourseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                String proT, proDesc, stDate, pPriority;
                 proT = pTitle.getText().toString();
                 proDesc = pDesc.getText().toString();
                 stDate = startDate.getText().toString();
                 pPriority = proPriority.getSelectedItem().toString();
 
                 if (TextUtils.isEmpty(proT)) {
-                    pTitle.setError("Field required");
-                } else if (TextUtils.isEmpty(proDesc)) {
-                    pDesc.setError("Field Required");
-                } else if (TextUtils.isEmpty(stDate)) {
-                    startDate.setError("Field required");
-                }
-                // Your code to handle the valid input
-                updateProject(project, proT, proDesc,pPriority, stDate, eDate, pProgress,actualEndD);
-                dismiss();
+                        pTitle.setError("Field required");
+                    } else if (TextUtils.isEmpty(proDesc)) {
+                        pDesc.setError("Field Required");
+                    } else if (TextUtils.isEmpty(pPriority)) {
+                        Toast.makeText(getActivity(), "Select priority", Toast.LENGTH_LONG).show();
+                    } else if (TextUtils.isEmpty(stDate)) {
+                        startDate.setError("Field required");
+                    } else if (!isValidDateFormat(stDate)) {
+                        Toast.makeText(getActivity(), "Invalid date format. Use dd-MM-yyyy.", Toast.LENGTH_LONG).show();
+                    } else {
+                        // Your existing code for valid input
+                        Bundle bundle2 = getArguments();
+                        if (bundle2 != null && bundle2.containsKey("proTid")) {
+                            String projectId = bundle2.getString("proTid");
+                            updateProject2(projectId, proT, proDesc, pPriority, stDate, eDate, pProgress, actualEndD);
+                        }
+                        Bundle bundle = getArguments();
+                        if (bundle != null && bundle.containsKey("project")) {
+                            // Your code to handle the valid input
+                            updateProject(project, proT, proDesc, pPriority, stDate, eDate, pProgress, actualEndD);
+                        }
+                        Bundle bundle1 = getArguments();
+                        if (bundle1 != null && bundle1.containsKey("proJ")) {
+                            updateProject(project, proT, proDesc, pPriority, stDate, eDate, pProgress, actualEndD);
+                        }
+                        dismiss();
+                    }
             }
         });
         return view;
+    }
+    // Function to validate the date format
+    private boolean isValidDateFormat(String date) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+            // Set lenient to false to enforce strict parsing
+            sdf.setLenient(false);
+            sdf.parse(date);
+            return true;
+        } catch (ParseException e) {
+            Log.e("DateValidation", "Invalid date format: " + date, e);
+            return false;
+        }
     }
 
     private void updateProject(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
@@ -152,28 +215,64 @@ public class UpdateProject extends BottomSheetDialogFragment {
         Date existingActualEndDate = projects.getActualEndDate();
 
         // Create the updated project with the existing progress value
-        Projects udpatedPorject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress,existingActualEndDate);
+        Projects udpatedPorject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress, existingActualEndDate);
 
         fb.collection("Projects").
-                        document(projects.getProjectId()).
-                        set(udpatedPorject).
-                        addOnSuccessListener(new OnSuccessListener<Void>() {
+                document(projects.getProjectId()).
+                set(udpatedPorject).
+                addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
+                        String id = project.getProjectId();
+                        calculateTotalEstimatedTimeAndEndDate(id);
 
                         Toast.makeText(requireContext(), "Project has been updated..", Toast.LENGTH_SHORT).show();
                     }
                 }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
 
-                Toast.makeText(requireContext(), "Fail to update the data..", Toast.LENGTH_SHORT).show();
-            }
-        });
+                        Toast.makeText(requireContext(), "Fail to update the data..", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void updateProject2(String projectId, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
+
+        // Create a map to store the fields to be updated
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("title", proTitle);
+        updates.put("description", proD);
+        updates.put("priority", priority);
+        updates.put("startDate", startDate);
+
+        // Check if endDate is provided and update if not empty
+        if (!TextUtils.isEmpty(endDate)) {
+            updates.put("endDate", endDate);
+        }
+
+        // Check if progres is provided and update if not empty
+        if (!TextUtils.isEmpty(progres)) {
+            updates.put("progress", progres);
+        }
+
+        // Check if actualEdate is provided and update if not null
+        if (actualEdate != null) {
+            updates.put("actualEndDate", actualEdate);
+        }
+
+        fb.collection("Projects")
+                .document(projectId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    calculateTotalEstimatedTimeAndEndDate(projectId);
+                    Toast.makeText(requireContext(), "Project has been updated..", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> Toast.makeText(requireContext(), "Fail to update the data..", Toast.LENGTH_SHORT).show());
     }
 
     //update end date of project automatically when startdate is updated
-   /* private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
+    private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
         fb.collection("projectTasks")
                 .whereEqualTo("projectId", projectId)
                 .get()
@@ -251,7 +350,7 @@ public class UpdateProject extends BottomSheetDialogFragment {
                                     .addOnCompleteListener(updateTask -> {
                                         if (updateTask.isSuccessful()) {
                                             Log.d("UpdateProject", "Project end date updated successfully");
-                                            endDateUpdateListener.onEndDateUpdated(updatedEndDate);
+                                            //endDateUpdateListener.onEndDateUpdated(updatedEndDate);
                                         } else {
                                             Log.e("UpdateProject", "Error updating project end date", updateTask.getException());
                                         }
@@ -284,5 +383,5 @@ public class UpdateProject extends BottomSheetDialogFragment {
         }
 
         return null;
-    }*/
+    }
 }

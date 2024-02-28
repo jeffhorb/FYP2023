@@ -19,13 +19,16 @@
         android:theme="@style/status_bar_color"
         tools:targetApi="31">
         <activity
+            android:name=".Analysis.CompletedTasksAnalysis"
+            android:exported="false" />
+        <activity
             android:name=".Analysis.CompletedProjectsAnalysis"
             android:exported="false"
-            android:label="Project Analysis"/>
+            android:label="Project Analysis" />
         <activity
             android:name=".Analysis.TasksProgressAnalysis"
             android:exported="false"
-            android:label="Task Analysis"/>
+            android:label="Task Analysis" />
         <activity
             android:name=".Analysis.ProjectProgressAnalysis"
             android:exported="false"

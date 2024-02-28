@@ -35,9 +35,7 @@ public class CompletedProjects extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         projectsArrayList = new ArrayList<>();
-
         recyclerView = findViewById(R.id.CompletedRecyclerView);
-
         searchView = findViewById(R.id.CompletedSearchView);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
@@ -75,8 +73,6 @@ public class CompletedProjects extends AppCompatActivity {
                         recyclerAdapter.notifyDataSetChanged();
                     }
                 });
-
-
     }
 
     private void setupSearchView() {

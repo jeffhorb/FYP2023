@@ -131,7 +131,7 @@
         android:id="@+id/taskProgress"
         android:layout_width="wrap_content"
         android:layout_height="1dp"
-        android:entries="@array/tasksProgress"
+        android:entries="@array/progress"
         android:gravity="end"
         android:visibility="invisible"/>
 

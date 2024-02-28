@@ -45,11 +45,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
     private SearchView searchView;
 
-    public interface DataUpdateCallback {
-        void onDataUpdated(String newData);
-    }
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,7 +90,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                         recyclerAdapter.notifyDataSetChanged();
                     }
                 });
-
 
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);

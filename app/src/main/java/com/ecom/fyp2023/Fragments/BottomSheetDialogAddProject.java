@@ -84,7 +84,6 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             dismiss();
         });
 
-
         addPro.setOnClickListener(v -> {
 
             proTitle = pTitle.getText().toString();
@@ -94,21 +93,24 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             priority = proPriority.getSelectedItem().toString();
             progress = proProgress.getSelectedItem().toString();
 
-
             if (TextUtils.isEmpty(proTitle)) {
                 pTitle.setError("Field required");
+            } else if (TextUtils.isEmpty(priority)) {
+                Toast.makeText(getActivity(), "Select priority", Toast.LENGTH_LONG).show();
             } else if (TextUtils.isEmpty(proDesc)) {
                 pDesc.setError("Field Required");
             } else if (TextUtils.isEmpty(startDt)) {
                 startDate.setError("Field required");
             } else if (TextUtils.isEmpty(endDt)) {
                 endDate.setError("Field required");
+            }else if (!isValidDateFormat(endDt)&&!isValidDateFormat(startDt)) {
+                Toast.makeText(getActivity(), "Invalid date format. Use dd-MM-yyyy.", Toast.LENGTH_LONG).show();
             } else if (!isBefore(startDt, endDt)) {
                 endDate.setError("End date must be after start date");
-            } else{
-                    addProjects(proTitle, proDesc, priority, startDt, endDt,progress,null);
-                }
-            });
+            } else {
+                addProjects(proTitle, proDesc, priority, startDt, endDt, progress, null);
+            }
+        });
 
         startDate.setOnClickListener(v -> {
             final Calendar c = Calendar.getInstance();
@@ -166,7 +168,6 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             intent.putExtra("priority", priority);
             intent.putExtra("progress", progres);
 
-
             startActivity(intent);
 
         }).addOnFailureListener(e -> Toast.makeText(getActivity(), "Failed \n" + e, Toast.LENGTH_SHORT).show());
@@ -187,7 +188,7 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             }
         });
     }
-
+    
     private boolean isBefore(String date1, String date2) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
@@ -196,6 +197,20 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             return startDate != null && endDate != null && startDate.before(endDate);
         } catch (ParseException e) {
             e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Function to validate the date format
+    private boolean isValidDateFormat(String date) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+            // Set lenient to false to enforce strict parsing
+            sdf.setLenient(false);
+            sdf.parse(date);
+            return true;
+        } catch (ParseException e) {
+            Log.e("DateValidation", "Invalid date format: " + date, e);
             return false;
         }
     }

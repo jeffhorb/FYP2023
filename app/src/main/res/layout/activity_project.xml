@@ -30,20 +30,21 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="70dp"
         android:orientation="horizontal"
         android:id="@+id/linear1">
 
         <TextView
             android:id="@+id/titleTextview"
-            android:layout_width="348dp"
+            android:layout_width="370dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
             android:ellipsize="end"
+            android:clickable="true"
             android:maxLines="1"
             android:text="projectTile"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textSize="15sp"
+            android:textColor="@color/black" />
 
 
         <ImageView
@@ -60,7 +61,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="2dp"
         android:orientation="horizontal"
         android:layout_below="@id/linear1"
         android:id="@+id/linear2">
@@ -70,18 +71,32 @@
             android:layout_height="match_parent"
             android:text="Progress:"
             android:textStyle="bold"
+            android:textColor="@color/black"
             android:layout_marginStart="10dp"/>
 
         <TextView
             android:id="@+id/progressTextview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
             android:text="progress"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="5dp"
             android:textSize="16sp"
             android:textStyle="normal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority:"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_marginStart="20sp"/>
+
+        <TextView
+            android:id="@+id/priorityTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:hint="proirity" />
 
     </LinearLayout>
 
@@ -99,6 +114,7 @@
             android:layout_height="match_parent"
             android:text="Description:"
             android:textStyle="bold"
+            android:textColor="@color/black"
             android:layout_marginStart="10dp"/>
 
         <TextView
@@ -123,42 +139,58 @@
             android:layout_height="match_parent"
             android:text="Start Date:"
             android:textStyle="bold"
+            android:textColor="@color/black"
             android:layout_marginStart="10dp"/>
 
         <TextView
             android:id="@+id/startDateTextView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginStart="3dp"
             android:hint="stardate" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="End Date:"
+            android:text="Estimated End Date:"
             android:textStyle="bold"
+            android:textColor="@color/black"
             android:layout_marginStart="10sp"/>
 
         <TextView
             android:id="@+id/endDateTextView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginStart="3dp"
             android:hint="enddate" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Priority:"
-            android:textStyle="bold"
-            android:layout_marginStart="10sp"/>
-
-        <TextView
-            android:id="@+id/priorityTextView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:hint="proirity" />
 
 
     </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/completionDateTitle"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Completion Date:"
+                android:textStyle="bold"
+                android:visibility="gone"
+                android:textColor="@color/black"
+                android:layout_marginStart="10sp"/>
+
+            <TextView
+                android:id="@+id/completionDateTextView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="5dp"
+                android:visibility="gone"
+                android:inputType="date"
+                android:hint="enddate" />
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -168,7 +200,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_below="@+id/linear3"
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="10dp"
         android:layout_marginBottom="5dp">
 
 
@@ -227,7 +259,6 @@
                 android:layout_marginBottom="5dp"
                 android:background="@android:color/transparent"
                 android:hint="Add a comment..."
-                android:maxLines="3"
                 android:padding="16dp"
                 tools:ignore="TextViewEdits" />
 

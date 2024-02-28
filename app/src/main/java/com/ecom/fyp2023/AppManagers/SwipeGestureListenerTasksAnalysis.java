@@ -8,17 +8,18 @@ import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.ecom.fyp2023.Analysis.CompletedProjectsAnalysis;
-import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
+import com.ecom.fyp2023.Analysis.CompletedTasksAnalysis;
+import com.ecom.fyp2023.Analysis.TasksProgressAnalysis;
 
-public class SwipeGestureListener extends GestureDetector.SimpleOnGestureListener {
+public class SwipeGestureListenerTasksAnalysis extends GestureDetector.SimpleOnGestureListener{
+
 
     private static final int SWIPE_THRESHOLD = 80;
     private static final int SWIPE_VELOCITY_THRESHOLD = 80;
 
     private final Context context;
 
-    public SwipeGestureListener(Context context) {
+    public SwipeGestureListenerTasksAnalysis(Context context) {
         this.context = context;
     }
 
@@ -33,19 +34,19 @@ public class SwipeGestureListener extends GestureDetector.SimpleOnGestureListene
             // Swipe detected, switch activities
             if (diffX > 0) {
                 // Swipe right
-                if (context instanceof ProjectProgressAnalysis) {
+                if (context instanceof TasksProgressAnalysis) {
                     // In Activity A, go to Activity B
                     startActivityB();
-                } else if (context instanceof CompletedProjectsAnalysis) {
+                } else if (context instanceof CompletedTasksAnalysis) {
                     // In Activity B, go to Activity A
                     startActivityA();
                 }
             } else {
                 // Swipe left
-                if (context instanceof ProjectProgressAnalysis) {
+                if (context instanceof TasksProgressAnalysis) {
                     // In Activity A, go to Activity B
                     startActivityB();
-                } else if (context instanceof CompletedProjectsAnalysis) {
+                } else if (context instanceof CompletedTasksAnalysis) {
                     // In Activity B, go to Activity A
                     startActivityA();
                 }
@@ -57,17 +58,15 @@ public class SwipeGestureListener extends GestureDetector.SimpleOnGestureListene
     }
 
     private void startActivityA() {
-        Intent intent = new Intent(context, ProjectProgressAnalysis.class);
+        Intent intent = new Intent(context, TasksProgressAnalysis.class);
         context.startActivity(intent);
         ((AppCompatActivity) context).finish();
     }
 
     private void startActivityB() {
-        Intent intent = new Intent(context, CompletedProjectsAnalysis.class);
+        Intent intent = new Intent(context, CompletedTasksAnalysis.class);
         context.startActivity(intent);
         ((AppCompatActivity) context).finish();
     }
 
 }
-
-

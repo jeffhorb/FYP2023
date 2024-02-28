@@ -48,7 +48,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
     Spinner taskDifficulty,duration;
 
-    String  progress,taskId,completedTime;
+    String  progress,projectId,completedTime;
     private FirebaseFirestore fb;
     Tasks tasks;
     Date startDate,endDate;
@@ -76,15 +76,15 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
         return new UpdateTaskFragment();
     }
 
-    private OnEndDateUpdateListener endDateUpdateListener;
+    //private OnEndDateUpdateListener endDateUpdateListener;
 
-    public interface OnEndDateUpdateListener {
-        void onEndDateUpdated(String updatedEndDate);
-    }
+   // public interface OnEndDateUpdateListener {
+      //  void onEndDateUpdated(String updatedEndDate);
+   // }
 
-    public void setOnEndDateUpdateListener(OnEndDateUpdateListener listener) {
-        this.endDateUpdateListener = listener;
-    }
+    //public void setOnEndDateUpdateListener(OnEndDateUpdateListener listener) {
+    //    this.endDateUpdateListener = listener;
+   // }
 
     @Nullable
     @Override
@@ -93,7 +93,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
         view.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.white));
 
         // Set the listener
-        setOnEndDateUpdateListener((UpdateTaskFragment.OnEndDateUpdateListener) requireActivity());
+        //setOnEndDateUpdateListener((UpdateTaskFragment.OnEndDateUpdateListener) requireActivity());
 
         fb = FirebaseFirestore.getInstance();
 
@@ -113,22 +113,23 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
         Bundle args = getArguments();
         if (args != null && args.containsKey("pId2")) {
-            taskId = args.getString("pId2");
+            projectId = args.getString("pId2");
         }
 
         Bundle arguments = getArguments();
         if (arguments != null && arguments.containsKey("tId")) {
-            taskId = arguments.getString("pId");
+            projectId = arguments.getString("pId");
         }
 
         Bundle arguments1 = getArguments();
         if (arguments1 != null && arguments1.containsKey("pro_key")) {
-            taskId = arguments1.getString("pro_key");
+            projectId = arguments1.getString("pro_key");
         }
 
         Bundle bundle = getArguments();
         if (bundle != null && bundle.containsKey("tasks")) {
-        tasks = (Tasks) bundle.getSerializable("tasks");
+            tasks = (Tasks) bundle.getSerializable("tasks");
+            tasks.getTaskId();
         }
 
         //from TaskActivity
@@ -204,7 +205,9 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                 taskDetails.setError("Field required");
             } else if (TextUtils.isEmpty(taskN)) {
                 taskName.setError("Field require");
-            } else if (!isValidEstimationFormat(timeEstimate)) {
+            } else if (TextUtils.isEmpty(diff)) {
+                Toast.makeText(getActivity(), "Select difficulty", Toast.LENGTH_LONG).show();
+            }else if (!isValidEstimationFormat(timeEstimate)) {
                 estimatedTime.setError("Invalid format. Use a number followed by duration");
             } else {
                 // Call the updateTask method
@@ -234,13 +237,12 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                 .document(task.getTaskId())
                 .set(updateTasks)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("taskid", "teakid " +taskId);
-
-                    calculateTotalEstimatedTimeAndEndDate(taskId);
+                    Log.d("proID", "proID " +projectId);
+                    calculateTotalEstimatedTimeAndEndDate(projectId);
                     Toast.makeText(requireContext(), "Task has been updated.", Toast.LENGTH_SHORT).show();
                     if (taskUpdateListener != null) {
                         taskUpdateListener.onTaskUpdated();
-                    }
+                   }
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(requireContext(), "Failed to update the task.", Toast.LENGTH_SHORT).show();
@@ -326,7 +328,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                                     .addOnCompleteListener(updateTask -> {
                                         if (updateTask.isSuccessful()) {
                                             Log.d("UpdateProject", "Project end date updated successfully");
-                                            endDateUpdateListener.onEndDateUpdated(updatedEndDate);
+                                            //endDateUpdateListener.onEndDateUpdated(updatedEndDate);
                                         } else {
                                             Log.e("UpdateProject", "Error updating project end date", updateTask.getException());
                                         }

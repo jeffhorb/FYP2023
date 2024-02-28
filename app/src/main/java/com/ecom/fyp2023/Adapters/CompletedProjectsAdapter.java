@@ -28,8 +28,10 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class CompletedProjectsAdapter extends RecyclerView.Adapter<CompletedProjectsAdapter.ViewHolder> {
     // creating variables for our ArrayList and context
@@ -67,6 +69,21 @@ public class CompletedProjectsAdapter extends RecyclerView.Adapter<CompletedProj
             holder.projectProgress.setText(projects.getProgress());
             holder.startDate.setText(projects.getStartDate());
             holder.endDate.setText(projects.getEndDate());
+
+            Projects selectedProject = projectsArrayList.get(holder.getAdapterPosition());
+
+            //set and make completed time visible if task is completed
+            if(selectedProject.getActualEndDate()!=null){
+                SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                String formattedEndDate = sdf1.format(selectedProject.getActualEndDate());
+                holder.completionDate.setText(formattedEndDate);
+                holder.completionDate.setVisibility(View.VISIBLE);
+                holder.completionDateTitle.setVisibility(View.VISIBLE);
+            }
+            else{
+                holder.completionDate.setVisibility(View.INVISIBLE);
+                holder.completionDateTitle.setVisibility(View.INVISIBLE);
+            }
 
             holder.buttonOptions.setOnClickListener(v -> showPopupMenu(holder.buttonOptions, holder.getAdapterPosition()));
         } else {
@@ -108,7 +125,7 @@ public class CompletedProjectsAdapter extends RecyclerView.Adapter<CompletedProj
 
         private final TextView projectT;
 
-        TextView projectProgress, startDate,endDate;
+        TextView projectProgress, startDate,endDate,completionDate,completionDateTitle;
 
         ImageButton buttonOptions;
 
@@ -120,6 +137,19 @@ public class CompletedProjectsAdapter extends RecyclerView.Adapter<CompletedProj
             projectProgress = itemView.findViewById(R.id.completedPProgress);
             startDate = itemView.findViewById(R.id.completedPStartDate);
             endDate = itemView.findViewById(R.id.completedPEndDate);
+            completionDate = itemView.findViewById(R.id.CompletedActualPEndDate);
+            completionDateTitle = itemView.findViewById(R.id.completedEndDateTitle);
+
+            projectT.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (projectT.getMaxLines() == 1) {
+                        projectT.setMaxLines(Integer.MAX_VALUE);
+                    } else {
+                        projectT.setMaxLines(1);
+                    }
+                }
+            });
 
             itemView.setOnClickListener(v -> {
 
@@ -149,7 +179,7 @@ public class CompletedProjectsAdapter extends RecyclerView.Adapter<CompletedProj
         // Replace the existing fragment with the new fragment.
         FragmentManager fragmentManager = ((AppCompatActivity) context).getSupportFragmentManager();
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.replace(R.id.updatefra, updateFragment);
+        transaction.replace(R.id.updatefragmentCom, updateFragment);
         transaction.addToBackStack(null);
         transaction.commit();
 

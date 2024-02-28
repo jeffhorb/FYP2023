@@ -7,6 +7,7 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -17,8 +18,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
+import com.ecom.fyp2023.AppManagers.DateUtils;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.CommentListFragment;
@@ -30,12 +35,18 @@ import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskActivity extends AppCompatActivity {
 
-    TextView tasksDetails, endDate, estTime, taskPro, commentFrag, userAssigned,taskName;
+    TextView tasksDetails, endDate,endDateTitle, estTime, taskPro, commentFrag, userAssigned,taskName,startDate,completedTime,completedTimeTitle,difficulty;
     ImageView expandMore, progressExpand, prerequisiteList;
 
     EditText notes;
@@ -63,7 +74,9 @@ public class TaskActivity extends AppCompatActivity {
         taskName = findViewById(R.id.taskName);
         tasksDetails = findViewById(R.id.taskDetails);
         endDate = findViewById(R.id.endDate);
+        startDate = findViewById(R.id.startDate);
         estTime = findViewById(R.id.eTime);
+        difficulty = findViewById(R.id.diff);
         commentFrag = findViewById(R.id.commentEditText);
         expandMore = findViewById(R.id.moreImageView);
         userAssigned = findViewById(R.id.userAssigned);
@@ -73,8 +86,32 @@ public class TaskActivity extends AppCompatActivity {
         save = findViewById(R.id.saveNote);
         clear = findViewById(R.id.clearNote);
         view = findViewById(R.id.viewNote);
+        endDateTitle = findViewById(R.id.endDateTextView);
+        completedTimeTitle = findViewById(R.id.cTimeTitle);
+        completedTime = findViewById(R.id.cTime);
 
         fb = FirebaseFirestore.getInstance();
+
+        taskName.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (taskName.getMaxLines() == 1) {
+                    taskName.setMaxLines(Integer.MAX_VALUE);
+                } else {
+                    taskName.setMaxLines(1);
+                }
+            }
+        });
+        tasksDetails.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (tasksDetails.getMaxLines() == 3) {
+                    taskName.setMaxLines(Integer.MAX_VALUE);
+                } else {
+                    tasksDetails.setMaxLines(3);
+                }
+            }
+        });
 
         sharedPreferenceManager = new SharedPreferenceManager(this);
 
@@ -101,7 +138,6 @@ public class TaskActivity extends AppCompatActivity {
         if (i1.hasExtra("projectId1")) {
             projectId = i1.getStringExtra("projectId1");
         }
-
         Intent i = getIntent();
         if (i.hasExtra("projectId2")) {
             projectId = i.getStringExtra("projectId2");
@@ -137,7 +173,27 @@ public class TaskActivity extends AppCompatActivity {
             taskName.setText(tasks.getTaskName());
             tasksDetails.setText(tasks.getTaskDetails());
             taskPro.setText(tasks.getProgress());
-            estTime.setText(tasks.getEstimatedTime());
+            difficulty.setText(tasks.getDifficulty());
+            estTime.setText(tasks.getEstimatedTime()+"(s)");
+
+            Date sDate = tasks.getStartDate();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+            String formattedStartDate = sdf.format(sDate);
+            startDate.setText(formattedStartDate);
+
+            //make tasks end date and it completion time visible if project is completed
+            String comTime = tasks.getCompletedTime();
+            Date eDate = tasks.getEndDate();
+            if (eDate != null&&comTime != null) {
+                SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                String formattedEndDate = sdf1.format(eDate);
+                endDate.setText(formattedEndDate);
+                endDateTitle.setVisibility(View.VISIBLE);
+                endDate.setVisibility(View.VISIBLE);
+                completedTime.setText(comTime);
+                completedTimeTitle.setVisibility(View.VISIBLE);
+                completedTime.setVisibility(View.VISIBLE);
+            }
 
             FirestoreManager firestoreManager = new FirestoreManager();
             firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
@@ -149,8 +205,57 @@ public class TaskActivity extends AppCompatActivity {
                     bundle.putString("pId", documentId);
                     UpdateTaskFragment fragment = new UpdateTaskFragment();
                     fragment.setArguments(bundle);
-                }
 
+                    //update project progress textview in real time tasks progress is updated in TaskActivty.
+                    fb.collection("Tasks")
+                            .document(documentId)
+                            .addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                                @Override
+                                public void onEvent(@Nullable DocumentSnapshot snapshot, @Nullable FirebaseFirestoreException e) {
+                                    if (e != null) {
+                                        Log.e("FirestoreListener", "Error getting project updates", e);
+                                        return;
+                                    }
+                                    if (snapshot != null && snapshot.exists()) {
+                                        // Update the progress TextView in real-time
+                                        String updatedName = snapshot.getString("taskName");
+                                        taskName.setText(updatedName);
+                                        String updatedDetails = snapshot.getString("taskDetails");
+                                        tasksDetails.setText(updatedDetails);
+                                        String updatedEstimatedT = snapshot.getString("estimatedTime");
+                                        estTime.setText(updatedEstimatedT);
+                                        String updatedDiff = snapshot.getString("difficulty");
+                                        difficulty.setText(updatedDiff);
+                                        String updatedProgress = snapshot.getString("progress");
+                                        Date updatedStartDate = snapshot.getDate("startDate");
+                                        SimpleDateFormat sdf2 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                                        String formattedStartDate = sdf2.format(updatedStartDate);
+                                        startDate.setText(formattedStartDate);
+
+                                        Date updatedEndDate = snapshot.getDate("endDate");
+                                        String updatedCompletionTime = snapshot.getString("completedTime");
+                                        if (updatedEndDate != null&&updatedCompletionTime != null) {
+                                            SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                                            String formattedEndDate = sdf1.format(updatedEndDate);
+                                            endDate.setText(formattedEndDate);
+                                            endDate.setVisibility(View.VISIBLE);
+                                            endDateTitle.setVisibility(View.VISIBLE);
+                                            completedTime.setText(updatedCompletionTime);
+                                            completedTime.setVisibility(View.VISIBLE);
+                                            completedTimeTitle.setVisibility(View.VISIBLE);
+                                        }else{
+                                            endDate.setVisibility(View.INVISIBLE);
+                                            endDate.setVisibility(View.INVISIBLE);
+                                            completedTimeTitle.setVisibility(View.GONE);
+                                            completedTime.setVisibility(View.GONE);
+                                        }
+                                        if (updatedProgress != null) {
+                                            taskPro.setText(updatedProgress);
+                                        }
+                                    }
+                                }
+                            });
+                }
                 // Set an OnClickListener for the save notes button
                 save.setOnClickListener(v -> {
                     // Get the text from the EditText
@@ -186,7 +291,6 @@ public class TaskActivity extends AppCompatActivity {
             }
         });
 
-
         // Set OnClickListener for the clear notes button
         clear.setOnClickListener(v -> {
 
@@ -203,7 +307,7 @@ public class TaskActivity extends AppCompatActivity {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
 
-                //MenuItem unAssignTaskMenuItem = popupMenu.getMenu().findItem(R.id.UnAssignTask);
+                MenuItem unAssignTaskMenuItem = popupMenu.getMenu().findItem(R.id.UnAssignTask);
 
                 if (menuItem.getItemId() == R.id.updateT) {
 
@@ -219,13 +323,16 @@ public class TaskActivity extends AppCompatActivity {
                                 tasks.setTaskId(documentId);
 
                                 UpdateTaskFragment updateTaskFragment = UpdateTaskFragment.newInstance();
-                                updateTaskFragment.setOnTaskUpdateListener((UpdateTaskFragment.OnTaskUpdateListener) TaskActivity.this);
+                                ///updateTaskFragment.setOnTaskUpdateListener((UpdateTaskFragment.OnTaskUpdateListener) TaskActivity.this);
                                 Bundle bundle = new Bundle();
                                 bundle.putSerializable("selectT", tasks);
                                 bundle.putString("pro_key", projectId);
                                 updateTaskFragment.setArguments(bundle);
-                                updateTaskFragment.show(getSupportFragmentManager(), updateTaskFragment.getTag());
-
+                                FragmentManager fragmentManager = TaskActivity.this.getSupportFragmentManager();
+                                FragmentTransaction transaction = fragmentManager.beginTransaction();
+                                transaction.replace(R.id.updateTaskfra, updateTaskFragment);
+                                transaction.addToBackStack(null);
+                                transaction.commit();
                             }
                         });
                     }
@@ -246,9 +353,10 @@ public class TaskActivity extends AppCompatActivity {
                                 usersListFragment.setArguments(bundle);
                                 usersListFragment.show(getSupportFragmentManager(), usersListFragment.getTag());
                                 //try to make the unassign menu item visible only when task is assigned to user
+                                //String username;
                                 //username = userAssigned.getText().toString();
                                 //if (!username.equalsIgnoreCase("Unassigned")) {
-                                //   unAssignTaskMenuItem.setVisible(true);
+                                  // unAssignTaskMenuItem.setVisible(true);
                                 //}
                             }
                         });
@@ -286,12 +394,60 @@ public class TaskActivity extends AppCompatActivity {
 
                 if (menuItem.getItemId() == R.id.taskIncomplete) {
                     updateTaskProgress("Incomplete");
-
+                    endDateTitle.setVisibility(View.GONE);
+                    endDate.setVisibility(View.GONE);
+                    completedTime.setVisibility(View.GONE);
+                    completedTimeTitle.setVisibility(View.GONE);
                 } else if (menuItem.getItemId() == R.id.taskInprogress) {
                     updateTaskProgress("In Progress");
+                    endDateTitle.setVisibility(View.GONE);
+                    endDate.setVisibility(View.GONE);
+                    completedTime.setVisibility(View.GONE);
+                    completedTimeTitle.setVisibility(View.GONE);
                 } else if (menuItem.getItemId() == R.id.taskComplete) {
                     //updateTaskProgress("Complete");
                     updateTaskProgressToComplete("Complete");
+
+                    // Update the progress TextView in real-time
+                    Intent intent = getIntent();
+                    if (intent.hasExtra("selectedTask")) {
+                        Tasks tasks = (Tasks) intent.getSerializableExtra("selectedTask");
+
+                        FirestoreManager firestoreManager = new FirestoreManager();
+                        assert tasks != null;
+                        firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
+                            if (documentId != null) {
+
+                                fb.collection("Tasks")
+                                        .document(documentId)
+                                        .addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                                            @Override
+                                            public void onEvent(@Nullable DocumentSnapshot snapshot, @Nullable FirebaseFirestoreException e) {
+                                                if (e != null) {
+                                                    Log.e("FirestoreListener", "Error getting project updates", e);
+                                                    return;
+                                                }
+                                                if (snapshot != null && snapshot.exists()) {
+                                                    String cTime = snapshot.getString("completedTime");
+
+                                                    Date eDate = snapshot.getDate("endDate");
+                                                    if (eDate != null&&cTime !=null) {
+                                                        SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                                                        String formattedEndDate = sdf1.format(eDate);
+                                                        endDate.setText(formattedEndDate);
+                                                        endDateTitle.setVisibility(View.VISIBLE);
+                                                        endDate.setVisibility(View.VISIBLE);
+
+                                                        completedTime.setText(cTime);
+                                                        completedTime.setVisibility(View.VISIBLE);
+                                                        completedTimeTitle.setVisibility(View.VISIBLE);
+                                                    }
+                                                }
+                                            }
+                                        });
+                            }
+                        });
+                    }
                 }
                 return true;
             }
@@ -300,6 +456,7 @@ public class TaskActivity extends AppCompatActivity {
         popupMenu.show();
     }
 
+    //update task progress to In progress or Incomplete and set the completedTime to null
     private void updateTaskProgress(String progress) {
         Intent intent = getIntent();
         if (intent.hasExtra("selectedTask")) {
@@ -309,23 +466,32 @@ public class TaskActivity extends AppCompatActivity {
             assert tasks != null;
             firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
                 if (documentId != null) {
+                    // Create a Map to store the fields to be updated
+                    Map<String, Object> updateFields = new HashMap<>();
+                    updateFields.put("progress", progress);
+
+                    // Check if progress is "Complete" to handle completedTime
+                    if ("Complete".equals(progress)) {
+                        updateTaskEndDateInFirestoreToNull(documentId);
+                        updateFields.put("completedTime", null);
+
+                        // Automatically update project progress based on task progress
+                        updateProjectProgressAuto(projectId, "Complete");
+                    } else {
+                        // Handle the case when progress is changed from Complete, set the completedTime to null
+                        updateTaskEndDateInFirestoreToNull(documentId);
+                        updateFields.put("completedTime", null);
+                        updateProjectProgressAuto(projectId, progress);
+                    }
+
                     FirebaseFirestore.getInstance().collection("Tasks")
                             .document(documentId)
-                            .update("progress", progress)
+                            .update(updateFields)
                             .addOnSuccessListener(aVoid -> {
                                 // Update successful
                                 Toast.makeText(TaskActivity.this, "Progress updated to " + progress, Toast.LENGTH_SHORT).show();
                                 taskPro.setText(progress);
                                 tasks.setProgress(progress);
-
-                                // Automatically update project progress based on task progress
-                                if ("Complete".equals(progress)) {
-                                    // Record timestamp when progress is set to Complete
-                                    updateProjectProgressAuto(projectId, "Complete");
-                                } else {
-                                    // Handle the case when progress is changed from Complete
-                                    updateProjectProgressAuto(projectId,progress);
-                                }
                             })
                             .addOnFailureListener(e -> {
                                 // Error updating progress
@@ -354,20 +520,25 @@ public class TaskActivity extends AppCompatActivity {
                         if (arePrerequisitesComplete) {
                             FirebaseFirestore.getInstance().collection("Tasks")
                                     .document(documentId)
-                                    .update("progress", progress)
+                                    .update("progress", progress, "endDate", new Date())
                                     .addOnSuccessListener(aVoid -> {
                                         // Update successful
                                         Toast.makeText(TaskActivity.this, "Progress updated to " + progress, Toast.LENGTH_SHORT).show();
                                         taskPro.setText(progress);
                                         tasks.setProgress(progress);
 
+                                        // Update completedTime field
+                                        if ("Complete".equals(progress)) {
+                                            updateCompletedTime(documentId, new Date(), tasks.getStartDate());
+                                        }
+
                                         // Automatically update project progress based on task progress
-                                        updateProjectProgressAuto(projectId,"Complete");
+                                        updateProjectProgressAuto(projectId, "Complete");
 
                                     })
                                     .addOnFailureListener(e -> {
-                                        // Error updating progress
-                                        Log.e("updateTaskProgress", "Error updating progress", e);
+                                        // Error updating progress and endDate
+                                        Log.e("updateTaskProgress", "Error updating progress and endDate", e);
                                         Toast.makeText(TaskActivity.this, "Error updating progress", Toast.LENGTH_SHORT).show();
                                     });
                         } else {
@@ -380,6 +551,21 @@ public class TaskActivity extends AppCompatActivity {
         }
     }
 
+    //update completedtime when task is completed
+    private void updateCompletedTime(String documentId, Date endDate, Date startDate) {
+        String completedTime = DateUtils.calculateDateDifference(endDate, startDate);
+        FirebaseFirestore.getInstance().collection("Tasks")
+                .document(documentId)
+                .update("completedTime", completedTime)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("UpdateCompletedTime", "Update successful");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("UpdateCompletedTime", "Error updating completedTime", e);
+                });
+    }
+
+    //check if all prerequisites are completed
     private void arePrerequisitesComplete(List<String> prerequisites, OnPrerequisitesCheckComplete callback) {
         if (prerequisites != null && !prerequisites.isEmpty()) {
             AtomicInteger count = new AtomicInteger(prerequisites.size());
@@ -445,6 +631,8 @@ public class TaskActivity extends AppCompatActivity {
 
         void onTaskProgressError();
     }
+
+    //update project progress automatically when it tasks progress is updated
     private void updateProjectProgressAuto(String projectId, String progress) {
         FirebaseFirestore.getInstance().collection("projectTasks")
                 .whereEqualTo("projectId", projectId)
@@ -530,6 +718,20 @@ public class TaskActivity extends AppCompatActivity {
         FirebaseFirestore.getInstance().collection("Projects")
                 .document(projectId)
                 .update("actualEndDate", null) // Set to null
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("Firestore", "Actual End Date set to null successfully");
+
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Failed to set Actual End Date to null: " + e.getMessage());
+                });
+    }
+
+    private void updateTaskEndDateInFirestoreToNull(String taskId) {
+        // Set 'actualEndDate' field to null in the 'Projects' collection
+        FirebaseFirestore.getInstance().collection("Tasks")
+                .document(taskId)
+                .update("endDate", null) // Set to null
                 .addOnSuccessListener(aVoid -> {
                     Log.d("Firestore", "Actual End Date set to null successfully");
 
@@ -715,4 +917,5 @@ public class TaskActivity extends AppCompatActivity {
             });
         }
     }
+
 }

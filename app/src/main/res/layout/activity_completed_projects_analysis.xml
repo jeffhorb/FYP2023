@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Analysis.ProjectProgressAnalysis"
+    tools:context=".Analysis.CompletedProjectsAnalysis"
     android:orientation="horizontal">
 
     <LinearLayout
@@ -35,7 +35,10 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/dataNotAvailable"/>
+            android:id="@+id/dataNotAvailable"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="50dp"
+            android:textColor="@color/black"/>
 
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/lineChart"

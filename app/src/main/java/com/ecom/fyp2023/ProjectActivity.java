@@ -1,5 +1,6 @@
 package com.ecom.fyp2023;
 
+import static android.content.ContentValues.TAG;
 import static com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject.MESSAGE_KEY;
 
 import android.content.Intent;
@@ -30,6 +31,7 @@ import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -38,13 +40,17 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class ProjectActivity extends AppCompatActivity implements
-        TasksRVAdapter.OnEndDateUpdateListener,
-        BottomSheetFragmentAddTask.OnEndDateUpdateListener, UpdateTaskFragment.OnTaskUpdateListener,UpdateTaskFragment.OnEndDateUpdateListener {
+         UpdateTaskFragment.OnTaskUpdateListener
+        /*BottomSheetFragmentAddTask.OnEndDateUpdateListener, TasksRVAdapter.OnEndDateUpdateListener,UpdateTaskFragment.OnEndDateUpdateListener*/{
 
     private RecyclerView recyclerView;
     private ArrayList<Tasks> tasksArrayList;
@@ -53,7 +59,7 @@ public class ProjectActivity extends AppCompatActivity implements
     String projectId;
 
     TextView commentFrag;
-    private TextView proDes, progress, proEndDate;
+    private TextView proDes, progress, proEndDate,projectCompletionDate,completionTitle;
 
     public static final String projectId_key = "proId";
     public static final String p_key = "p_key";
@@ -72,6 +78,8 @@ public class ProjectActivity extends AppCompatActivity implements
         proDes = findViewById(R.id.descriptionTextView);
         TextView proStartDate = findViewById(R.id.startDateTextView);
         proEndDate = findViewById(R.id.endDateTextView);
+        projectCompletionDate = findViewById(R.id.completionDateTextView);
+        completionTitle = findViewById(R.id.completionDateTitle);
         TextView proPriority = findViewById(R.id.priorityTextView);
         ImageView addTask = findViewById(R.id.addTasksImageView);
         progress = findViewById(R.id.progressTextview);
@@ -79,8 +87,7 @@ public class ProjectActivity extends AppCompatActivity implements
         commentFrag = findViewById(R.id.commentEditText);
         ImageView expandMore = findViewById(R.id.moreImageView);
 
-        //expand Max line
-        proDes.setMaxLines(3);
+        //proDes.setMaxLines(3);
 
         // Set an onClickListener for the TextView
         proDes.setOnClickListener(new View.OnClickListener() {
@@ -93,6 +100,16 @@ public class ProjectActivity extends AppCompatActivity implements
                 }
             }
         });
+        proTitle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (proTitle.getMaxLines() == 1) {
+                    proDes.setMaxLines(Integer.MAX_VALUE);
+                } else {
+                    proDes.setMaxLines(1);
+                }
+            }
+        });
 
         db = FirebaseFirestore.getInstance();
 
@@ -101,14 +118,12 @@ public class ProjectActivity extends AppCompatActivity implements
         LinearLayoutManager layoutManager = new LinearLayoutManager(ProjectActivity.this, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
-        tasksRVAdapter = new TasksRVAdapter(tasksArrayList, ProjectActivity.this,this);
+        tasksRVAdapter = new TasksRVAdapter(tasksArrayList, ProjectActivity.this);
         recyclerView.setAdapter(tasksRVAdapter);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
-
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         expandMore.setOnClickListener(new View.OnClickListener() {
@@ -147,10 +162,30 @@ public class ProjectActivity extends AppCompatActivity implements
                                         Log.e("FirestoreListener", "Error getting project updates", e);
                                         return;
                                     }
-
                                     if (snapshot != null && snapshot.exists()) {
                                         // Update the progress TextView in real-time
+                                        String updatedTitle = snapshot.getString("title");
+                                        proTitle.setText(updatedTitle);
+                                        String updatedDescription = snapshot.getString("description");
+                                        proDes.setText(updatedDescription);
+                                        String updatedStartDt = snapshot.getString("startDate");
+                                        proStartDate.setText(updatedStartDt);
+                                        String updatedEndDate = snapshot.getString("endDate");
+                                        proEndDate.setText(updatedEndDate);
+                                        String updatedPriority = snapshot.getString("priority");
+                                        proPriority.setText(updatedPriority);
                                         String updatedProgress = snapshot.getString("progress");
+                                        Date completionDate = snapshot.getDate("actualEndDate");
+                                        if (completionDate != null) {
+                                            SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                                            String formattedEndDate = sdf1.format(completionDate);
+                                            projectCompletionDate.setText(formattedEndDate);
+                                            completionTitle.setVisibility(View.VISIBLE);
+                                            projectCompletionDate.setVisibility(View.VISIBLE);
+                                        }else{
+                                            completionTitle.setVisibility(View.GONE);
+                                            projectCompletionDate.setVisibility(View.GONE);
+                                        }
                                         if (updatedProgress != null) {
                                             progress.setText(updatedProgress);
                                         }
@@ -165,10 +200,9 @@ public class ProjectActivity extends AppCompatActivity implements
                     bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
 
                     UpdateTaskFragment fragment = UpdateTaskFragment.newInstance();
-
                     Bundle bundle = new Bundle();
                     bundle.putString("pId", documentId);
-                    fragment.setOnEndDateUpdateListener(ProjectActivity.this);
+                    //fragment.setOnEndDateUpdateListener(ProjectActivity.this);//updatd end date in realtime
                     fragment.setArguments(bundle);
 
                     db.collection("projectTasks")
@@ -201,7 +235,8 @@ public class ProjectActivity extends AppCompatActivity implements
             String receivedProId = i.getStringExtra(MESSAGE_KEY);
             projectId = receivedProId;
 
-            //update project progress textview in real time tasks progress is updated in TaskActivty.
+
+            //update project progress textview in real time tasks progress is updated in ProjectActivity.
             db.collection("Projects")
                     .document(receivedProId)
                     .addSnapshotListener(new EventListener<DocumentSnapshot>() {
@@ -211,10 +246,30 @@ public class ProjectActivity extends AppCompatActivity implements
                                 Log.e("FirestoreListener", "Error getting project updates", e);
                                 return;
                             }
-
                             if (snapshot != null && snapshot.exists()) {
-                                // Update the progress TextView in real-time
+                                // Update the TextViews in real-time
+                                String updatedTitle = snapshot.getString("title");
+                                proTitle.setText(updatedTitle);
+                                String updatedDescription = snapshot.getString("description");
+                                proDes.setText(updatedDescription);
+                                String updatedStartDt = snapshot.getString("startDate");
+                                proStartDate.setText(updatedStartDt);
+                                String updatedEndDate = snapshot.getString("endDate");
+                                proEndDate.setText(updatedEndDate);
+                                String updatedPriority = snapshot.getString("priority");
+                                proPriority.setText(updatedPriority);
                                 String updatedProgress = snapshot.getString("progress");
+                                Date completionDate = snapshot.getDate("actualEndDate");
+                                if (completionDate != null) {
+                                    SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                                    String formattedEndDate = sdf1.format(completionDate);
+                                    projectCompletionDate.setText(formattedEndDate);
+                                    completionTitle.setVisibility(View.VISIBLE);
+                                    projectCompletionDate.setVisibility(View.VISIBLE);
+                                }else{
+                                    completionTitle.setVisibility(View.GONE);
+                                    projectCompletionDate.setVisibility(View.GONE);
+                                }
                                 if (updatedProgress != null) {
                                     progress.setText(updatedProgress);
                                 }
@@ -225,7 +280,7 @@ public class ProjectActivity extends AppCompatActivity implements
             tasksRVAdapter.setSelectedProject(receivedProId);
 
             BottomSheetFragmentAddTask taskFragment = BottomSheetFragmentAddTask.newInstance();
-            taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener
+            //taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener//updatd end date in realtime
             Bundle bundle = new Bundle();
             bundle.putString(projectId_key, receivedProId);
             taskFragment.setArguments(bundle);
@@ -254,7 +309,7 @@ public class ProjectActivity extends AppCompatActivity implements
                 String receivedProId = i1.getStringExtra(MESSAGE_KEY);
 
                 BottomSheetFragmentAddTask taskFragment = BottomSheetFragmentAddTask.newInstance();
-                taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener
+                //taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener
                 Bundle bundle = new Bundle();
                 bundle.putString(projectId_key, receivedProId);
                 taskFragment.setArguments(bundle);
@@ -274,7 +329,7 @@ public class ProjectActivity extends AppCompatActivity implements
                         fetchAndDisplayTasks(documentId);
 
                         BottomSheetFragmentAddTask taskFragment = BottomSheetFragmentAddTask.newInstance();
-                        taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener
+                        //taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener
                         Bundle bundle = new Bundle();
                         bundle.putString(p_key, documentId);
                         taskFragment.setArguments(bundle);
@@ -283,7 +338,6 @@ public class ProjectActivity extends AppCompatActivity implements
                 });
             }
         });
-
 
         commentFrag.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -334,68 +388,46 @@ public class ProjectActivity extends AppCompatActivity implements
                 }//update project in the projectActivity activity
                 else if (menuItem.getItemId() == R.id.UpdateProject) {
 
-                    /*Intent i1 = getIntent();
-                    if (i1.hasExtra("proJT")) {
-                        Projects project = (Projects) i1.getSerializableExtra("proJT");
+                    Intent i1 = getIntent();
+                    if (i1.hasExtra(MESSAGE_KEY)) {
+                        String receivedProId = i1.getStringExtra(MESSAGE_KEY);
+                        // Create an instance of your UpdateFragment.
+                        UpdateProject updateFragment = new UpdateProject();
+                        // Pass data to the fragment using Bundle.
+                        Bundle bundle = new Bundle();
+                        bundle.putString("proTid", receivedProId);
+                        updateFragment.setArguments(bundle);
+                        // Replace the existing fragment with the new fragment.
+                        FragmentManager fragmentManager = ProjectActivity.this.getSupportFragmentManager();
+                        FragmentTransaction transaction = fragmentManager.beginTransaction();
+                        transaction.replace(R.id.updatePfra, updateFragment);
+                        transaction.addToBackStack(null);
+                        transaction.commit();
+                    }
+                }
 
-                        FirestoreManager firestoreManager = new FirestoreManager();
-
-                        firestoreManager.getDocumentId("Projects", "title", project.getTitle(), documentId -> {
-                            if (documentId != null) {
-                                project.setProjectId(documentId);
-
-
-                                // Create an instance of your UpdateFragment.
-                                UpdateProject updateFragment = new UpdateProject();
-
-                                // Pass data to the fragment using Bundle.
-                                Bundle bundle = new Bundle();
-                                bundle.putSerializable("proT", project);
-                                updateFragment.setArguments(bundle);
-
-                                // Replace the existing fragment with the new fragment.
-                                FragmentManager fragmentManager = ProjectActivity.this.getSupportFragmentManager();
-                                FragmentTransaction transaction = fragmentManager.beginTransaction();
-                                transaction.replace(R.id.updatePfra, updateFragment);
-                                transaction.addToBackStack(null);
-                                transaction.commit();
-                            }
-                            });*/
-
-                    //}
-
-
-                    Intent intent1 = getIntent();
-                    if (intent1.hasExtra("selectedProject")) {
-                        Projects projects = (Projects) intent1.getSerializableExtra("selectedProject");
-
+                Intent intent1 = getIntent();
+                if (intent1.hasExtra("selectedProject")) {
+                    Projects projects = (Projects) intent1.getSerializableExtra("selectedProject");
                     FirestoreManager firestoreManager = new FirestoreManager();
                     assert projects != null;
                     firestoreManager.getDocumentId("Projects", "title", projects.getTitle(), documentId -> {
                         if (documentId != null) {
                             projects.setProjectId(documentId);
-
-
                             // Create an instance of your UpdateFragment.
                             UpdateProject updateFragment = new UpdateProject();
-
                             // Pass data to the fragment using Bundle.
                             Bundle bundle = new Bundle();
-                            bundle.putSerializable("proJ",  projects);
+                            bundle.putSerializable("proJ", projects);
                             updateFragment.setArguments(bundle);
-
                             // Replace the existing fragment with the new fragment.
-                            FragmentManager fragmentManager =ProjectActivity.this.getSupportFragmentManager();
+                            FragmentManager fragmentManager = ProjectActivity.this.getSupportFragmentManager();
                             FragmentTransaction transaction = fragmentManager.beginTransaction();
                             transaction.replace(R.id.updatePfra, updateFragment);
                             transaction.addToBackStack(null);
                             transaction.commit();
-
-
                         }  // Handle the case where the document ID couldn't be retrieved
                     });
-                    }
-
                 }
                 return true;
             }
@@ -456,11 +488,11 @@ public class ProjectActivity extends AppCompatActivity implements
                 });
     }
 
-    @Override
-    public void onEndDateUpdated(String updatedEndDate) {
+    //@Override
+    //public void onEndDateUpdated(String updatedEndDate) {
         // Update your TextView with the new end date
-        proEndDate.setText(updatedEndDate);
-    }
+      //  proEndDate.setText(updatedEndDate);
+    //}
 
     @Override
     protected void onResume() {
@@ -470,4 +502,5 @@ public class ProjectActivity extends AppCompatActivity implements
             fetchAndDisplayTasks(projectId);
         }
     }
+
 }

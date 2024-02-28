@@ -50,11 +50,11 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     Tasks selectedTask;
     private String proIdFromAddTask;
 
-    private final OnEndDateUpdateListener endDateUpdateListener;
+    //private final OnEndDateUpdateListener endDateUpdateListener;
 
-    public interface OnEndDateUpdateListener {
-        void onEndDateUpdated(String updatedEndDate);
-    }
+    //public interface OnEndDateUpdateListener {
+      //  void onEndDateUpdated(String updatedEndDate);
+    //}
 
     // Setter method to set the selected project
     public void setSelectedProject(String selectedProject) {
@@ -62,12 +62,12 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
         this.proIdFromAddTask = selectedProject;
     }
 
-    public TasksRVAdapter(List<Tasks> tasksList, Context context, OnEndDateUpdateListener endDateUpdateListener ) {
+    public TasksRVAdapter(List<Tasks> tasksList, Context context /*OnEndDateUpdateListener endDateUpdateListener*/ ) {
         this.tasksList = tasksList;
         this.context = context;
         this.sharedPreferenceManager = new SharedPreferenceManager(context);
         this.fb = FirebaseFirestore.getInstance();
-        this.endDateUpdateListener = endDateUpdateListener;
+        //this.endDateUpdateListener = endDateUpdateListener;
     }
 
     @NonNull
@@ -81,13 +81,24 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 
         Tasks tasks = tasksList.get(position);
+        selectedTask = tasksList.get(holder.getAdapterPosition());
 
         holder.taskName.setText(tasks.getTaskName());
         holder.taskDiff.setText(tasks.getDifficulty());
-        holder.taskEstimatedTime.setText(tasks.getEstimatedTime());
+        holder.taskEstimatedTime.setText(tasks.getEstimatedTime()+"(s)");
         holder.taskProgress.setText(tasks.getProgress());
         holder.option.setOnClickListener(v -> showPopupMenu(holder.option, holder.getAdapterPosition()));
 
+        //set and make completed time visible if task is completed
+        if(selectedTask.getCompletedTime()!=null){
+            holder.completedTime.setText(selectedTask.getCompletedTime());
+            holder.completedTime.setVisibility(View.VISIBLE);
+            holder.completedTimeTitle.setVisibility(View.VISIBLE);
+        }
+        else{
+            holder.completedTime.setVisibility(View.GONE);
+            holder.completedTimeTitle.setVisibility(View.GONE);
+        }
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -101,7 +112,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                 intent.putExtra("projectId1",proIdFromAddTask);
                 intent.putExtra("projectId2",proIdFromSelectedPro);
                 context.startActivity(intent);
-
             }
         });
     }
@@ -138,7 +148,7 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView taskName, taskEstimatedTime, taskDiff,taskProgress;
+        TextView taskName, taskEstimatedTime, taskDiff,taskProgress,completedTime,completedTimeTitle;
         ImageView  option;
 
         public ViewHolder(@NonNull View itemView) {
@@ -148,6 +158,8 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
             taskDiff = itemView.findViewById(R.id.taskDifficulty);
             option = itemView.findViewById(R.id.taskButtonOptions);
             taskProgress = itemView.findViewById(R.id.progressTask);
+            completedTime = itemView.findViewById(R.id.comTime);
+            completedTimeTitle = itemView.findViewById(R.id.comTimeTitle);
 
             taskName.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -159,9 +171,28 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                     }
                 }
             });
+            completedTime.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (completedTime.getMaxLines() == 1) {
+                        completedTime.setMaxLines(Integer.MAX_VALUE);
+                    } else {
+                        completedTime.setMaxLines(1);
+                    }
+                }
+            });
+            taskEstimatedTime.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (taskEstimatedTime.getMaxLines() == 1) {
+                        taskEstimatedTime.setMaxLines(Integer.MAX_VALUE);
+                    } else {
+                        taskEstimatedTime.setMaxLines(1);
+                    }
+                }
+            });
         }
     }
-
     private void showUpdateFragmrnt(Tasks tasks) {
 
         UpdateTaskFragment updateFragment = new UpdateTaskFragment();
@@ -215,12 +246,14 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                     calculateTotalEstimatedTimeAndEndDate(proIdFromAddTask);
                 }
                 removeTaskFromProjectTasks(documentId);
-                removeItemFromFirestore(documentId);
+                removeTaskFromFirestore(documentId);
+                removeTaskNotes(documentId);
+                removeTaskUser(documentId);
             }
         });
     }
 
-    private void removeItemFromFirestore(String documentId) {
+    private void removeTaskFromFirestore(String documentId) {
         FirebaseFirestore.getInstance().collection("Tasks").document(documentId).delete().addOnCompleteListener(task -> {
             task.isSuccessful();
         });
@@ -253,6 +286,51 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                         Log.e("RemoveProjectTask", "Error removing task from projectTasks", task.getException());
                     }
                 });
+    }
+
+    private void removeTaskNotes(String taskId) {
+        FirebaseFirestore.getInstance().collection("taskNotes")
+                .whereEqualTo("taskId", taskId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String noteId = document.getString("noteId");
+                            if (noteId != null) {
+                                removeNote(noteId); // Remove note from "Notes" collection
+                            }
+                            document.getReference().delete()
+                                    .addOnSuccessListener(aVoid -> Log.d("RemoveTaskNote", "Note removed successfully"))
+                                    .addOnFailureListener(e -> Log.e("RemoveTaskNote", "Error removing note", e));
+                        }
+                    } else {
+                        Log.e("RemoveTaskNote", "Error fetching taskNotes", task.getException());
+                    }
+                });
+    }
+
+    private void removeTaskUser(String taskId) {
+        FirebaseFirestore.getInstance().collection("userTasks")
+                .whereEqualTo("taskId", taskId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (DocumentSnapshot document : task.getResult()) {
+                            document.getReference().delete()
+                                    .addOnSuccessListener(aVoid -> Log.d("RemoveTaskNote", "Note removed successfully"))
+                                    .addOnFailureListener(e -> Log.e("RemoveTaskNote", "Error removing note", e));
+                        }
+                    } else {
+                        Log.e("RemoveTaskNote", "Error fetching taskNotes", task.getException());
+                    }
+                });
+    }
+
+    private void removeNote(String noteId) {
+        FirebaseFirestore.getInstance().collection("Notes").document(noteId)
+                .delete()
+                .addOnSuccessListener(aVoid -> Log.d("RemoveNote", "Note removed successfully"))
+                .addOnFailureListener(e -> Log.e("RemoveNote", "Error removing note", e));
     }
 
     private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
@@ -331,9 +409,9 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                                     .addOnCompleteListener(updateTask -> {
                                         if (updateTask.isSuccessful()) {
                                             Log.d("UpdateProject", "Project end date updated successfully");
-                                            if (endDateUpdateListener != null) {
-                                                endDateUpdateListener.onEndDateUpdated(updatedEndDate);
-                                            }
+                                            //if (endDateUpdateListener != null) {
+                                              //  endDateUpdateListener.onEndDateUpdated(updatedEndDate);
+                                            //}
                                         } else {
                                             Log.e("UpdateProject", "Error updating project end date", updateTask.getException());
                                         }

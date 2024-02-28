@@ -60,21 +60,16 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         return new BottomSheetFragmentAddTask();
     }
 
-    private OnEndDateUpdateListener endDateUpdateListener;
-
     @Override
     public void provideTaskId(String taskName, OnTaskIdFetchedListener listener) {
         getTaskIdFromName(taskName, listener);
-
     }
 
-    public interface OnEndDateUpdateListener {
-        void onEndDateUpdated(String updatedEndDate);
-    }
-
-    public void setOnEndDateUpdateListener(OnEndDateUpdateListener listener) {
-        this.endDateUpdateListener = listener;
-    }
+    //private OnEndDateUpdateListener endDateUpdateListener;
+    //public interface OnEndDateUpdateListener {
+      //  void onEndDateUpdated(String updatedEndDate);//}
+    //public void setOnEndDateUpdateListener(OnEndDateUpdateListener listener) {
+      //  this.endDateUpdateListener = listener;//}
 
     @Nullable
     @Override
@@ -105,7 +100,6 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         Bundle arguments = getArguments();
         if (arguments != null && arguments.containsKey(ProjectActivity.p_key)) {
             projectId = arguments.getString(ProjectActivity.p_key);
-
         }
 
         ImageView closeImageView = view.findViewById(R.id.closeImageView);
@@ -134,23 +128,18 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
                                 // Select the task
                                 selectedPrerequisites.add(taskId);
                             }
-
                             // Highlight selected items in the Spinner
                             highlightSelectedItems(spinnerPrerequisite, selectedPrerequisites);
                         }  // Handle the case where the task ID is not found
-                        // (e.g., display an error message or take appropriate action)
-
                     }
                 });
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parentView) {
-                // Do nothing when nothing is selected
             }
         });
-
-
+        
         save.setOnClickListener(v -> {
             String detls = details.getText().toString();
             String taskN = taskName.getText().toString();
@@ -162,20 +151,22 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
             Calendar calendar = Calendar.getInstance();
             Date startDate = calendar.getTime();
 
-            estimatedTime.setText(timeEstimate);
-            estimatedTime.setSelection(estimatedTime.length());
-
             if (TextUtils.isEmpty(detls)) {
                 details.setError("Field required");
-                estimatedTime.setText(null);
             } else if (TextUtils.isEmpty(estTime)) {
                 estimatedTime.setError("Field required");
             }else if(TextUtils.isEmpty(taskN)){
                 taskName.setError("Field required");
             } else if (!isValidEstimationFormat(timeEstimate)) {
-                estimatedTime.setText(null);
                 estimatedTime.setError("Invalid format. Use a number followed by duration");
+            } else if (TextUtils.isEmpty(diff)) {
+                Toast.makeText(getActivity(), "Select difficulty", Toast.LENGTH_LONG).show();
             } else {
+                // Call the listener setup method for the prerequisite spinner
+                setupPrerequisitesListener();
+
+                estimatedTime.setText(timeEstimate);
+                estimatedTime.setSelection(estimatedTime.length());
 
                 saveTasks(taskN,detls, diff, progrs, timeEstimate, selectedPrerequisites,null,startDate,null);
                 selectedPrerequisites.clear();
@@ -257,7 +248,6 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
 
                                                 if (estimatedTime != null) {
                                                     long taskDays = TimeConverter.convertToDays(estimatedTime);
-
                                                     // Update the highest estimated time
                                                     highestEstimatedTime.updateAndGet(currentValue ->
                                                             Math.max(currentValue, taskDays)
@@ -309,7 +299,7 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
                                     .addOnCompleteListener(updateTask -> {
                                         if (updateTask.isSuccessful()) {
                                             Log.d("UpdateProject", "Project end date updated successfully");
-                                            endDateUpdateListener.onEndDateUpdated(updatedEndDate);
+                                            //endDateUpdateListener.onEndDateUpdated(updatedEndDate);
                                         } else {
                                             Log.e("UpdateProject", "Error updating project end date", updateTask.getException());
                                         }
@@ -371,6 +361,29 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         return taskNames;
     }
 
+    private void setupPrerequisitesListener() {
+        FirebaseFirestore.getInstance().collection("Tasks")
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Toast.makeText(getActivity(), "Error fetching task names", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    List<String> taskNames = new ArrayList<>();
+                    taskNames.add("   ");  // Add an empty option
+
+                    for (QueryDocumentSnapshot document : value) {
+                        String taskName = document.getString("taskName");
+                        taskNames.add(taskName);
+                    }
+
+                    prerequisitesAdapter.clear();
+                    prerequisitesAdapter.addAll(taskNames);
+                    prerequisitesAdapter.notifyDataSetChanged();
+                });
+    }
+
+
     // Fetch task ID from Firestore based on task name
     public void getTaskIdFromName(String selectedTaskName, OnTaskIdFetchedListener listener) {
         FirebaseFirestore.getInstance().collection("Tasks")
@@ -395,7 +408,6 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
     }
 
     // New method to highlight selected items in the Spinner
-    // Updated highlightSelectedItems method
     private void highlightSelectedItems(@NonNull Spinner spinner, List<String> selectedPrerequisites) {
         for (int i = 0; i < spinner.getCount(); i++) {
             View view = spinner.getChildAt(i);
