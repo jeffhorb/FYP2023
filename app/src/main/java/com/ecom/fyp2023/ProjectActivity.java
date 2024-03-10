@@ -1,6 +1,5 @@
 package com.ecom.fyp2023;
 
-import static android.content.ContentValues.TAG;
 import static com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject.MESSAGE_KEY;
 
 import android.content.Intent;
@@ -31,7 +30,6 @@ import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -42,7 +40,6 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -52,8 +49,6 @@ public class ProjectActivity extends AppCompatActivity implements
          UpdateTaskFragment.OnTaskUpdateListener
         /*BottomSheetFragmentAddTask.OnEndDateUpdateListener, TasksRVAdapter.OnEndDateUpdateListener,UpdateTaskFragment.OnEndDateUpdateListener*/{
 
-    private RecyclerView recyclerView;
-    private ArrayList<Tasks> tasksArrayList;
     private TasksRVAdapter tasksRVAdapter;
     private FirebaseFirestore db;
     String projectId;
@@ -83,7 +78,7 @@ public class ProjectActivity extends AppCompatActivity implements
         TextView proPriority = findViewById(R.id.priorityTextView);
         ImageView addTask = findViewById(R.id.addTasksImageView);
         progress = findViewById(R.id.progressTextview);
-        recyclerView = findViewById(R.id.tasksRecyclerView);
+        RecyclerView recyclerView = findViewById(R.id.tasksRecyclerView);
         commentFrag = findViewById(R.id.commentEditText);
         ImageView expandMore = findViewById(R.id.moreImageView);
 
@@ -113,7 +108,7 @@ public class ProjectActivity extends AppCompatActivity implements
 
         db = FirebaseFirestore.getInstance();
 
-        tasksArrayList = new ArrayList<>();
+        ArrayList<Tasks> tasksArrayList = new ArrayList<>();
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(ProjectActivity.this, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
@@ -237,6 +232,7 @@ public class ProjectActivity extends AppCompatActivity implements
 
 
             //update project progress textview in real time tasks progress is updated in ProjectActivity.
+            assert receivedProId != null;
             db.collection("Projects")
                     .document(receivedProId)
                     .addSnapshotListener(new EventListener<DocumentSnapshot>() {
@@ -381,9 +377,28 @@ public class ProjectActivity extends AppCompatActivity implements
             public boolean onMenuItemClick(MenuItem menuItem) {
 
                 if (menuItem.getItemId() == R.id.tasksProgressAnalysis) {
-                    Intent intent = new Intent(ProjectActivity.this, TasksProgressAnalysis.class);
-                    startActivity(intent);
-                    finish();
+
+
+                    Intent i =getIntent();
+                    if (i.hasExtra(MESSAGE_KEY)) {
+                        String receivedProId = i.getStringExtra(MESSAGE_KEY);
+                        Intent intent = new Intent(ProjectActivity.this, TasksProgressAnalysis.class);
+                        intent.putExtra("PROJECTid", receivedProId);
+                        startActivity(intent);
+                    }
+
+                  else  if (getIntent().hasExtra("selectedProject")) {
+                        Projects projects = (Projects) getIntent().getSerializableExtra("selectedProject");
+                        FirestoreManager firestoreManager = new FirestoreManager();
+                        assert projects != null;
+                        firestoreManager.getDocumentId("Projects", "title", projects.getTitle(), documentId -> {
+                            if (documentId != null) {
+                                Intent intent = new Intent(ProjectActivity.this, TasksProgressAnalysis.class);
+                                intent.putExtra("PROJECTID", documentId);
+                                startActivity(intent);
+                            }
+                        });
+                    }
 
                 }//update project in the projectActivity activity
                 else if (menuItem.getItemId() == R.id.UpdateProject) {
@@ -404,31 +419,34 @@ public class ProjectActivity extends AppCompatActivity implements
                         transaction.addToBackStack(null);
                         transaction.commit();
                     }
+
+                    Intent intent1 = getIntent();
+                    if (intent1.hasExtra("selectedProject")) {
+                        Projects projects = (Projects) intent1.getSerializableExtra("selectedProject");
+                        FirestoreManager firestoreManager = new FirestoreManager();
+                        assert projects != null;
+                        firestoreManager.getDocumentId("Projects", "title", projects.getDescription(), documentId -> {
+                            if (documentId != null) {
+                                projects.setProjectId(documentId);
+                                // Create an instance of your UpdateFragment.
+                                UpdateProject updateFragment = new UpdateProject();
+                                // Pass data to the fragment using Bundle.
+                                Bundle bundle = new Bundle();
+                                bundle.putSerializable("proJ", projects);
+                                updateFragment.setArguments(bundle);
+                                // Replace the existing fragment with the new fragment.
+                                FragmentManager fragmentManager = ProjectActivity.this.getSupportFragmentManager();
+                                FragmentTransaction transaction = fragmentManager.beginTransaction();
+                                transaction.replace(R.id.updatePfra, updateFragment);
+                                transaction.addToBackStack(null);
+                                transaction.commit();
+                            }  // Handle the case where the document ID couldn't be retrieved
+                        });
+                    }
+
                 }
 
-                Intent intent1 = getIntent();
-                if (intent1.hasExtra("selectedProject")) {
-                    Projects projects = (Projects) intent1.getSerializableExtra("selectedProject");
-                    FirestoreManager firestoreManager = new FirestoreManager();
-                    assert projects != null;
-                    firestoreManager.getDocumentId("Projects", "title", projects.getTitle(), documentId -> {
-                        if (documentId != null) {
-                            projects.setProjectId(documentId);
-                            // Create an instance of your UpdateFragment.
-                            UpdateProject updateFragment = new UpdateProject();
-                            // Pass data to the fragment using Bundle.
-                            Bundle bundle = new Bundle();
-                            bundle.putSerializable("proJ", projects);
-                            updateFragment.setArguments(bundle);
-                            // Replace the existing fragment with the new fragment.
-                            FragmentManager fragmentManager = ProjectActivity.this.getSupportFragmentManager();
-                            FragmentTransaction transaction = fragmentManager.beginTransaction();
-                            transaction.replace(R.id.updatePfra, updateFragment);
-                            transaction.addToBackStack(null);
-                            transaction.commit();
-                        }  // Handle the case where the document ID couldn't be retrieved
-                    });
-                }
+
                 return true;
             }
         });
@@ -473,6 +491,7 @@ public class ProjectActivity extends AppCompatActivity implements
                         if (document.exists()) {
                             Tasks taskData = document.toObject(Tasks.class);
 
+                            assert taskData != null;
                             taskData.setTaskId(document.getId());
                             tasksList.add(taskData);
 

@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
-import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.ecom.fyp2023.R;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -23,8 +22,8 @@ import java.util.Map;
 
 public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder> {
 
-    private List<Users> userList;
-    private Context context;
+    private final List<Users> userList;
+    private final Context context;
 
     private String taskId;
 

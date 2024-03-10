@@ -19,6 +19,12 @@
         android:theme="@style/status_bar_color"
         tools:targetApi="31">
         <activity
+            android:name=".Analysis.CompletedTaskAnalysisBarChart"
+            android:exported="false" />
+        <activity
+            android:name=".Analysis.CompletedProjectAnalysisBarChart"
+            android:exported="false" />
+        <activity
             android:name=".Analysis.CompletedTasksAnalysis"
             android:exported="false" />
         <activity
@@ -64,6 +70,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".AppManagers.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".SignUpActivity"
             android:exported="false"

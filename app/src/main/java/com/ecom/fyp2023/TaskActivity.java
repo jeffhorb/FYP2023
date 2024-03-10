@@ -7,7 +7,6 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -39,10 +38,8 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -229,6 +226,7 @@ public class TaskActivity extends AppCompatActivity {
                                         String updatedProgress = snapshot.getString("progress");
                                         Date updatedStartDate = snapshot.getDate("startDate");
                                         SimpleDateFormat sdf2 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                                        assert updatedStartDate != null;
                                         String formattedStartDate = sdf2.format(updatedStartDate);
                                         startDate.setText(formattedStartDate);
 
@@ -307,7 +305,7 @@ public class TaskActivity extends AppCompatActivity {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
 
-                MenuItem unAssignTaskMenuItem = popupMenu.getMenu().findItem(R.id.UnAssignTask);
+                //MenuItem unAssignTaskMenuItem = popupMenu.getMenu().findItem(R.id.UnAssignTask);
 
                 if (menuItem.getItemId() == R.id.updateT) {
 
@@ -818,31 +816,38 @@ public class TaskActivity extends AppCompatActivity {
                 });
     }
 
-    private void showPrerequisitesDialog(List<String> prerequisites) {
+     private void showPrerequisitesDialog(List<String> prerequisites) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Prerequisites");
 
         StringBuilder prerequisitesText = new StringBuilder();
 
         if (prerequisites != null && !prerequisites.isEmpty()) {
+            int prerequisitesCount = prerequisites.size();
+            AtomicInteger prerequisitesProcessed = new AtomicInteger();
+
             for (String prerequisiteId : prerequisites) {
                 // Fetch the task details based on the prerequisite ID
                 getTaskName(prerequisiteId, taskName -> {
-                    if (taskName != null) {
+                    if (taskName != null && !taskName.isEmpty()) {
                         prerequisitesText.append("- ").append(taskName).append("\n");
-
-                        // If this is the last prerequisite, set the message and show the dialog
-                        if (prerequisiteId.equals(prerequisites.get(prerequisites.size() - 1))) {
-                            builder.setMessage(prerequisitesText.toString());
-                            builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-                            AlertDialog dialog = builder.create();
-                            dialog.show();
-                        }
                     }
-                    builder.setMessage("No prerequisites");
-                    builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
+
+                    // Increment the counter for processed prerequisites
+                    prerequisitesProcessed.getAndIncrement();
+
+                    // If all prerequisites have been processed, set the message and show the dialog
+                    if (prerequisitesProcessed.get() == prerequisitesCount) {
+                        if (prerequisitesText.length() > 0) {
+                            builder.setMessage(prerequisitesText.toString());
+                        } else {
+                            builder.setMessage("No prerequisites");
+                        }
+
+                        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+                        AlertDialog dialog = builder.create();
+                        dialog.show();
+                    }
                 });
             }
         } else {
@@ -852,6 +857,7 @@ public class TaskActivity extends AppCompatActivity {
             dialog.show();
         }
     }
+
 
     private void getTaskName(String taskId, @NonNull TaskDetailsCallback callback) {
         FirebaseFirestore.getInstance().collection("Tasks")
@@ -910,6 +916,7 @@ public class TaskActivity extends AppCompatActivity {
             Tasks tasks = (Tasks) intent.getSerializableExtra("selectedTask");
 
             FirestoreManager firestoreManager = new FirestoreManager();
+            assert tasks != null;
             firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
                 if (documentId != null) {
                     sharedPreferenceManager.saveNoteToSharedPreferencesForTask(note, documentId);

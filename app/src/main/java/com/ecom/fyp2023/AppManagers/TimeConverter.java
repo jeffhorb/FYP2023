@@ -44,7 +44,7 @@ public class TimeConverter {
            case "day":
                return numericValue;
            case "week":
-               return numericValue * 7; // Convert weeks to days
+               return numericValue * 7L; // Convert weeks to days
            default:
                throw new IllegalArgumentException("Invalid time unit: " + timeUnit);
        }

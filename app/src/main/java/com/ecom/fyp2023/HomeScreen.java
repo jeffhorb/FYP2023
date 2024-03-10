@@ -16,12 +16,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.ProjectsRVAdapter;
-import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
+import com.ecom.fyp2023.Analysis.CompletedProjectAnalysisBarChart;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -49,6 +50,8 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        // Inside your onCreate method or Application class
+        FirebaseApp.initializeApp(this);
 
         db = FirebaseFirestore.getInstance();
 
@@ -147,7 +150,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     }
 
     public void analysePro(MenuItem menuitem){
-        Intent intent = new Intent(HomeScreen.this, ProjectProgressAnalysis.class);
+        Intent intent = new Intent(HomeScreen.this, CompletedProjectAnalysisBarChart.class);
         startActivity(intent);
         finish();
     }

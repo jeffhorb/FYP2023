@@ -1,21 +1,21 @@
 package com.ecom.fyp2023.ModelClasses;
 
 public class Users {
+    private String userName;
+    private String userEmail;
+    private String fcmToken; // Add this field
 
-    // variables for storing our data.
-    private String userName, userEmail;
-
+    // Default constructor (needed for Firestore deserialization)
     public Users() {
-        // empty constructor
-        // required for Firebase.
     }
 
-    // Constructor for all variables.
-    public Users(String userName, String userEmail) {
+    public Users(String userName, String userEmail, String fcmToken) {
         this.userName = userName;
         this.userEmail = userEmail;
+        this.fcmToken = fcmToken;
     }
 
+    // Getters and setters
     public String getUserName() {
         return userName;
     }
@@ -30,5 +30,13 @@ public class Users {
 
     public void setUserEmail(String userEmail) {
         this.userEmail = userEmail;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }

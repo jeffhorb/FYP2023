@@ -12,17 +12,18 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.AppManagers.DateValueFormatter;
-import com.ecom.fyp2023.AppManagers.SwipeGestureListenerProjectAnalysis;
+import com.ecom.fyp2023.AppManagers.SwipeGestureListenerTasksAnalysis;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.R;
-import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -37,24 +38,21 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-public class CompletedProjectsAnalysis extends AppCompatActivity {
+public class CompletedProjectAnalysisBarChart extends AppCompatActivity {
 
-    LineChart lineChart;
-
-    FirebaseFirestore db;
-
+    private BarChart barChart;
     private GestureDetector gestureDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_completed_projects_analysis);
+        setContentView(R.layout.activity_completed_project_analysis_bar_chart);
 
-        gestureDetector = new GestureDetector(this, new SwipeGestureListenerProjectAnalysis(this));
+        gestureDetector = new GestureDetector(this, new SwipeGestureListenerTasksAnalysis(this));
 
-        lineChart = findViewById(R.id.lineChart);
+        barChart = findViewById(R.id.barChart);
 
-        db = FirebaseFirestore.getInstance();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -73,11 +71,11 @@ public class CompletedProjectsAnalysis extends AppCompatActivity {
                             projects.add(project);
                             // Check if both endDate and actualEndDate are not null
                             if (project.getEndDate() != null && project.getActualEndDate() != null) {
-                            projectsWithDates.add(project);
+                                projectsWithDates.add(project);
                             }
                         }
 
-                        updateLineChart(projectsWithDates);
+                        updateBarChart(projectsWithDates);
                     } else {
                         // Handle errors
                     }
@@ -87,24 +85,26 @@ public class CompletedProjectsAnalysis extends AppCompatActivity {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event);
+
     }
 
-    private void updateLineChart(@NonNull List<Projects> projects) {
+    private void updateBarChart(@NonNull List<Projects> projects) {
 
         if (projects.isEmpty()) {
             // Handle the case where there are no projects
             TextView textView = findViewById(R.id.dataNotAvailable);
             textView.setText("No Completed projects to display.");
             textView.setTextSize(20);
-            lineChart.setVisibility(View.GONE);
+            barChart.setVisibility(View.GONE);
+            return;
         }
-        List<Entry> estimatedEntries = new ArrayList<>();
-        List<Entry> actualEntries = new ArrayList<>();
-        List<String> title = new ArrayList<>();
 
+        List<BarEntry> estimatedEntries = new ArrayList<>();
+        List<BarEntry> actualEntries = new ArrayList<>();
+        List<String> title = new ArrayList<>();
         Set<String> uniqueDates = new HashSet<>();
-        List<String> a = new ArrayList<>();
         List<String> e = new ArrayList<>();
+        List<String> a = new ArrayList<>();
 
         // Sort projects based on the estimated end date
         projects.sort((project1, project2) -> {
@@ -116,25 +116,22 @@ public class CompletedProjectsAnalysis extends AppCompatActivity {
             return 0;
         });
 
+
         for (int i = 0; i < projects.size(); i++) {
             Projects project = projects.get(i);
 
-            Date estimatedEndDate = parseDate(project.getEndDate());
+            Date estimatedEndDate= parseDate(project.getEndDate());
+            Date actualEndDate = project.getActualEndDate();
 
             // Check if estimatedEndDate is not null and actualEndDate is a valid Date object
-           if (estimatedEndDate != null && project.getActualEndDate() != null) {
-                // Create separate Entry objects for estimated and actual end dates
-                estimatedEntries.add(new Entry(i, estimatedEndDate.getTime()));
-                actualEntries.add(new Entry(i, project.getActualEndDate().getTime()));
+            if (estimatedEndDate != null && actualEndDate != null) {
 
-                // Store unique dates for y-axis labels
-                e.add(formatDateToString(estimatedEndDate));
-                a.add(formatDateToString(project.getActualEndDate()));
-                uniqueDates.add(formatDateToString(estimatedEndDate));
-                uniqueDates.add(formatDateToString(project.getActualEndDate()));
+                // Create separate BarEntry objects for estimated and actual end dates
+                estimatedEntries.add(new BarEntry(i, estimatedEndDate.getTime()));
+                actualEntries.add(new BarEntry(i, actualEndDate.getTime()));
+                a.add(formatDateToString(estimatedEndDate));
+                a.add(formatDateToString(estimatedEndDate));
 
-                // Store project titles for x-axis labels
-                title.add(project.getTitle());
             }
         }
 
@@ -142,59 +139,68 @@ public class CompletedProjectsAnalysis extends AppCompatActivity {
         description.setText("Analysis of Completed Projects Estimated vs Actual end date");
         description.setPosition(1070f, 70f);
         description.setTextSize(15f);
-        lineChart.setDescription(description);
+        barChart.setDescription(description);
 
-        LineDataSet estimatedDataSet = new LineDataSet(estimatedEntries, "Estimated End Date");
+        BarDataSet estimatedDataSet = new BarDataSet(estimatedEntries, "Estimated End Date");
         estimatedDataSet.setColor(Color.BLUE);
-        // Set custom data point formatter for estimatedDataSet
         estimatedDataSet.setValueFormatter(new DateValueFormatter(e));
 
-        LineDataSet actualDataSet = new LineDataSet(actualEntries, "Actual End Date");
+        BarDataSet actualDataSet = new BarDataSet(actualEntries, "Actual End Date");
         actualDataSet.setColor(Color.RED);
-        // Set custom data point formatter for actualDataSet
-        actualDataSet.setValueFormatter(new DateValueFormatter(a));
+        estimatedDataSet.setValueFormatter(new DateValueFormatter(a));
 
-        // Set unique dates as y-axis labels
-        lineChart.getAxisLeft().setValueFormatter(new IndexAxisValueFormatter(uniqueDates));
-
+        List<String> uniqueDatesList = new ArrayList<>(uniqueDates);
+        barChart.getAxisLeft().setValueFormatter(new DateValueFormatter(uniqueDatesList) {
+            @Override
+            public String getAxisLabel(float value, AxisBase axis) {
+                // Convert the value (millis) to formatted date
+                return formatDateToString((long) value);
+            }
+        });
         // Set unique project titles as x-axis labels
-        lineChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(title));
+        barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(title));
 
-        List<ILineDataSet> dataSets = new ArrayList<>();
+        List<IBarDataSet> dataSets = new ArrayList<>();
         dataSets.add(estimatedDataSet);
         dataSets.add(actualDataSet);
 
-        LineData lineData = new LineData(dataSets);
+        BarData barData = new BarData(dataSets);
 
         // Customize the appearance of the chart
-        lineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        lineChart.getXAxis().setAxisLineColor(Color.BLACK);
-        lineChart.getXAxis().setGranularity(1f);
-        lineChart.getXAxis().setLabelCount(title.size()); // Adjust label count as needed
+        barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
+        barChart.getXAxis().setAxisLineColor(Color.BLACK);
+        barChart.getXAxis().setGranularity(1f);
+        barChart.getXAxis().setLabelCount(title.size()); // Adjust label count as needed
 
-        lineChart.setTouchEnabled(false);
-
-        lineChart.getAxisRight().setEnabled(false); // Disable the right y-axis
-        lineChart.getAxisRight().setDrawLabels(false);
-        lineChart.getAxisLeft().setAxisLineColor(Color.BLACK);
+        barChart.setTouchEnabled(false);
+        //barChart.getXAxis().setLabelRotationAngle(45); title the project title
+        barChart.getAxisRight().setEnabled(false); // Disable the right y-axis
+        barChart.getAxisRight().setDrawLabels(false);
+        barChart.getAxisLeft().setAxisLineColor(Color.BLACK);
 
         // Adjust the chart's viewport and margins to avoid labels being out of bounds
-        lineChart.setExtraTopOffset(50f);
-        lineChart.setExtraBottomOffset(20f);
-        lineChart.setExtraLeftOffset(20f);
-        lineChart.setExtraRightOffset(20f);
+        barChart.setExtraTopOffset(50f);
+        barChart.setExtraBottomOffset(20f);
+        barChart.setExtraLeftOffset(20f);
+        barChart.setExtraRightOffset(20f);
 
-        lineChart.setData(lineData);
-        lineChart.getLegend().setEnabled(true); // Enable legend (project names)
-        lineChart.invalidate(); // Refresh the chart
+        barChart.setData(barData);
+        barChart.getLegend().setEnabled(true); // Enable legend (project names)
+        barChart.invalidate(); // Refresh the chart
     }
-
-
     @NonNull
     private String formatDateToString(Date date) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
         return sdf.format(date);
     }
+
+    @NonNull
+    private String formatDateToString(long millis) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+        Date date = new Date(millis);
+        return sdf.format(date);
+    }
+
 
     @Nullable
     private Date parseDate (String dateString){

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Analysis.TasksProgressAnalysis"
+    tools:context=".Analysis.CompletedProjectsAnalysis"
     android:orientation="horizontal">
 
     <LinearLayout
@@ -27,33 +27,24 @@
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/next"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="NEXT"
-        android:textStyle="bold"
-        android:textSize="16sp"
-        android:layout_marginStart="360dp"
-        android:layout_marginTop="70dp"
-        android:textColor="@color/black"/>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="100dp">
+        android:layout_marginTop="60dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/noData"/>
+            android:id="@+id/dataNotAvailable"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="50dp"
+            android:textColor="@color/black"/>
 
-        <com.github.mikephil.charting.charts.PieChart
-            android:id="@+id/pieChartTask"
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/barChart"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
     </LinearLayout>
-
 
 </RelativeLayout>

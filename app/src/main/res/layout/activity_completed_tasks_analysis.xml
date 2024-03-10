@@ -27,11 +27,21 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/next"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="NEXT"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginStart="360dp"
+        android:layout_marginTop="70dp"
+        android:textColor="@color/black"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="60dp">
-
+        android:layout_marginTop="100dp">
 
         <TextView
             android:layout_width="wrap_content"

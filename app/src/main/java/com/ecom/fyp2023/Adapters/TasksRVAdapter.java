@@ -33,8 +33,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -230,27 +232,29 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     }
 
     private void removeTask(int position) {
-        Tasks removeTask = tasksList.remove(position);
-        notifyItemRemoved(position);
+        if (position >= 0 && position < tasksList.size()) {
+            Tasks removeTask = tasksList.remove(position);
+            notifyItemRemoved(position);
 
-        FirestoreManager firestoreManager = new FirestoreManager();
-        firestoreManager.getDocumentId("Tasks", "taskDetails", removeTask.getTaskDetails(), documentId -> {
-            if (documentId != null) {
-
-                if (proIdFromSelectedPro != null) {
-                    //Set some data based on the selected project
-                    calculateTotalEstimatedTimeAndEndDate(proIdFromSelectedPro);
+            FirestoreManager firestoreManager = new FirestoreManager();
+            firestoreManager.getDocumentId("Tasks", "taskDetails", removeTask.getTaskDetails(), documentId -> {
+                if (documentId != null) {
+                    if (proIdFromSelectedPro != null) {
+                        calculateTotalEstimatedTimeAndEndDate(proIdFromSelectedPro);
+                    }
+                    if (proIdFromAddTask != null) {
+                        calculateTotalEstimatedTimeAndEndDate(proIdFromAddTask);
+                    }
+                    removeTaskFromProjectTasks(documentId);
+                    removeTaskFromFirestore(documentId);
+                    removeTaskNotes(documentId);
+                    removeTaskUser(documentId);
                 }
-                if (proIdFromAddTask != null) {
-                    //Set some data based on the selected project
-                    calculateTotalEstimatedTimeAndEndDate(proIdFromAddTask);
-                }
-                removeTaskFromProjectTasks(documentId);
-                removeTaskFromFirestore(documentId);
-                removeTaskNotes(documentId);
-                removeTaskUser(documentId);
-            }
-        });
+            });
+        } else {
+            // Handle invalid position (e.g., show a log message)
+            Log.e("RemoveTask", "Invalid position: " + position);
+        }
     }
 
     private void removeTaskFromFirestore(String documentId) {
@@ -333,7 +337,8 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                 .addOnFailureListener(e -> Log.e("RemoveNote", "Error removing note", e));
     }
 
-    private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
+    //update end date of project automatically. this does not account for prerequisites take out when satisfied
+    /*private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
         fb.collection("projectTasks")
                 .whereEqualTo("projectId", projectId)
                 .get()
@@ -387,6 +392,115 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                                     });
                         }
                     } else {
+                        Log.e("CalculateTime", "Error fetching project tasks", task.getException());
+                    }
+                });
+    }*/
+
+    private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
+        fb.collection("projectTasks")
+                .whereEqualTo("projectId", projectId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        AtomicLong highestEstimatedTime = new AtomicLong();
+                        AtomicInteger tasksProcessed = new AtomicInteger(0);
+                        int totalTasks = task.getResult().size();
+
+                        // Set to keep track of already considered tasks for end date calculation
+                        Set<String> consideredTasks = new HashSet<>();
+
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String taskId = document.getString("taskId");
+
+                            assert taskId != null;
+                            fb.collection("Tasks")
+                                    .document(taskId)
+                                    .get()
+                                    .addOnCompleteListener(taskDocumentTask -> {
+                                        if (taskDocumentTask.isSuccessful()) {
+                                            DocumentSnapshot taskDocument = taskDocumentTask.getResult();
+
+                                            if (taskDocument != null && taskDocument.exists()) {
+                                                String estimatedTime = taskDocument.getString("estimatedTime");
+
+                                                if (estimatedTime != null) {
+                                                    long taskDays = TimeConverter.convertToDays(estimatedTime);
+
+                                                    // Consider prerequisites if any
+                                                    List<String> prerequisites = (List<String>) taskDocument.get("prerequisites");
+                                                    if (prerequisites != null && !prerequisites.isEmpty()) {
+                                                        for (String prerequisiteTaskId : prerequisites) {
+                                                            // Check if the prerequisite task is already considered
+                                                            if (!consideredTasks.contains(prerequisiteTaskId)) {
+                                                                // Fetch and calculate estimated time for the prerequisite task
+                                                                fb.collection("Tasks")
+                                                                        .document(prerequisiteTaskId)
+                                                                        .get()
+                                                                        .addOnCompleteListener(prerequisiteTaskDocumentTask -> {
+                                                                            if (prerequisiteTaskDocumentTask.isSuccessful()) {
+                                                                                DocumentSnapshot prerequisiteTaskDocument = prerequisiteTaskDocumentTask.getResult();
+
+                                                                                if (prerequisiteTaskDocument != null && prerequisiteTaskDocument.exists()) {
+                                                                                    String prerequisiteEstimatedTime = prerequisiteTaskDocument.getString("estimatedTime");
+
+                                                                                    if (prerequisiteEstimatedTime != null) {
+                                                                                        long prerequisiteTaskDays = TimeConverter.convertToDays(prerequisiteEstimatedTime);
+
+                                                                                        // Update the highest estimated time
+                                                                                        highestEstimatedTime.updateAndGet(currentValue ->
+                                                                                                Math.max(currentValue, taskDays + prerequisiteTaskDays)
+                                                                                        );
+
+                                                                                        // Mark the prerequisite task as considered
+                                                                                        consideredTasks.add(prerequisiteTaskId);
+
+                                                                                        Log.d("CalculateTime", "Prerequisite task processed. Highest estimated time so far: " + highestEstimatedTime);
+
+                                                                                        // Check if all tasks have been processed
+                                                                                        if (tasksProcessed.incrementAndGet() == totalTasks) {
+                                                                                            // Update the project's end date based on the highest estimated time
+                                                                                            updateProjectEndDate(projectId, highestEstimatedTime.get());
+                                                                                        }
+                                                                                    } else {
+                                                                                        Log.e("CalculateTime", "Prerequisite task's estimated time is null for task: " + prerequisiteTaskId);
+                                                                                    }
+                                                                                } else {
+                                                                                    Log.e("CalculateTime", "Prerequisite task document is null or doesn't exist for taskId: " + prerequisiteTaskId);
+                                                                                }
+                                                                            } else {
+                                                                                // Handle failure in fetching prerequisite task document
+                                                                                Log.e("CalculateTime", "Error fetching prerequisite task document", prerequisiteTaskDocumentTask.getException());
+                                                                            }
+                                                                        });
+                                                            }
+                                                        }
+                                                    } else {
+                                                        // Update the highest estimated time if no prerequisites
+                                                        highestEstimatedTime.updateAndGet(currentValue ->
+                                                                Math.max(currentValue, taskDays)
+                                                        );
+
+                                                        // Check if all tasks have been processed
+                                                        if (tasksProcessed.incrementAndGet() == totalTasks) {
+                                                            // Update the project's end date based on the highest estimated time
+                                                            updateProjectEndDate(projectId, highestEstimatedTime.get());
+                                                        }
+                                                    }
+                                                } else {
+                                                    Log.e("CalculateTime", "Estimated time is null for task: " + taskId);
+                                                }
+                                            } else {
+                                                Log.e("CalculateTime", "Task document is null or doesn't exist for taskId: " + taskId);
+                                            }
+                                        } else {
+                                            // Handle failure in fetching task document
+                                            Log.e("CalculateTime", "Error fetching task document", taskDocumentTask.getException());
+                                        }
+                                    });
+                        }
+                    } else {
+                        // Handle failure in fetching project tasks
                         Log.e("CalculateTime", "Error fetching project tasks", task.getException());
                     }
                 });

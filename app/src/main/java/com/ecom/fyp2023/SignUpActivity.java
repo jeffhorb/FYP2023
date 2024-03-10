@@ -1,5 +1,6 @@
 package com.ecom.fyp2023;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -7,6 +8,8 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,19 +18,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.regex.Pattern;
 
 public class SignUpActivity extends AppCompatActivity {
-    EditText userName, email, password;
+    EditText  email, password;
     TextView loginN, num, atoz, AtoZ, symbols;
     Button signupButn;
     FirebaseAuth authicate;
@@ -39,7 +42,7 @@ public class SignUpActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
-        userName = findViewById(R.id.name);
+        //userName = findViewById(R.id.name);
         email = findViewById(R.id.email);
         password = findViewById(R.id.password);
         num = findViewById(R.id.num);
@@ -99,87 +102,180 @@ public class SignUpActivity extends AppCompatActivity {
         signupButn.setOnClickListener(view -> {
             String mail = email.getText().toString().trim();
             String pword = password.getText().toString().trim();
-            String userN = userName.getText().toString();
+            //String userN = userName.getText().toString();
 
 
             if (TextUtils.isEmpty(mail)) {
                 email.setError("Email Required");
             }
-            else if (TextUtils.isEmpty(userN)) {
-                userName.setError("User name required");
-            }
             else if (TextUtils.isEmpty(pword)) {
                 password.setError("Password Required");
             } else if (pword.length() < 8) {
                 password.setError("Password length must be at least 8 characters");
-                return;
             } else {
                 pBar.setVisibility(View.VISIBLE);
 
-                // Check if the username already exists in Firestore
-                checkUsernameExistence(userN, mail, pword);
-
-                /*authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(task -> {
+                // Username does not exist, proceed with user authentication
+                authicate.createUserWithEmailAndPassword(mail, pword).addOnCompleteListener(authTask -> {
                     pBar.setVisibility(View.GONE);
-                    if (task.isSuccessful()) {
-                        addUserToFirestore(userN, mail);
-                        Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
-                        startActivity(intent);
-                        //FirebaseUser user = authicate.getCurrentUser();
-                        //sendEmailVerification(user);
+                    if (authTask.isSuccessful()) {
+                        showUsernameInputDialog();
                     } else {
                         Toast.makeText(SignUpActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
-                });*/
+                });
             }
-
         });
     }
 
-    /*private void sendEmailVerification(FirebaseUser user) {
-        user.sendEmailVerification().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                Toast.makeText(SignUpActivity.this, "Verification email sent.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(SignUpActivity.this, "Error occurred.", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }*/
 
-    private void checkUsernameExistence(String userName, String email, String password) {
-        CollectionReference dbUsers = db.collection("Users");
-        Query query = dbUsers.whereEqualTo("userName", userName);
+    private void showUsernameInputDialog() {
+        // Create an AlertDialog.Builder instance
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter Your Username");
 
-        query.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                QuerySnapshot querySnapshot = task.getResult();
-                if (querySnapshot != null && !querySnapshot.isEmpty()) {
-                    // Username already exists, show an error message or take appropriate action
-                    pBar.setVisibility(View.GONE);
-                    Toast.makeText(SignUpActivity.this, "Username already exists. Please use a different one.", Toast.LENGTH_SHORT).show();
-                } else {
-                    // Username does not exist, proceed with user authentication
-                    authicate.createUserWithEmailAndPassword(email, password).addOnCompleteListener(authTask -> {
-                        pBar.setVisibility(View.GONE);
-                        if (authTask.isSuccessful()) {
-                            addUserToFirestore(userName, email);
-                            Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
-                            Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
-                            startActivity(intent);
-                            // FirebaseUser user = authicate.getCurrentUser();
-                            // sendEmailVerification(user);
-                        } else {
-                            Toast.makeText(SignUpActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+        // Set up the layout for the dialog
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_username_input, null);
+        final EditText usernameEditText = dialogView.findViewById(R.id.editTextUsername);
+        builder.setView(dialogView);
+
+        // Set up the buttons for positive (OK) and negative (Cancel) actions
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String enteredUsername = usernameEditText.getText().toString();
+                String mail = email.getText().toString().trim();
+
+                // User could be forced to add a username
+                if (enteredUsername.isEmpty()) {
+                    // If the username is null or empty, set it to the email
+                    enteredUsername = mail;
                 }
-            } else {
-                // Handle the case where checking for username existence fails
-                pBar.setVisibility(View.GONE);
-                Toast.makeText(SignUpActivity.this, "Error checking username existence.", Toast.LENGTH_SHORT).show();
+
+                // Check if the entered username already exists in Firestore
+                checkUsernameExists(enteredUsername, mail);
             }
         });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // User canceled, show a warning dialog
+                showCancelWarningDialog();
+            }
+        });
+
+        // Show the dialog
+        builder.show();
+    }
+
+
+
+    private void showUsernameExistsDialog() {
+        // Create a dialog to inform the user that the username already exists
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Username Exists");
+        builder.setMessage("The entered username already exists. Please choose a different one.");
+
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Show the username input dialog again
+                showUsernameInputDialog();
+            }
+        });
+
+        // Show the dialog
+        builder.show();
+    }
+
+
+
+
+    private void addUserToFirestore(String userName, String userEmail, String fcmToken) {
+        // creating a collection reference
+        // for our Firebase Firestore database.
+        CollectionReference dbUsers = db.collection("Users");
+
+        // adding our data to our courses object class.
+        Users users = new Users(userName, userEmail, fcmToken);
+
+        // below method is use to add data to Firebase Firestore.
+        dbUsers.add(users).addOnSuccessListener(documentReference -> {
+            // Document added successfully
+            Log.d("Firestore", "User added with ID: " + documentReference.getId());
+        }).addOnFailureListener(e -> {
+            // Handle the failure to add the document
+            Log.e("Firestore", "Error adding user", e);
+        });
+    }
+
+    private void checkUsernameExists(String enteredUsername, String userEmail) {
+        CollectionReference dbUsers = db.collection("Users");
+
+        // Query Firestore to check if the username already exists
+        dbUsers.whereEqualTo("userName", enteredUsername)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (task.getResult().size() > 0) {
+                            // Username already exists, prompt the user to enter a new one
+                            showUsernameExistsDialog();
+                        } else {
+                            // Username is unique, proceed with authentication
+                            FirebaseMessaging.getInstance().getToken()
+                                    .addOnCompleteListener(tokenTask -> {
+                                        if (tokenTask.isSuccessful() && tokenTask.getResult() != null) {
+                                            String fcmToken = tokenTask.getResult();
+                                            // Call a method to store the FCM token in the Firestore users collection
+                                            addUserToFirestore(enteredUsername, userEmail, fcmToken);
+                                            Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
+                                            startActivity(intent);
+                                        }
+                                    });
+                        }
+                    }
+                });
+    }
+
+    private void showCancelWarningDialog() {
+        // Create a warning dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("username will set to your email");
+        builder.setMessage("Are you sure you want to cancel?");
+        String mail = email.getText().toString().trim();
+
+        // Set up the buttons for positive (Go Back) and negative (Cancel) actions
+        builder.setPositiveButton("Go Back", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // User chose to go back, show the username input dialog again
+                showUsernameInputDialog();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // User chose to completely cancel, do nothing or handle accordingly
+                FirebaseMessaging.getInstance().getToken()
+                        .addOnCompleteListener(tasks -> {
+                            if (tasks.isSuccessful() && tasks.getResult() != null) {
+                                String fcmToken = tasks.getResult();
+                                // Call a method to store the FCM token in the Firestore users collection
+                                addUserToFirestore(mail, mail, fcmToken);
+                                Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
+                                Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
+                                startActivity(intent);
+                            }
+                        });
+            }
+        });
+
+        // Show the warning dialog
+        builder.show();
     }
 
 
@@ -222,20 +318,14 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
 
-    private void addUserToFirestore(String userName, String userEmail) {
-        // creating a collection reference
-        // for our Firebase Firestore database.
-        CollectionReference dbUsers = db.collection("Users");
 
-        // adding our data to our courses object class.
-        Users users = new Users(userName, userEmail);
-
-        // below method is use to add data to Firebase Firestore.
-        dbUsers.add(users).addOnSuccessListener(documentReference -> {
-
-        }).addOnFailureListener(e -> {
-
+      /*private void sendEmailVerification(FirebaseUser user) {
+        user.sendEmailVerification().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                Toast.makeText(SignUpActivity.this, "Verification email sent.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(SignUpActivity.this, "Error occurred.", Toast.LENGTH_SHORT).show();
+            }
         });
-
-    }
+    }*/
 }

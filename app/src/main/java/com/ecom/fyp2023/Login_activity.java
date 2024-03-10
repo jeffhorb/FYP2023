@@ -2,11 +2,11 @@ package com.ecom.fyp2023;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -22,10 +22,14 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class Login_activity extends AppCompatActivity {
 
@@ -50,6 +54,8 @@ public class Login_activity extends AppCompatActivity {
     ProgressBar pBar;
     TextView textView, forgotpword;
     public ProgressDialog loginprogress;
+    FirebaseFirestore db;
+    String mail,pword;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,6 +68,8 @@ public class Login_activity extends AppCompatActivity {
         authicate = FirebaseAuth.getInstance();
         loginprogress=new ProgressDialog(this);
         checkBoxRememberMe = findViewById(R.id.checkBoxRememberMe);
+
+        db = FirebaseFirestore.getInstance();
 
 
         forgotpword.setOnClickListener(v -> showRecoverPasswordDialog());
@@ -99,8 +107,8 @@ public class Login_activity extends AppCompatActivity {
         });
 
        loginBtn.setOnClickListener(v -> {
-           String mail = Aemail.getText().toString().trim();
-           String pword = Apassword.getText().toString().trim();
+            mail = Aemail.getText().toString().trim();
+            pword = Apassword.getText().toString().trim();
 
            if (TextUtils.isEmpty(mail)  ) {
                Aemail.setError("Email Required");
@@ -109,12 +117,21 @@ public class Login_activity extends AppCompatActivity {
                Apassword.setError("Password Required");
            }else{
                pBar.setVisibility(View.VISIBLE);
+
                authicate.signInWithEmailAndPassword(mail, pword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                    @Override
                    public void onComplete(@NonNull Task<AuthResult> task) {
                        pBar.setVisibility(View.GONE);
                        if (task.isSuccessful()) {
-                           //
+                           FirebaseMessaging.getInstance().getToken()
+                                   .addOnCompleteListener(tasks -> {
+                                       if (tasks.isSuccessful() && tasks.getResult() != null) {
+                                           String fcmToken = tasks.getResult();
+                                           // Call a method to store the FCM token in the Firestore users collection
+                                           updateFcmTokenInFirestore(mail,fcmToken);
+                                       }
+                                   });
+
                            if (checkBoxRememberMe.isChecked())
                                saveLoginDetails(mail, pword);
                            Intent intent = new Intent(Login_activity.this, HomeScreen.class);
@@ -128,6 +145,36 @@ public class Login_activity extends AppCompatActivity {
            }
        });
     }
+
+
+    private void updateFcmTokenInFirestore(String userEmail, String newFcmToken) {
+        // Creating a reference to the Users collection in Firestore.
+        CollectionReference dbUsers = db.collection("Users");
+
+        // Querying for the specific user document based on the userEmail.
+        Query query = dbUsers.whereEqualTo("userEmail", userEmail);
+
+        query.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    // Updating the fcmToken field in the retrieved document.
+                    document.getReference().update("fcmToken", newFcmToken)
+                            .addOnSuccessListener(aVoid -> {
+                                // FcmToken updated successfully.
+                                Log.d("Firestore", "FcmToken updated for user: " + userEmail);
+                            })
+                            .addOnFailureListener(e -> {
+                                // Handle the failure to update the FcmToken.
+                                Log.e("Firestore", "Error updating FcmToken", e);
+                            });
+                }
+            } else {
+                // Handle the failure to retrieve the user document.
+                Log.e("Firestore", "Error getting user document", task.getException());
+            }
+        });
+    }
+
     ProgressDialog loadingBar;
     private void showRecoverPasswordDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -183,6 +230,5 @@ public class Login_activity extends AppCompatActivity {
     private void saveLoginDetails(String email, String password) {
         new SharedPreferenceManager(this).saveLoginDetails(email, password);
     }
-
 }
 
