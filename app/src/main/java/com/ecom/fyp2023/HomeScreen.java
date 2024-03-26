@@ -16,14 +16,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.ProjectsRVAdapter;
-import com.ecom.fyp2023.Analysis.CompletedProjectAnalysisBarChart;
 import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.navigation.NavigationView;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;

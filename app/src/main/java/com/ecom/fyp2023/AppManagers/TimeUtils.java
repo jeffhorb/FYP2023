@@ -2,10 +2,8 @@ package com.ecom.fyp2023.AppManagers;
 
 import androidx.annotation.NonNull;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class TimeUtils {

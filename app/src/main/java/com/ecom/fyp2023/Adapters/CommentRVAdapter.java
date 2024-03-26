@@ -15,20 +15,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.TimeUtils;
 import com.ecom.fyp2023.ModelClasses.Comment;
-import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.ViewHolder> {
 

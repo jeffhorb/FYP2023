@@ -23,7 +23,6 @@ import com.ecom.fyp2023.AppManagers.TimeConverter;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.CollectionReference;
@@ -46,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implements CustomArrayAdapter.TaskIdProvider{
 

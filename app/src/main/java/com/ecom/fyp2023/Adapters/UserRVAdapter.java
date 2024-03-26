@@ -13,7 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Analysis.TeamMemberEvaluation;
-import com.ecom.fyp2023.Analysis.TeamMemberTasksAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.ecom.fyp2023.R;
