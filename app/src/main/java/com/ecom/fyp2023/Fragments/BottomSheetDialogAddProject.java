@@ -24,6 +24,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import org.jetbrains.annotations.Contract;
 
@@ -108,7 +109,8 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             } else if (!isBefore(startDt, endDt)) {
                 endDate.setError("End date must be after start date");
             } else {
-                addProjects(proTitle, proDesc, priority, startDt, endDt, progress, null);
+                // Check if the project title already exists
+                checkProjectTitleExists(proTitle, proDesc, priority, startDt, endDt, progress, null);
             }
         });
 
@@ -143,6 +145,28 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
         });
 
         return view;
+    }
+
+    private void checkProjectTitleExists(String title, String description, String priority, String startDate,
+                                         String endDate, String progress, Date actualEDate) {
+        // Query Projects collection to check if a project with the same title exists
+        FirebaseFirestore.getInstance().collection("Projects")
+                .whereEqualTo("title", title)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            // Project title already exists
+                            pTitle.setError("Project title already exists");
+                            return;
+                        }
+                        // Project title is unique, proceed with adding the project
+                        addProjects(title, description, priority, startDate, endDate, progress, actualEDate);
+                    } else {
+                        // Handle errors
+                        Toast.makeText(getActivity(), "Failed to check project title", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
     public void addProjects(String title, String description, String priority, String startDate, String endDate, String progres, Date actualEDate) {
 

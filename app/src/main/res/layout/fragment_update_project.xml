@@ -1,13 +1,12 @@
 <!-- fragment_bottom_sheet.xml -->
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/updateProjectFrag"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:layout_gravity="bottom"
-    android:padding="16dp"
-    >
+    android:padding="16dp">
 
     <ImageView
         android:id="@+id/closeImageView"
@@ -30,36 +29,61 @@
         android:textSize="20sp"
         android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/proT"
+
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:drawablePadding="8dp"
+        android:layout_height="wrap_content"
         android:hint="Title"
-        android:inputType="textMultiLine"
-        android:padding="8dp"
-        android:textColor="@color/black" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <EditText
-        android:id="@+id/proD"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/proT"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:drawablePadding="8dp"
+            android:padding="8dp"
+            android:textColor="@color/black" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:drawablePadding="8dp"
-        android:inputType="textMultiLine"
+        android:layout_height="wrap_content"
         android:hint="Description"
-        android:padding="8dp"
-        android:textColor="@color/black" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/proD"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:drawablePadding="8dp"
+            android:inputType="textMultiLine"
+            android:padding="8dp"
+            android:textColor="@color/black" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Start Date"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/startD"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:drawablePadding="8dp"
-            android:hint="Start date"
+            android:hint="Start Date"
             android:inputType="date"
-            android:padding="8dp"
-            android:textColor="@color/black" />
+            android:padding="8dp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
 
 
     <TextView

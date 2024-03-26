@@ -8,6 +8,7 @@ import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.ecom.fyp2023.Analysis.CompletedProjectAnalysisBarChart;
 import com.ecom.fyp2023.Analysis.CompletedProjectsAnalysis;
 import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
 
@@ -37,17 +38,23 @@ public class SwipeGestureListenerProjectAnalysis extends GestureDetector.SimpleO
                     // In Activity A, go to Activity B
                     startActivityB();
                 } else if (context instanceof CompletedProjectsAnalysis) {
-                    // In Activity B, go to Activity A
+                    // In Activity B, go to Activity C
+                    startActivityC();
+                } else if (context instanceof CompletedProjectAnalysisBarChart) {
+                    // In Activity C, go to Activity A
                     startActivityA();
                 }
             } else {
                 // Swipe left
                 if (context instanceof ProjectProgressAnalysis) {
-                    // In Activity A, go to Activity B
-                    startActivityB();
+                    // In Activity A, go to Activity C
+                    startActivityC();
                 } else if (context instanceof CompletedProjectsAnalysis) {
                     // In Activity B, go to Activity A
                     startActivityA();
+                } else if (context instanceof CompletedProjectAnalysisBarChart) {
+                    // In Activity C, go to Activity B
+                    startActivityB();
                 }
             }
             return true;
@@ -68,6 +75,9 @@ public class SwipeGestureListenerProjectAnalysis extends GestureDetector.SimpleO
         ((AppCompatActivity) context).finish();
     }
 
+    private void startActivityC() {
+        Intent intent = new Intent(context, CompletedProjectAnalysisBarChart.class);
+        context.startActivity(intent);
+        ((AppCompatActivity) context).finish();
+    }
 }
-
-

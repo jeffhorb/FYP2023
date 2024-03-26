@@ -112,7 +112,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Description:"
+            android:text="Project Description:"
             android:textStyle="bold"
             android:textColor="@color/black"
             android:layout_marginStart="10dp"/>
@@ -218,7 +218,7 @@
         <ImageView
             android:id="@+id/addTasksImageView"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:clickable="true"
             android:focusable="true"
             android:layout_gravity="center"
@@ -232,11 +232,11 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/tasksRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="600dp"
+        android:layout_height="614dp"
         android:layout_above="@+id/fragmentContainer"
         android:layout_below="@+id/linear4"
         android:layout_marginTop="-12dp"
-        android:layout_marginBottom="6dp"
+        android:layout_marginBottom="5dp"
         android:padding="12dp"
         android:scrollbars="vertical"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
@@ -248,6 +248,27 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:background="@android:color/white">
+
+
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="bottom"/>
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/updatePfra"
+                android:orientation="vertical"
+                android:gravity="bottom"/>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/userFragment"
+                android:orientation="vertical"
+                android:gravity="bottom"/>
 
             <TextView
                 android:id="@+id/commentEditText"
@@ -261,19 +282,6 @@
                 android:hint="Add a comment..."
                 android:padding="16dp"
                 tools:ignore="TextViewEdits" />
-
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:id="@+id/updateTaskfra"
-                android:orientation="vertical"
-                android:gravity="bottom"/>
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:id="@+id/updatePfra"
-                android:orientation="vertical"
-                android:gravity="bottom"/>
 
         </FrameLayout>
 

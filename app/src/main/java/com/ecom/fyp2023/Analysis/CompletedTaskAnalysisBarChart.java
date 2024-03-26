@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.View;
 import android.widget.TextView;
 
@@ -12,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.AppManagers.StringValueFormatter;
-import com.ecom.fyp2023.AppManagers.SwipeGestureListenerTasksAnalysis;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
 import com.github.mikephil.charting.charts.BarChart;
@@ -42,7 +40,7 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
 
     TextView next;
 
-    private GestureDetector gestureDetector;
+   // private GestureDetector gestureDetector;
 
     String projectId;
 
@@ -51,7 +49,7 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_completed_task_analysis_bar_chart);
 
-        gestureDetector = new GestureDetector(this, new SwipeGestureListenerTasksAnalysis(this));
+        //gestureDetector = new GestureDetector(this, new SwipeGestureListenerTasksAnalysis(this));
 
         barChart = findViewById(R.id.barChart);
         barChart = findViewById(R.id.barChart);
@@ -131,25 +129,6 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
         List<BarEntry> completedTimeEntries = new ArrayList<>();
         List<String> tasksTitle = new ArrayList<>();
 
-//        for (int i = 0; i < tasksList.size(); i++) {
-//            Tasks tasks = tasksList.get(i);
-//            String estimatedT = tasks.getEstimatedTime();
-//            String completedT = tasks.getCompletedTime();
-//
-//            if (estimatedT != null && completedT != null) {
-//                // Parse the numbers from the strings
-//                int estimatedDays = extractDaysFromString(estimatedT);
-//                int completedDays = extractDaysFromString(completedT);
-//
-//                // Create separate Entry objects for estimated and completed times
-//                estimatedTimeEntries.add(new BarEntry(i, estimatedDays));
-//                completedTimeEntries.add(new BarEntry(i, completedDays));
-//
-//                // Store task titles for x-axis labels
-//                tasksTitle.add(tasks.getTaskName());
-//            }
-//        }
-//
         List<String> e = new ArrayList<>();
         List<String> a = new ArrayList<>();
 
@@ -162,9 +141,9 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
             if (estimatedT != null) {
                 // Parse the numbers from the strings
                 int estimatedDays = extractDaysFromString(estimatedT);
-
                 // Create separate Entry object for estimated time
                 estimatedTimeEntries.add(new BarEntry(i, estimatedDays));
+                e.add(estimatedT);
 
                 // Check if completedT is not null, then add completed time entry
                 if (completedT != null) {
@@ -176,7 +155,7 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
                     // If completedT is null, add a placeholder entry (you can customize this behavior)
                     completedTimeEntries.add(new BarEntry(i, 0));
                 }
-                e.add(estimatedT);
+
                 // Store task titles for x-axis labels
                 tasksTitle.add(tasks.getTaskName());
             }
@@ -188,29 +167,27 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
         description.setTextSize(15f);
         barChart.setDescription(description);
 
-        BarDataSet estimatedDataSet = new BarDataSet(estimatedTimeEntries, "Estimated Time (In Days)");
-        estimatedDataSet.setColor(Color.BLUE);
-        //estimatedDataSet.setValueFormatter(new StringValueFormatter(e));
+        List<IBarDataSet> dataSets = new ArrayList<>();
 
         BarDataSet actualDataSet = new BarDataSet(completedTimeEntries, "Completion Time(In Days)");
         actualDataSet.setColor(Color.RED);
-        //estimatedDataSet.setValueFormatter(new StringValueFormatter(a));
-
-
-        estimatedDataSet.setValueFormatter(new StringValueFormatter(e));
         actualDataSet.setValueFormatter(new StringValueFormatter(a));
+        dataSets.add(actualDataSet);
+
+        BarDataSet estimatedDataSet = new BarDataSet(estimatedTimeEntries, "Estimated Time (In Days)");
+        estimatedDataSet.setColor(Color.BLUE);
+        dataSets.add(estimatedDataSet);
+        estimatedDataSet.setValueFormatter(new StringValueFormatter(e));
+
+
+
         // Set unique project titles as x-axis labels
         barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(tasksTitle));
-
-        List<IBarDataSet> dataSets = new ArrayList<>();
-        dataSets.add(estimatedDataSet);
-        dataSets.add(actualDataSet);
 
         BarData barData = new BarData(dataSets);
 
         // Customize the appearance of the chart
         barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-
         barChart.getXAxis().setAxisLineColor(Color.BLACK);
         barChart.getXAxis().setGranularity(1f);
         barChart.getXAxis().setLabelCount(tasksTitle.size()); // Adjust label count as needed
@@ -236,7 +213,7 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
         // Extract the numeric value from the string, considering both "day(s)" and "week(s)"
         try {
             int numericValue;
-            if (timeString.contains("day")) {
+            if (timeString.contains("day") ) {
                 numericValue = Integer.parseInt(timeString.replaceAll("[^0-9]", ""));
             } else if (timeString.contains("week")) {
                 int weeks = Integer.parseInt(timeString.replaceAll("[^0-9]", ""));

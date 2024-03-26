@@ -24,9 +24,11 @@ import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import org.jetbrains.annotations.Contract;
 
@@ -52,9 +54,11 @@ public class UpdateProject extends BottomSheetDialogFragment {
         return new UpdateProject();
     }
 
-    EditText pTitle;
-    EditText pDesc;
-    EditText startDate;
+//    EditText pTitle;
+//    EditText pDesc;
+//    EditText startDate;
+
+    TextInputEditText pTitle,pDesc,startDate;
     Spinner proPriority;
 
     String pProgress, eDate;
@@ -95,7 +99,7 @@ public class UpdateProject extends BottomSheetDialogFragment {
         Bundle bundle1 = getArguments();
         if (bundle1 != null && bundle1.containsKey("proJ")) {
             project = (Projects) bundle1.getSerializable("proJ");
-            project.getProjectId();
+            //project.getProjectId();
             pTitle.setText(project.getTitle());
             pDesc.setText(project.getDescription());
             startDate.setText(project.getStartDate());
@@ -180,7 +184,9 @@ public class UpdateProject extends BottomSheetDialogFragment {
                         Bundle bundle2 = getArguments();
                         if (bundle2 != null && bundle2.containsKey("proTid")) {
                             String projectId = bundle2.getString("proTid");
-                            updateProject2(projectId, proT, proDesc, pPriority, stDate, eDate, pProgress, actualEndD);
+                            //updateProject2(projectId, proT, proDesc, pPriority, stDate, eDate, pProgress, actualEndD);
+                            // Check if the project title already exists before updating
+                            checkProjectTitleExistsAndUpdate2(projectId, proT, proDesc, pPriority, stDate, eDate, pProgress, actualEndD);
                         }
                         Bundle bundle = getArguments();
                         if (bundle != null && bundle.containsKey("project")) {
@@ -211,31 +217,96 @@ public class UpdateProject extends BottomSheetDialogFragment {
         }
     }
 
-    private void updateProject(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
+//    private void updateProject(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
+//
+//        String existingProgress = projects.getProgress();
+//        String existingEndDate = projects.getEndDate();
+//        Date existingActualEndDate = projects.getActualEndDate();
+//
+//        // Create the updated project with the existing progress value
+//        Projects udpatedPorject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress, existingActualEndDate);
+//
+//        fb.collection("Projects").
+//                document(projects.getProjectId()).
+//                set(udpatedPorject).
+//                addOnSuccessListener(new OnSuccessListener<Void>() {
+//                    @Override
+//                    public void onSuccess(Void aVoid) {
+//                        String id = project.getProjectId();
+//                        calculateTotalEstimatedTimeAndEndDate(id);
+//
+//                        Toast.makeText(requireContext(), "Project has been updated..", Toast.LENGTH_SHORT).show();
+//                    }
+//                }).addOnFailureListener(new OnFailureListener() {
+//                    @Override
+//                    public void onFailure(@NonNull Exception e) {
+//
+//                        Toast.makeText(requireContext(), "Fail to update the data..", Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//    }
+private void updateProject(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
+    // Query Projects collection to check if a project with the new title exists
+    FirebaseFirestore.getInstance().collection("Projects")
+            .whereEqualTo("title", proTitle)
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        // If the project title exists and it's not the current project being updated
+                        if (!document.getId().equals(projects.getProjectId())) {
+                            // Project title already exists
+                            pTitle.setError("Project title already exists");
+                            return;
+                        }
+                    }
+                    // Project title is unique, proceed with the update
+                    performProjectUpdate(projects, proTitle, proD, priority, startDate, endDate, progres, actualEdate);
+                } else {
+                    // Handle errors
+                    Toast.makeText(requireContext(), "Failed to check project title", Toast.LENGTH_SHORT).show();
+                }
+            });
+}
 
+    private void performProjectUpdate(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
         String existingProgress = projects.getProgress();
         String existingEndDate = projects.getEndDate();
         Date existingActualEndDate = projects.getActualEndDate();
 
         // Create the updated project with the existing progress value
-        Projects udpatedPorject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress, existingActualEndDate);
+        Projects updatedProject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress, existingActualEndDate);
 
-        fb.collection("Projects").
-                document(projects.getProjectId()).
-                set(udpatedPorject).
-                addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        String id = project.getProjectId();
-                        calculateTotalEstimatedTimeAndEndDate(id);
+        fb.collection("Projects")
+                .document(projects.getProjectId())
+                .set(updatedProject)
+                .addOnSuccessListener(aVoid -> {
+                    calculateTotalEstimatedTimeAndEndDate(projects.getProjectId());
+                    Toast.makeText(requireContext(), "Project has been updated..", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Fail to update the data..", Toast.LENGTH_SHORT).show();
+                    Log.e("UpdateProject", "Error updating project", e);
+                });
+    }
 
-                        Toast.makeText(requireContext(), "Project has been updated..", Toast.LENGTH_SHORT).show();
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-
-                        Toast.makeText(requireContext(), "Fail to update the data..", Toast.LENGTH_SHORT).show();
+    private void checkProjectTitleExistsAndUpdate2(String projectId, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
+        // Query Projects collection to check if a project with the new title exists
+        FirebaseFirestore.getInstance().collection("Projects")
+                .whereEqualTo("title", proTitle)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            // Project title already exists
+                            pTitle.setError("Project title already exists");
+                            return;
+                        }
+                        // Project title is unique, proceed with the update
+                        updateProject2(projectId, proTitle, proD, priority, startDate, endDate, progres, actualEdate);
+                    } else {
+                        // Handle errors
+                        Toast.makeText(getActivity(), "Failed to check project title", Toast.LENGTH_SHORT).show();
                     }
                 });
     }

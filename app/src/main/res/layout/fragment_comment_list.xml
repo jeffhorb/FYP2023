@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,49 +11,59 @@
         android:layout_height="wrap_content"
         android:src="@drawable/baseline_close_24"
         android:layout_gravity="end"
+        android:layout_marginStart="380dp"
         android:layout_marginEnd="8dp"
         android:clickable="true"
         android:focusable="true" />
 
-    <EditText
-        android:id="@+id/commentEditText"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="48dp"
-        android:layout_marginBottom="8dp"
-        android:background="@android:color/transparent"
-        android:hint="Add a comment..."
-        android:imeOptions="actionSend"
-        android:inputType="textMultiLine"
-        android:layout_gravity="bottom"
-        android:maxLines="3"
-        android:padding="16dp" />
+        android:orientation="vertical"
+        android:layout_below="@id/closeImageView">
 
-    <ImageView
-        android:id="@+id/sendImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="375dp"
-        android:layout_gravity="bottom"
-        android:layout_marginEnd="6dp"
-        android:layout_marginBottom="25dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:src="@drawable/baseline_send_24" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/commentsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:scrollbars="vertical"
+            android:background="@android:color/white"
+            tools:listitem="@layout/comment_item" />
 
+        <FrameLayout
+            android:id="@+id/frameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/commentsRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="30dp"
-        android:layout_marginBottom="100dp"
-        android:padding="8dp"
-        android:scrollbars="vertical"
-        android:background="@android:color/white"
-        tools:listitem="@layout/comment_item" />
+            <EditText
+                android:id="@+id/commentEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="48dp"
+                android:layout_marginBottom="8dp"
+                android:background="@android:color/transparent"
+                android:gravity="bottom"
+                android:hint="Add a comment..."
+                android:imeOptions="actionSend"
+                android:inputType="textMultiLine"
+                android:padding="16dp" />
 
+            <ImageView
+                android:id="@+id/sendImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginTop="15dp"
+                android:layout_marginEnd="6dp"
+                android:layout_marginBottom="25dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/baseline_send_24" />
 
-
-</FrameLayout>
+        </FrameLayout>
+    </LinearLayout>
+</RelativeLayout>

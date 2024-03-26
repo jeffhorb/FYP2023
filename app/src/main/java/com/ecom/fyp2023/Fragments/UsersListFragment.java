@@ -68,10 +68,11 @@ public class UsersListFragment extends BottomSheetDialogFragment {
             dismiss();
         });
 
-        Bundle arguments = getArguments();
-        if (arguments != null && arguments.containsKey("proID")) {
-            proId = arguments.getString("proID");
-            //userAdapter.setSelectedProjectId(proId);
+        //intent from ProjectActivity
+        Bundle argument1 = getArguments();
+        if (argument1 != null && argument1.containsKey("proTid")) {
+            proId = argument1.getString("proTid");
+            userAdapter.setSelectedProjectId(proId);
         }
 
         Bundle bundle = getArguments();

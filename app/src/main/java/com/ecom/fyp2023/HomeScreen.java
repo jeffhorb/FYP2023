@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.ProjectsRVAdapter;
 import com.ecom.fyp2023.Analysis.CompletedProjectAnalysisBarChart;
+import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
 import com.ecom.fyp2023.ModelClasses.Projects;
@@ -45,13 +46,18 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     SharedPreferenceManager sharedPrefManager;
 
     private SearchView searchView;
+    //private GoogleCalendarAPI googleCalendarAPI;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        // Inside your onCreate method or Application class
-        FirebaseApp.initializeApp(this);
+
+//        FirebaseApp.initializeApp(this);
+
+        // Initialize GoogleCalendarAPI instance
+        //googleCalendarAPI = new GoogleCalendarAPI(this);
 
         db = FirebaseFirestore.getInstance();
 
@@ -62,7 +68,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
         searchView = findViewById(R.id.searchView);
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(HomeScreen.this, RecyclerView.VERTICAL,false);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(HomeScreen.this, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
         sharedPrefManager = new SharedPreferenceManager(this);
@@ -70,7 +76,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         //search method
         setupSearchView();
 
-        recyclerAdapter = new ProjectsRVAdapter(projectsArrayList,HomeScreen.this);
+        recyclerAdapter = new ProjectsRVAdapter(projectsArrayList, HomeScreen.this);
         recyclerView.setAdapter(recyclerAdapter);
 
         db.collection("Projects")
@@ -88,9 +94,10 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                             if (project != null) {
                                 project.setProjectId(document.getId());
                                 projectsArrayList.add(project);
+                                recyclerAdapter.notifyDataSetChanged();
                             }
                         }
-                        recyclerAdapter.notifyDataSetChanged();
+
                     }
                 });
 
@@ -109,7 +116,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         actionBarDrawerToggle = new ActionBarDrawerToggle(
                 this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close);
         drawerLayout.addDrawerListener(actionBarDrawerToggle);
-            actionBarDrawerToggle.syncState();
+        actionBarDrawerToggle.syncState();
 
 
     }
@@ -120,13 +127,14 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         getMenuInflater().inflate(R.menu.menu, menu);
         return true;
     }
+
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
 
         if (itemId == R.id.completedP) {
-           Intent intent = new Intent(HomeScreen.this, CompletedProjects.class);
-           startActivity(intent);
+            Intent intent = new Intent(HomeScreen.this, CompletedProjects.class);
+            startActivity(intent);
             return true;
         } else if (itemId == R.id.imageNotification) {
             // Handle the action for menu option 2
@@ -140,17 +148,21 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     }
 
 
-
     //bottom navigation
-    public void addPro(MenuItem menuitem){
-
+    public void addPro(MenuItem menuitem) {
         BottomSheetDialogAddProject bottomSheetDialogFragment = BottomSheetDialogAddProject.newInstance();
         bottomSheetDialogFragment.show(getSupportFragmentManager(), bottomSheetDialogFragment.getTag());
 
     }
 
-    public void analysePro(MenuItem menuitem){
-        Intent intent = new Intent(HomeScreen.this, CompletedProjectAnalysisBarChart.class);
+    public void analysePro(MenuItem menuitem) {
+        Intent intent = new Intent(HomeScreen.this, ProjectProgressAnalysis.class);
+        startActivity(intent);
+        finish();
+    }
+
+    public void openDocument(MenuItem menuitem) {
+        Intent intent = new Intent(HomeScreen.this, DocumentActivity.class);
         startActivity(intent);
         finish();
     }
@@ -174,7 +186,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         ArrayList<Projects> filteredList = new ArrayList<>();
 
         for (Projects item : projectsArrayList) {
-            if (item.getTitle().toLowerCase().contains(query.toLowerCase())||item.getPriority().toLowerCase().contains(query.toLowerCase())) {
+            if (item.getTitle().toLowerCase().contains(query.toLowerCase()) || item.getPriority().toLowerCase().contains(query.toLowerCase())) {
                 filteredList.add(item);
             }
         }
@@ -217,4 +229,16 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         }
     }
 
+//    // Handle the result of the sign-in intent
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//
+//        if (requestCode == GoogleCalendarAPI.RC_SIGN_IN) {
+//            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+//            googleCalendarAPI.handleSignInResult(task);
+//
+//        }
+//
+//    }
 }

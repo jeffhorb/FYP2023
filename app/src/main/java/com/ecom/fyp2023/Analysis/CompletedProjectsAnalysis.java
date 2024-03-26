@@ -1,5 +1,6 @@
 package com.ecom.fyp2023.Analysis;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.GestureDetector;
@@ -53,6 +54,14 @@ public class CompletedProjectsAnalysis extends AppCompatActivity {
         gestureDetector = new GestureDetector(this, new SwipeGestureListenerProjectAnalysis(this));
 
         lineChart = findViewById(R.id.lineChart);
+        TextView next = findViewById(R.id.nextAnalysis);
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(CompletedProjectsAnalysis.this, CompletedProjectAnalysisBarChart.class);
+                startActivity(intent);
+            }
+        });
 
         db = FirebaseFirestore.getInstance();
 
@@ -65,12 +74,10 @@ public class CompletedProjectsAnalysis extends AppCompatActivity {
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
-                        List<Projects> projects = new ArrayList<>();
                         List<Projects> projectsWithDates = new ArrayList<>();
 
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             Projects project = document.toObject(Projects.class);
-                            projects.add(project);
                             // Check if both endDate and actualEndDate are not null
                             if (project.getEndDate() != null && project.getActualEndDate() != null) {
                             projectsWithDates.add(project);

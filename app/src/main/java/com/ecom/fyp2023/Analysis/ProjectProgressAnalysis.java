@@ -1,5 +1,6 @@
 package com.ecom.fyp2023.Analysis;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -31,6 +32,7 @@ public class ProjectProgressAnalysis extends AppCompatActivity {
     PieChart pieChart;
     FirebaseFirestore db;
 
+    TextView next;
     private GestureDetector gestureDetector;
 
     @Override
@@ -43,6 +45,16 @@ public class ProjectProgressAnalysis extends AppCompatActivity {
         pieChart = findViewById(R.id.pieChart);
 
         db = FirebaseFirestore.getInstance();
+
+        next = findViewById(R.id.nextAnalysis);
+
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ProjectProgressAnalysis.this, CompletedProjectsAnalysis.class);
+                startActivity(intent);
+            }
+        });
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

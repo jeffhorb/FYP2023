@@ -1,6 +1,7 @@
 package com.ecom.fyp2023;
 
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -30,14 +31,21 @@ import com.ecom.fyp2023.Fragments.NotesFragment;
 import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.ModelClasses.Notes;
+import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.SetOptions;
+
+import org.checkerframework.checker.units.qual.N;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -51,12 +59,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskActivity extends AppCompatActivity {
 
-    TextView tasksDetails, endDate,endDateTitle, estTime, taskPro, commentFrag, userAssigned,taskName,startDate,completedTime,completedTimeTitle,difficulty;
-    ImageView expandMore, progressExpand, prerequisiteList;
+    TextView tasksDetails, endDate,endDateTitle, estTime, taskPro, commentFrag, userAssigned,taskName,startDate,completedTime,completedTimeTitle,difficulty
+            ,storyPints;
+    ImageView expandMore, progressExpand, prerequisiteList,help;
 
     EditText notes;
-    String projectId,notesId;
+    String projectId;
     Button save, clear,view;
+
+    String nId,notesContent;
 
     FirebaseFirestore fb;
 
@@ -86,6 +97,8 @@ public class TaskActivity extends AppCompatActivity {
         endDateTitle = findViewById(R.id.endDateTextView);
         completedTimeTitle = findViewById(R.id.cTimeTitle);
         completedTime = findViewById(R.id.cTime);
+        storyPints =   findViewById(R.id.storyPoint);
+        help = findViewById(R.id.help);
 
         fb = FirebaseFirestore.getInstance();
 
@@ -121,6 +134,46 @@ public class TaskActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 showPopupMenuForOption(view);
+            }
+        });
+
+        help.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(TaskActivity.this);
+                builder.setTitle("Story Point Guide");
+
+                String message = "1-3 days:\n" +
+                        "  - Low difficulty: 1\n" +
+                        "  - Medium difficulty: 2\n" +
+                        "  - High difficulty: 3\n\n" +
+                        "4-7 days:\n" +
+                        "  - Low difficulty: 4\n" +
+                        "  - Medium difficulty: 5\n" +
+                        "  - High difficulty: 6\n\n" +
+                        "8-18 days:\n" +
+                        "  - Low difficulty: 7\n" +
+                        "  - Medium difficulty: 8\n" +
+                        "  - High difficulty: 9\n\n" +
+                        "19-28 days:\n" +
+                        "  - Low difficulty: 10\n" +
+                        "  - Medium difficulty: 11\n" +
+                        "  - High difficulty: 12\n\n" +
+                        "Above 28 days:\n" +
+                        "  - Low difficulty: 13\n" +
+                        "  - Medium difficulty: 14\n" +
+                        "  - High difficulty: 15";
+
+                builder.setMessage(message);
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                // Create and show the dialog
+                AlertDialog dialog = builder.create();
+                dialog.show();
             }
         });
 
@@ -163,6 +216,7 @@ public class TaskActivity extends AppCompatActivity {
 
             prerequisiteList.setOnClickListener(v -> {
                 // Show the prerequisites dialog
+                assert tasks != null;
                 showPrerequisitesDialog(tasks.getPrerequisites());
             });
 
@@ -172,6 +226,7 @@ public class TaskActivity extends AppCompatActivity {
             taskPro.setText(tasks.getProgress());
             difficulty.setText(tasks.getDifficulty());
             estTime.setText(tasks.getEstimatedTime()+"(s)");
+            storyPints.setText(tasks.getStoryPoints() + " point(s)");
 
             Date sDate = tasks.getStartDate();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
@@ -187,7 +242,7 @@ public class TaskActivity extends AppCompatActivity {
                 endDate.setText(formattedEndDate);
                 endDateTitle.setVisibility(View.VISIBLE);
                 endDate.setVisibility(View.VISIBLE);
-                completedTime.setText(comTime);
+                completedTime.setText(comTime +"(s)");
                 completedTimeTitle.setVisibility(View.VISIBLE);
                 completedTime.setVisibility(View.VISIBLE);
             }
@@ -221,6 +276,9 @@ public class TaskActivity extends AppCompatActivity {
                                         tasksDetails.setText(updatedDetails);
                                         String updatedEstimatedT = snapshot.getString("estimatedTime");
                                         estTime.setText(updatedEstimatedT);
+                                        Long storyPointLong = snapshot.getLong("storyPoints");
+                                        int updatedStoryP = storyPointLong != null ? storyPointLong.intValue() : 0;
+                                        storyPints.setText(String.valueOf(updatedStoryP+ " point(s)"));
                                         String updatedDiff = snapshot.getString("difficulty");
                                         difficulty.setText(updatedDiff);
                                         String updatedProgress = snapshot.getString("progress");
@@ -238,7 +296,7 @@ public class TaskActivity extends AppCompatActivity {
                                             endDate.setText(formattedEndDate);
                                             endDate.setVisibility(View.VISIBLE);
                                             endDateTitle.setVisibility(View.VISIBLE);
-                                            completedTime.setText(updatedCompletionTime);
+                                            completedTime.setText(updatedCompletionTime+"(s)");
                                             completedTime.setVisibility(View.VISIBLE);
                                             completedTimeTitle.setVisibility(View.VISIBLE);
                                         }else{
@@ -256,13 +314,15 @@ public class TaskActivity extends AppCompatActivity {
                 }
                 // Set an OnClickListener for the save notes button
                 save.setOnClickListener(v -> {
-                    // Get the text from the EditText
+
                     String note = notes.getText().toString();
 
                     if (TextUtils.isEmpty(note)){
                         notes.setError("Add notes");
+                    }else if (nId != null && !nId.isEmpty()) {
+                        updateNote(nId,note);
                     }else {
-                        saveNotes(note, documentId);
+                          saveNotes(note, documentId);
                     }
                 });
 
@@ -321,7 +381,6 @@ public class TaskActivity extends AppCompatActivity {
                                 tasks.setTaskId(documentId);
 
                                 UpdateTaskFragment updateTaskFragment = UpdateTaskFragment.newInstance();
-                                ///updateTaskFragment.setOnTaskUpdateListener((UpdateTaskFragment.OnTaskUpdateListener) TaskActivity.this);
                                 Bundle bundle = new Bundle();
                                 bundle.putSerializable("selectT", tasks);
                                 bundle.putString("pro_key", projectId);
@@ -350,12 +409,6 @@ public class TaskActivity extends AppCompatActivity {
                                 bundle.putString("TASKID", documentId);
                                 usersListFragment.setArguments(bundle);
                                 usersListFragment.show(getSupportFragmentManager(), usersListFragment.getTag());
-                                //try to make the unassign menu item visible only when task is assigned to user
-                                //String username;
-                                //username = userAssigned.getText().toString();
-                                //if (!username.equalsIgnoreCase("Unassigned")) {
-                                  // unAssignTaskMenuItem.setVisible(true);
-                                //}
                             }
                         });
                     }
@@ -371,7 +424,6 @@ public class TaskActivity extends AppCompatActivity {
                             if (documentId != null) {
                                 unAssignTask(documentId);
                                 userAssigned.setText("Unassigned");
-                                //unAssignTaskMenuItem.setVisible(false);
                             }
                         });
                     }
@@ -416,33 +468,30 @@ public class TaskActivity extends AppCompatActivity {
                         firestoreManager.getDocumentId("Tasks", "taskDetails", tasks.getTaskDetails(), documentId -> {
                             if (documentId != null) {
 
-                                fb.collection("Tasks")
-                                        .document(documentId)
-                                        .addSnapshotListener(new EventListener<DocumentSnapshot>() {
-                                            @Override
-                                            public void onEvent(@Nullable DocumentSnapshot snapshot, @Nullable FirebaseFirestoreException e) {
-                                                if (e != null) {
-                                                    Log.e("FirestoreListener", "Error getting project updates", e);
-                                                    return;
-                                                }
-                                                if (snapshot != null && snapshot.exists()) {
-                                                    String cTime = snapshot.getString("completedTime");
+                                fb.collection("Tasks").document(documentId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                                    @Override
+                                    public void onEvent(@Nullable DocumentSnapshot snapshot, @Nullable FirebaseFirestoreException e) {
+                                        if (e != null) {
+                                            Log.e("FirestoreListener", "Error getting project updates", e);
+                                            return;
+                                        }
+                                        if (snapshot != null && snapshot.exists()) {
+                                            String cTime = snapshot.getString("completedTime");
 
-                                                    Date eDate = snapshot.getDate("endDate");
-                                                    if (eDate != null&&cTime !=null) {
-                                                        SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
-                                                        String formattedEndDate = sdf1.format(eDate);
-                                                        endDate.setText(formattedEndDate);
-                                                        endDateTitle.setVisibility(View.VISIBLE);
-                                                        endDate.setVisibility(View.VISIBLE);
-
-                                                        completedTime.setText(cTime);
-                                                        completedTime.setVisibility(View.VISIBLE);
-                                                        completedTimeTitle.setVisibility(View.VISIBLE);
-                                                    }
-                                                }
+                                            Date eDate = snapshot.getDate("endDate");
+                                            if (eDate != null&&cTime !=null) {
+                                                SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                                                String formattedEndDate = sdf1.format(eDate);
+                                                endDate.setText(formattedEndDate);
+                                                endDateTitle.setVisibility(View.VISIBLE);
+                                                endDate.setVisibility(View.VISIBLE);
+                                                completedTime.setText(cTime+"(s)");
+                                                completedTime.setVisibility(View.VISIBLE);
+                                                completedTimeTitle.setVisibility(View.VISIBLE);
                                             }
-                                        });
+                                        }
+                                    }
+                                });
                             }
                         });
                     }
@@ -529,10 +578,8 @@ public class TaskActivity extends AppCompatActivity {
                                         if ("Complete".equals(progress)) {
                                             updateCompletedTime(documentId, new Date(), tasks.getStartDate());
                                         }
-
                                         // Automatically update project progress based on task progress
                                         updateProjectProgressAuto(projectId, "Complete");
-
                                     })
                                     .addOnFailureListener(e -> {
                                         // Error updating progress and endDate
@@ -887,7 +934,7 @@ public class TaskActivity extends AppCompatActivity {
         Notes notes = new Notes(note);
         dbTasks.add(notes).addOnSuccessListener(documentReference -> {
             Toast.makeText(TaskActivity.this, "Notes saved", Toast.LENGTH_SHORT).show();
-            notesId = documentReference.getId();
+            String notesId = documentReference.getId();
             addTaskNotes(taskId, notesId);
         }).addOnFailureListener(e -> Toast.makeText(TaskActivity.this, "Failed \n" + e, Toast.LENGTH_SHORT).show());
     }
@@ -925,4 +972,34 @@ public class TaskActivity extends AppCompatActivity {
         }
     }
 
+    // Move the updateNote method outside the save method
+    private void updateNote(String noteId, String note) {
+        // Create the updated note
+        Map<String, Object> noteData = new HashMap<>();
+        noteData.put("note", note);
+
+        fb.collection("Notes")
+                .document(noteId)
+                .update(noteData)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(TaskActivity.this, "Note has been updated..", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("UpdateNote", "Error updating note", e);
+                });
+    }
+
+    //intent from notesRV
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // Now getIntent() should always return the most recent
+        if (intent.hasExtra("noteID") && intent.hasExtra("notes")) {
+            nId = intent.getStringExtra("noteID");
+            notesContent = intent.getStringExtra("notes");
+            notes.setText(notesContent);
+        }
+    }
 }
+

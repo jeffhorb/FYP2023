@@ -1,21 +1,15 @@
 package com.ecom.fyp2023.Analysis;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.ecom.fyp2023.AppManagers.SwipeGestureListenerTasksAnalysis;
-import com.ecom.fyp2023.ModelClasses.Projects;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.ecom.fyp2023.ModelClasses.Tasks;
-import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.data.PieData;
@@ -25,7 +19,6 @@ import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -37,7 +30,6 @@ import java.util.Objects;
 public class TasksProgressAnalysis extends AppCompatActivity {
 
     PieChart pieChart;
-    GestureDetector gestureDetector;
 
     TextView next;
 
@@ -50,8 +42,6 @@ public class TasksProgressAnalysis extends AppCompatActivity {
 
         pieChart = findViewById(R.id.pieChartTask);
         next = findViewById(R.id.next);
-
-        gestureDetector = new GestureDetector(this, new SwipeGestureListenerTasksAnalysis(this));
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -102,11 +92,6 @@ public class TasksProgressAnalysis extends AppCompatActivity {
                     }
                 }
             });
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event);
     }
 
 

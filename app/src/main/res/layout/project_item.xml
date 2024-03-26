@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:layout_margin="5dp"
     app:cardCornerRadius="6dp"
-    app:cardElevation="4dp">
+    app:cardElevation="10dp">
 
 
 
@@ -46,9 +46,6 @@
                 android:textSize="16sp" />
 
         </LinearLayout>
-
-
-
 
     <ImageButton
         android:id="@+id/buttonOptions"

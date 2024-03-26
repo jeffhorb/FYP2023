@@ -23,8 +23,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.regex.Pattern;
@@ -190,27 +192,6 @@ public class SignUpActivity extends AppCompatActivity {
         builder.show();
     }
 
-
-
-
-    private void addUserToFirestore(String userName, String userEmail, String fcmToken) {
-        // creating a collection reference
-        // for our Firebase Firestore database.
-        CollectionReference dbUsers = db.collection("Users");
-
-        // adding our data to our courses object class.
-        Users users = new Users(userName, userEmail, fcmToken);
-
-        // below method is use to add data to Firebase Firestore.
-        dbUsers.add(users).addOnSuccessListener(documentReference -> {
-            // Document added successfully
-            Log.d("Firestore", "User added with ID: " + documentReference.getId());
-        }).addOnFailureListener(e -> {
-            // Handle the failure to add the document
-            Log.e("Firestore", "Error adding user", e);
-        });
-    }
-
     private void checkUsernameExists(String enteredUsername, String userEmail) {
         CollectionReference dbUsers = db.collection("Users");
 
@@ -219,7 +200,18 @@ public class SignUpActivity extends AppCompatActivity {
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        if (task.getResult().size() > 0) {
+                        boolean usernameExists = false;
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            String username = document.getString("userName");
+                            // Perform a case-sensitive comparison
+                            if (username.equals(enteredUsername)) {
+                                // Username already exists, set the flag to true
+                                usernameExists = true;
+                                break;
+                            }
+                        }
+
+                        if (usernameExists) {
                             // Username already exists, prompt the user to enter a new one
                             showUsernameExistsDialog();
                         } else {
@@ -236,9 +228,43 @@ public class SignUpActivity extends AppCompatActivity {
                                         }
                                     });
                         }
+                    } else {
+                        // Handle the failure to check the username
+                        Log.e("Firestore", "Error checking username", task.getException());
+                        Toast.makeText(SignUpActivity.this, "Error checking username.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
+
+
+//    private void checkUsernameExists(String enteredUsername, String userEmail) {
+//        CollectionReference dbUsers = db.collection("Users");
+//
+//        // Query Firestore to check if the username already exists
+//        dbUsers.whereEqualTo("userName", enteredUsername)
+//                .get()
+//                .addOnCompleteListener(task -> {
+//                    if (task.isSuccessful()) {
+//                        if (task.getResult().size() > 0) {
+//                            // Username already exists, prompt the user to enter a new one
+//                            showUsernameExistsDialog();
+//                        } else {
+//                            // Username is unique, proceed with authentication
+//                            FirebaseMessaging.getInstance().getToken()
+//                                    .addOnCompleteListener(tokenTask -> {
+//                                        if (tokenTask.isSuccessful() && tokenTask.getResult() != null) {
+//                                            String fcmToken = tokenTask.getResult();
+//                                            // Call a method to store the FCM token in the Firestore users collection
+//                                            addUserToFirestore(enteredUsername, userEmail, fcmToken);
+//                                            Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
+//                                            Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
+//                                            startActivity(intent);
+//                                        }
+//                                    });
+//                        }
+//                    }
+//                });
+//    }
 
     private void showCancelWarningDialog() {
         // Create a warning dialog
@@ -278,6 +304,25 @@ public class SignUpActivity extends AppCompatActivity {
         builder.show();
     }
 
+    private void addUserToFirestore(String userName, String userEmail, String fcmToken) {
+        // creating a collection reference
+        // for our Firebase Firestore database.
+        CollectionReference dbUsers = db.collection("Users");
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String userId = currentUser.getUid();
+        // adding our data to our courses object class.
+        Users users = new Users(userName, userEmail, fcmToken,userId);
+
+        // below method is use to add data to Firebase Firestore.
+        dbUsers.add(users).addOnSuccessListener(documentReference -> {
+            // Document added successfully
+            Log.d("Firestore", "User added with ID: " + documentReference.getId());
+        }).addOnFailureListener(e -> {
+            // Handle the failure to add the document
+            Log.e("Firestore", "Error adding user", e);
+        });
+    }
 
     public void validatepass(String password) {
         String specialC = ("[ \\\\@  [\\\"]\\\\[\\\\]\\\\\\|^{#%'*/<()>}:`;,!& .?_$+-]+");

@@ -4,15 +4,12 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.ecom.fyp2023.AppManagers.SwipeGestureListenerTasksAnalysis;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
 import com.github.mikephil.charting.charts.LineChart;
@@ -42,14 +39,10 @@ public class CompletedTasksAnalysis extends AppCompatActivity {
 
     TextView next;
 
-    private GestureDetector gestureDetector;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_completed_tasks_analysis);
-
-        gestureDetector = new GestureDetector(this, new SwipeGestureListenerTasksAnalysis(this));
 
         lineChart = findViewById(R.id.lineChart);
 
@@ -92,11 +85,6 @@ public class CompletedTasksAnalysis extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event);
     }
 
     private void retrieveTaskDetails(String taskId, List<Tasks> tasksList) {
@@ -159,10 +147,10 @@ public class CompletedTasksAnalysis extends AppCompatActivity {
         lineChart.setDescription(description);
 
         LineDataSet estimatedDataSet = new LineDataSet(estimatedTimeEntries, "Estimated Time (In Days)");
-        estimatedDataSet.setColor(Color.BLUE);
+        estimatedDataSet.setColor(Color.RED);
 
         LineDataSet actualDataSet = new LineDataSet(completedTimeEntries, "Completion Time(In Days)");
-        actualDataSet.setColor(Color.RED);
+        actualDataSet.setColor(Color.BLUE);
 
         List<ILineDataSet> dataSets = new ArrayList<>();
         dataSets.add(estimatedDataSet);

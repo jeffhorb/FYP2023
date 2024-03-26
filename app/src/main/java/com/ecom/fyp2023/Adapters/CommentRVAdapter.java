@@ -13,17 +13,22 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
+import com.ecom.fyp2023.AppManagers.TimeUtils;
 import com.ecom.fyp2023.ModelClasses.Comment;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.ViewHolder> {
 
@@ -47,26 +52,40 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
+
         if (currentUser != null) {
-            String userEmail = currentUser.getEmail();
-            holder.userEmail.setText(userEmail);
-        }
+            String currentUserId = currentUser.getUid();
 
-        Comment comment = commentList.get(position);
+            Comment comment = commentList.get(position);
+            holder.userEmail.setText(comment.getUserName());
+            holder.comment.setText(comment.getComment());
 
-        holder.comment.setText(comment.getComment());
+//            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM", Locale.getDefault());
+//            String formattedDate = sdf.format(comment.getTimestamp());
+//            holder.timeAdded.setText(formattedDate);
+            Date timestamp = comment.getTimestamp(); // Assuming comment.getTimestamp() returns a Date object
+            String timeAgo = TimeUtils.getTimeAgo(timestamp);
+            holder.timeAdded.setText(timeAgo);
 
-        holder.deleteComment.setOnClickListener(v -> {
-            // Call a method to delete the item from Firestore
-            removeComment(position);
-        });
 
-        /*holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Handle the item click event, you might want to open a detailed view or perform some action
+            // Compare the current user's ID with the user ID associated with the comment
+            if (comment.getCurrentUserId().equals(currentUserId)) {
+                holder.deleteComment.setVisibility(View.VISIBLE); // Show delete button
+            } else {
+                holder.deleteComment.setVisibility(View.GONE); // Hide delete button
             }
-        });*/
+
+            holder.deleteComment.setOnClickListener(v -> {
+                // Call a method to delete the item from Firestore
+                removeComment(position);
+            });
+              /*holder.itemView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                // Handle the item click event, you might want to open a detailed view or perform some action
+//            }
+//        });*/
+        }
     }
 
     @Override
@@ -75,7 +94,7 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView userEmail, comment;
+        TextView userEmail, comment,timeAdded;
 
         ImageView deleteComment;
 
@@ -84,6 +103,7 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
             userEmail = itemView.findViewById(R.id.commentUserName);
             comment = itemView.findViewById(R.id.commentText);
             deleteComment = itemView.findViewById(R.id.deleteComment);
+            timeAdded = itemView.findViewById(R.id.timeAdded);
         }
     }
     public void updateList(@NonNull List<Comment> itemList) {
@@ -93,19 +113,23 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
     }
 
     private void removeComment(int position) {
-        Comment removeComment = commentList.remove(position);
-        notifyItemRemoved(position);
 
-        FirestoreManager firestoreManager = new FirestoreManager();
-        firestoreManager.getDocumentId("Comments", "comment", removeComment.getComment(), documentId -> {
-            if (documentId != null) {
-                removeItemFromFirestore(documentId);
-                removeCommentFromProjectComment(documentId);
-            } else {
-                // Handle the case where the document ID couldn't be retrieved
-                Toast.makeText(context, "Document does not exist", Toast.LENGTH_SHORT).show();
-            }
-        });
+        if (position >= 0 && position < commentList.size()) {
+            Comment removedComment = commentList.remove(position);
+            notifyItemRemoved(position);
+
+
+            FirestoreManager firestoreManager = new FirestoreManager();
+            firestoreManager.getDocumentId("Comments", "comment", removedComment.getComment(), documentId -> {
+                if (documentId != null) {
+                    removeItemFromFirestore(documentId);
+                    removeCommentFromProjectComment(documentId);
+                } else {
+                    // Handle the case where the document ID couldn't be retrieved
+                    Toast.makeText(context, "Document does not exist", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
     private void removeItemFromFirestore(String documentId) {

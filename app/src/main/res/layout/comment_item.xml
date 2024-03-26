@@ -16,20 +16,29 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Username"
-            android:textStyle="bold"
-            android:textSize="16sp"/>
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/timeAdded"
+            android:layout_width="275dp"
+            android:layout_height="wrap_content"
+            android:text="timeAdded"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="1dp"
+            android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/deleteComment"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:layout_marginStart="210dp"
-            android:layout_marginEnd="10dp"
+            android:layout_gravity="end"
             android:src="@drawable/baseline_delete_24"
             android:contentDescription="Delete Comment"
             android:clickable="true"
             android:focusable="true"/>
-
 
     </LinearLayout>
 

@@ -23,7 +23,7 @@ public class DateUtils {
             // Calculate days using TimeUnit for more accurate results
             long daysDifference = TimeUnit.MILLISECONDS.toDays(differenceInMillis);
 
-            return daysDifference + "day(s)";
+            return daysDifference + "day";
         } catch (Exception e) {
             e.printStackTrace();
             return "Error calculating difference";

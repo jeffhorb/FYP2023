@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item
-        android:id="@+id/home"
-        android:title="Home"
-        android:icon="@drawable/nav_home_24"/>
-
-
 
     <item
-        android:title="Add"
-        android:icon="@drawable/baseline_add_circle_outline_24"
-        android:onClick="addPro"/>
+        android:title="Group"
+        android:icon="@drawable/baseline_group_24" />
+
+
 
 
     <item
         android:title="Analytics"
         android:icon="@drawable/baseline_analytics_24"
         android:onClick="analysePro"/>
+
+    <item
+        android:title="Documents"
+        android:icon="@drawable/_849788_folder_document_multimedia_icon"
+        android:onClick="openDocument"/>
+
+    <item
+        android:title="Add"
+        android:icon="@drawable/_394221_plus_add_create_icon"
+        android:onClick="addPro" />
 
 </menu>

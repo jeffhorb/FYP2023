@@ -52,24 +52,17 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     Tasks selectedTask;
     private String proIdFromAddTask;
 
-    //private final OnEndDateUpdateListener endDateUpdateListener;
-
-    //public interface OnEndDateUpdateListener {
-      //  void onEndDateUpdated(String updatedEndDate);
-    //}
-
     // Setter method to set the selected project
     public void setSelectedProject(String selectedProject) {
         this.proIdFromSelectedPro = selectedProject;
         this.proIdFromAddTask = selectedProject;
     }
 
-    public TasksRVAdapter(List<Tasks> tasksList, Context context /*OnEndDateUpdateListener endDateUpdateListener*/ ) {
+    public TasksRVAdapter(List<Tasks> tasksList, Context context ) {
         this.tasksList = tasksList;
         this.context = context;
         this.sharedPreferenceManager = new SharedPreferenceManager(context);
         this.fb = FirebaseFirestore.getInstance();
-        //this.endDateUpdateListener = endDateUpdateListener;
     }
 
     @NonNull
@@ -233,18 +226,14 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
 
     private void removeTask(int position) {
         if (position >= 0 && position < tasksList.size()) {
+
             Tasks removeTask = tasksList.remove(position);
             notifyItemRemoved(position);
 
             FirestoreManager firestoreManager = new FirestoreManager();
             firestoreManager.getDocumentId("Tasks", "taskDetails", removeTask.getTaskDetails(), documentId -> {
                 if (documentId != null) {
-                    if (proIdFromSelectedPro != null) {
-                        calculateTotalEstimatedTimeAndEndDate(proIdFromSelectedPro);
-                    }
-                    if (proIdFromAddTask != null) {
-                        calculateTotalEstimatedTimeAndEndDate(proIdFromAddTask);
-                    }
+
                     removeTaskFromProjectTasks(documentId);
                     removeTaskFromFirestore(documentId);
                     removeTaskNotes(documentId);
@@ -260,6 +249,14 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
     private void removeTaskFromFirestore(String documentId) {
         FirebaseFirestore.getInstance().collection("Tasks").document(documentId).delete().addOnCompleteListener(task -> {
             task.isSuccessful();
+            if (proIdFromSelectedPro != null) {
+                Log.d("proID", "proID " + proIdFromSelectedPro);
+                calculateTotalEstimatedTimeAndEndDate(proIdFromSelectedPro);
+            }
+            if (proIdFromAddTask != null) {
+                Log.d("proID", "proID " + proIdFromAddTask);
+                calculateTotalEstimatedTimeAndEndDate(proIdFromAddTask);
+            }
         });
     }
 

@@ -1,6 +1,7 @@
 package com.ecom.fyp2023.Adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.ecom.fyp2023.Analysis.TeamMemberEvaluation;
+import com.ecom.fyp2023.Analysis.TeamMemberTasksAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.ecom.fyp2023.R;
@@ -25,10 +28,14 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
     private final List<Users> userList;
     private final Context context;
 
-    private String taskId;
+    private String taskId,projectId;
 
     public void setSelectedTaskId(String selectedTaskId) {
         this.taskId = selectedTaskId;
+    }
+
+    public void setSelectedProjectId(String proId) {
+        this.projectId = proId;
     }
 
     public UserRVAdapter(List<Users> userList, Context context) {
@@ -56,7 +63,16 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
                 FirestoreManager firestoreManager = new FirestoreManager();
                 firestoreManager.getDocumentId("Users", "userEmail", user.getUserEmail(), documentId -> {
                     if (documentId != null) {
-                        AssignUserTask(documentId,taskId);
+                        if (taskId != null){
+                            AssignUserTask(documentId,taskId);
+                        }else {
+                            // Create an Intent
+                            Intent intent = new Intent(context, TeamMemberEvaluation.class);
+                            intent.putExtra("userID", documentId);
+                            intent.putExtra("userName", user.getUserName());
+                            intent.putExtra("projID",projectId);
+                            context.startActivity(intent);
+                        }
                     }  // Handle the case where the document ID couldn't be retrieved
                 });
             }
@@ -67,6 +83,9 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
     public int getItemCount() {
         return userList.size();
     }
+
+
+
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView username,userEmail;
@@ -107,6 +126,5 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
                     }
                 });
     }
-
 }
 

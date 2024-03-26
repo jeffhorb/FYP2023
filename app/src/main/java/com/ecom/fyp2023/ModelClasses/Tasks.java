@@ -21,13 +21,16 @@ public class Tasks implements Serializable {
 
     private Date startDate;
     private Date endDate;
+    private Date estimatedEndDate;
+    private int storyPoints;
+
 
 
     public Tasks() {
         // Default constructor required for Firestore
     }
 
-    public Tasks(String taskName,String taskDetails, String difficulty, String progress, String estimatedTime, List<String> prerequisites,String completedTime,Date startDate,Date endDate) {
+    public Tasks(String taskName,String taskDetails, String difficulty, String progress, String estimatedTime, List<String> prerequisites,String completedTime,Date startDate,Date endDate,Date estimatedEndDate, int storyPoints) {
         this.taskName = taskName;
         this.taskDetails = taskDetails;
         this.difficulty = difficulty;
@@ -37,6 +40,8 @@ public class Tasks implements Serializable {
         this.completedTime = completedTime;
         this.startDate = startDate;
         this.endDate =  endDate;
+        this.estimatedEndDate = estimatedEndDate;
+        this.storyPoints = storyPoints;
     }
 
     public String getTaskName() {
@@ -118,5 +123,21 @@ public class Tasks implements Serializable {
 
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
+    }
+
+    public Date getEstimatedEndDate() {
+        return estimatedEndDate;
+    }
+
+    public void setEstimatedEndDate(Date estimatedEndDate) {
+        this.estimatedEndDate = estimatedEndDate;
+    }
+
+    public int getStoryPoints() {
+        return storyPoints;
+    }
+
+    public void setStoryPoints(int storyPoints) {
+        this.storyPoints = storyPoints;
     }
 }

@@ -2,6 +2,7 @@ package com.ecom.fyp2023.Adapters;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,9 +14,11 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.ecom.fyp2023.Analysis.TeamMemberTasksAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.ModelClasses.Notes;
 import com.ecom.fyp2023.R;
+import com.ecom.fyp2023.TaskActivity;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -48,6 +51,24 @@ public class NotesRVAdapter extends RecyclerView.Adapter<NotesRVAdapter.ViewHold
         holder.deleteNotes.setOnClickListener(v -> {
             // Call a method to delete the item from Firestore
             showRemoveConfirmationDialog(position);
+        });
+        holder.updateNotes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FirestoreManager firestoreManager = new FirestoreManager();
+                firestoreManager.getDocumentId("Notes", "note", notes.getNote(), documentId -> {
+                    if (documentId != null) {
+                            // Create an Intent
+                        Intent intent = new Intent(context, TaskActivity.class);
+                        intent.putExtra("notes", notes.getNote());
+                        intent.putExtra("noteID", documentId);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        context.startActivity(intent);
+
+                    }  // Handle the case where the document ID couldn't be retrieved
+                });
+
+            }
         });
     }
 

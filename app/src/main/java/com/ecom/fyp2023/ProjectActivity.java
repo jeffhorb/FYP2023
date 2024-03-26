@@ -26,6 +26,7 @@ import com.ecom.fyp2023.Fragments.BottomSheetFragmentAddTask;
 import com.ecom.fyp2023.Fragments.CommentListFragment;
 import com.ecom.fyp2023.Fragments.UpdateProject;
 import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
+import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -45,15 +46,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-public class ProjectActivity extends AppCompatActivity implements
-         UpdateTaskFragment.OnTaskUpdateListener
-        /*BottomSheetFragmentAddTask.OnEndDateUpdateListener, TasksRVAdapter.OnEndDateUpdateListener,UpdateTaskFragment.OnEndDateUpdateListener*/{
+public class ProjectActivity extends AppCompatActivity implements UpdateTaskFragment.OnTaskUpdateListener {
 
     private TasksRVAdapter tasksRVAdapter;
     private FirebaseFirestore db;
     String projectId;
 
-    TextView commentFrag;
+    TextView commentFrag,proTitle;
     private TextView proDes, progress, proEndDate,projectCompletionDate,completionTitle;
 
     public static final String projectId_key = "proId";
@@ -69,7 +68,7 @@ public class ProjectActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_project);
 
-        TextView proTitle = findViewById(R.id.titleTextview);
+        proTitle = findViewById(R.id.titleTextview);
         proDes = findViewById(R.id.descriptionTextView);
         TextView proStartDate = findViewById(R.id.startDateTextView);
         proEndDate = findViewById(R.id.endDateTextView);
@@ -191,17 +190,19 @@ public class ProjectActivity extends AppCompatActivity implements
                     tasksRVAdapter.setSelectedProject(documentId);
                     fetchAndDisplayTasks(documentId);
 
-                    CommentListFragment bottomSheetFragment = CommentListFragment.newInstance(documentId);
-                    bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
-
+                    //CommentListFragment bottomSheetFragment = CommentListFragment.newInstance(documentId);
+                    //bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
+                    if (!isFinishing()) {
+                        CommentListFragment bottomSheetFragment = CommentListFragment.newInstance(documentId);
+                        bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
+                    }
                     UpdateTaskFragment fragment = UpdateTaskFragment.newInstance();
                     Bundle bundle = new Bundle();
                     bundle.putString("pId", documentId);
-                    //fragment.setOnEndDateUpdateListener(ProjectActivity.this);//updatd end date in realtime
                     fragment.setArguments(bundle);
 
                     db.collection("projectTasks")
-                            .whereEqualTo("projectId", documentId)  // Replace with the ID of the current project
+                            .whereEqualTo("projectId", documentId)
                             .addSnapshotListener(new EventListener<QuerySnapshot>() {
                                 @Override
                                 public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
@@ -444,8 +445,18 @@ public class ProjectActivity extends AppCompatActivity implements
                         });
                     }
 
-                }
+                }else if (menuItem.getItemId() == R.id.teamAnalysis){
 
+                    UsersListFragment usersListFragment = UsersListFragment.newInstance();
+                    Bundle bundle1 = new Bundle();
+                    usersListFragment.setArguments(bundle1);
+                    bundle1.putString("proTid", projectId);
+                    FragmentManager fragmentManager = ProjectActivity.this.getSupportFragmentManager();
+                    FragmentTransaction transaction = fragmentManager.beginTransaction();
+                    transaction.replace(R.id.userFragment, usersListFragment);
+                    transaction.addToBackStack(null);
+                    transaction.commit();
+                }
 
                 return true;
             }
@@ -455,7 +466,6 @@ public class ProjectActivity extends AppCompatActivity implements
     }
     @Override
     public void onTaskUpdated() {
-        // Implement the logic to refresh the task data in the RecyclerView
         // Fetch and display tasks again to update the RecyclerView
         fetchAndDisplayTasks(projectId);
     }
@@ -494,24 +504,16 @@ public class ProjectActivity extends AppCompatActivity implements
                             assert taskData != null;
                             taskData.setTaskId(document.getId());
                             tasksList.add(taskData);
-
+                            tasksList.sort((o1, o2) -> o2.getStartDate().compareTo(o1.getStartDate()));
                             tasksRVAdapter.updateList(tasksList);
-
                         } else {
                             Log.e("Firestore", "Error fetching task details: " + task.getException());
-                            //Toast.makeText(ProjectActivity.this, "Task not found", Toast.LENGTH_SHORT).show();
                         }
                     } else {
                         Toast.makeText(ProjectActivity.this, "Error fetching task details", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-
-    //@Override
-    //public void onEndDateUpdated(String updatedEndDate) {
-        // Update your TextView with the new end date
-      //  proEndDate.setText(updatedEndDate);
-    //}
 
     @Override
     protected void onResume() {

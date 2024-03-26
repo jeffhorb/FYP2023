@@ -3,9 +3,16 @@
 
     <item
         android:id="@+id/tasksProgressAnalysis"
-        android:title="Tasks Analytics"/>
+        android:title="Tasks Analysis"/>
+    <item
+        android:id="@+id/teamAnalysis"
+        android:title="Team Analysis"/>
+
+    <item
+        android:title=""/>
+
     <item
         android:id="@+id/UpdateProject"
-        android:title="Update" />
+        android:title="Update Project" />
 
 </menu>

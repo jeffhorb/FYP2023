@@ -51,9 +51,12 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
     Spinner taskDifficulty,duration;
 
     String  progress,projectId,completedTime;
+
     private FirebaseFirestore fb;
     Tasks tasks;
-    Date startDate,endDate;
+    Date startDate,endDate,estimatedEndDate;
+
+    int sP;
 
     ArrayAdapter<String> prerequisitesAdapter;
     private final List<String> selectedPrerequisites = new ArrayList<>();
@@ -78,15 +81,6 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
         return new UpdateTaskFragment();
     }
 
-    //private OnEndDateUpdateListener endDateUpdateListener;
-
-   // public interface OnEndDateUpdateListener {
-      //  void onEndDateUpdated(String updatedEndDate);
-   // }
-
-    //public void setOnEndDateUpdateListener(OnEndDateUpdateListener listener) {
-    //    this.endDateUpdateListener = listener;
-   // }
 
     @Nullable
     @Override
@@ -104,14 +98,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
         TextInputEditText estimatedTime = view.findViewById(R.id.updateEstimatedTime);
         taskDifficulty = view.findViewById(R.id.updateTaskDif);
         duration = view.findViewById(R.id.upTaskDuration);
-
         Button updateTaskBtn = view.findViewById(R.id.updateBtn);
-
-        Spinner spinnerPrerequisite = view.findViewById(R.id.spinnerPrerequisite);
-        List<String> taskNames = getTaskNamesFromFirestore();
-        prerequisitesAdapter = new CustomArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, taskNames, selectedPrerequisites, this);
-        prerequisitesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerPrerequisite.setAdapter(prerequisitesAdapter);
 
         Bundle args = getArguments();
         if (args != null && args.containsKey("pId2")) {
@@ -140,6 +127,12 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
             tasks = (Tasks) bundle.getSerializable("selectT");
             tasks.getTaskId();
         }
+
+        Spinner spinnerPrerequisite = view.findViewById(R.id.spinnerPrerequisite);
+        List<String> taskNames = getTaskNamesFromFirestore(projectId);
+        prerequisitesAdapter = new CustomArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, taskNames, selectedPrerequisites, this);
+        prerequisitesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerPrerequisite.setAdapter(prerequisitesAdapter);
 
         assert tasks != null;
         taskDetails.setText(tasks.getTaskDetails());
@@ -212,9 +205,9 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
             }else if (!isValidEstimationFormat(timeEstimate)) {
                 estimatedTime.setError("Invalid format. Use a number followed by duration");
             } else {
-                // Call the updateTask method
-                updateTask(tasks, taskN, detls, diff, progress, timeEstimate,selectedPrerequisites,completedTime,startDate,endDate);
-                dismiss();
+                // Check if the new taskName conflicts with existing tasks before updating
+                checkTaskNameExistsForUpdate(tasks, taskN, detls, diff, progress, timeEstimate,
+                        selectedPrerequisites, completedTime, startDate, endDate, estimatedEndDate, sP);
             }
         });
         return view;
@@ -225,26 +218,67 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
         return estTime.matches(regex);
     }
 
-    private void updateTask(@NonNull Tasks task, String taskN, String taskDetails, String tasksDiff, String progres, String taskEtime,List<String> prerequisite,String completeT,Date sD,Date eD) {
+    private void checkTaskNameExistsForUpdate(@NonNull Tasks tasks, String taskNames, String taskDetails, String tasksDiff, String progress, String taskEtime,
+                                              List<String> prerequisite, String completeT, Date sD, Date eD, Date estED, int sP) {
+        // Query Tasks collection to check if a task with the same name exists
+        FirebaseFirestore.getInstance().collection("Tasks")
+                .whereEqualTo("taskName", taskNames)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            // If the taskName exists and it's not the current task being updated
+                            if (!document.getId().equals(tasks.getTaskId())) {
+                                // Task name already exists
+                                taskName.setError("Task name already exists");
+                                return;
+                            }
+                        }
+                        // Task name is unique, proceed with updating the task
+                        performTaskUpdate(tasks, taskNames, taskDetails, tasksDiff, progress, taskEtime,
+                                prerequisite, completeT, sD, eD, estED, sP);
+                        dismiss();
+                    } else {
+                        // Handle errors
+                        Toast.makeText(getActivity(), "Failed to check task name", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void performTaskUpdate(@NonNull Tasks task, String taskN, String taskDetails, String tasksDiff, String progres,
+                                   @NonNull String taskEtime, List<String> prerequisite, String completeT, Date sD, Date eD, Date estED, int sP) {
+
+        // Convert to days using the TimeConverter class
+        long estimatedDays = TimeConverter.convertToDays(taskEtime);
 
         String existingProgress = task.getProgress();
         String existingCompletedTime = task.getCompletedTime();
         Date existingStartDate = task.getStartDate();
         Date existingEndDate = task.getEndDate();
 
-        // Create the updated task with the existing progress value
-        Tasks updateTasks = new Tasks(taskN,taskDetails, tasksDiff, existingProgress, taskEtime,prerequisite,existingCompletedTime,existingStartDate,existingEndDate);
+        // Calculate the new estimated end date based on the start date and updated estimated days
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(existingStartDate);
+        calendar.add(Calendar.DAY_OF_MONTH, (int) estimatedDays);
+        Date updatedEstimatedEndDate = calendar.getTime();
+
+        // Calculate the new StoryPoint based on the updated difficulty level and estimated time
+        int updatedStoryPoint = calculateStoryPoint(tasksDiff, estimatedDays);
+
+        // Create the updated task with the new estimated end date and StoryPoint
+        Tasks updateTasks = new Tasks(taskN, taskDetails, tasksDiff, existingProgress, taskEtime, prerequisite,
+                existingCompletedTime, existingStartDate, existingEndDate, updatedEstimatedEndDate, updatedStoryPoint);
 
         fb.collection("Tasks")
                 .document(task.getTaskId())
                 .set(updateTasks)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("proID", "proID " +projectId);
+                    Log.d("proID", "proID " + projectId);
                     calculateTotalEstimatedTimeAndEndDate(projectId);
                     Toast.makeText(requireContext(), "Task has been updated.", Toast.LENGTH_SHORT).show();
                     if (taskUpdateListener != null) {
                         taskUpdateListener.onTaskUpdated();
-                   }
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(requireContext(), "Failed to update the task.", Toast.LENGTH_SHORT).show();
@@ -252,66 +286,52 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                 });
     }
 
-    //update end date of project automatically when startdate is updated. this does not account for prerequisites take out when satisfied
-    /*private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
-        fb.collection("projectTasks")
-                .whereEqualTo("projectId", projectId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        AtomicLong highestEstimatedTime = new AtomicLong();
-                        AtomicInteger tasksProcessed = new AtomicInteger(0);
-                        int totalTasks = task.getResult().size();
 
-                        for (DocumentSnapshot document : task.getResult()) {
-                            String taskId = document.getString("taskId");
-
-                            fb.collection("Tasks")
-                                    .document(taskId)
-                                    .get()
-                                    .addOnCompleteListener(taskDocumentTask -> {
-                                        if (taskDocumentTask.isSuccessful()) {
-                                            DocumentSnapshot taskDocument = taskDocumentTask.getResult();
-
-                                            if (taskDocument != null && taskDocument.exists()) {
-                                                String estimatedTime = taskDocument.getString("estimatedTime");
-
-                                                if (estimatedTime != null) {
-                                                    long taskDays = TimeConverter.convertToDays(estimatedTime);
-
-                                                    // Update the highest estimated time
-                                                    highestEstimatedTime.updateAndGet(currentValue ->
-                                                            Math.max(currentValue, taskDays)
-                                                    );
-
-                                                    Log.d("CalculateTime", "Task processed. Highest estimated time so far: " + highestEstimatedTime);
-                                                } else {
-                                                    Log.e("CalculateTime", "Estimated time is null for task: " + taskId);
-                                                }
-                                            } else {
-                                                Log.e("CalculateTime", "Task document is null or doesn't exist for taskId: " + taskId);
-                                            }
-                                        } else {
-                                            // Handle failure in fetching task document
-                                            Log.e("CalculateTime", "Error fetching task document", taskDocumentTask.getException());
-                                        }
-
-                                        // Increment the counter for processed tasks
-                                        tasksProcessed.incrementAndGet();
-
-                                        // Check if all tasks have been processed
-                                        if (tasksProcessed.get() == totalTasks) {
-                                            // Update the project's end date based on the highest estimated time
-                                            updateProjectEndDate(projectId, highestEstimatedTime.get());
-                                        }
-                                    });
-                        }
-                    } else {
-                        // Handle failure in fetching project tasks
-                        Log.e("CalculateTime", "Error fetching project tasks", task.getException());
-                    }
-                });
-    }*/
+    private int calculateStoryPoint(String difficulty, long estimatedDays) {
+        int storyPoint = 0;
+        if (estimatedDays >= 1 && estimatedDays <= 3) {
+            if (difficulty.equalsIgnoreCase("low")) {
+                storyPoint = 1;
+            } else if (difficulty.equalsIgnoreCase("medium")) {
+                storyPoint = 2;
+            } else if (difficulty.equalsIgnoreCase("high")) {
+                storyPoint = 3;
+            }
+        } else if (estimatedDays >= 4 && estimatedDays <= 7) {
+            if (difficulty.equalsIgnoreCase("low")) {
+                storyPoint = 4;
+            } else if (difficulty.equalsIgnoreCase("medium")) {
+                storyPoint = 5;
+            } else if (difficulty.equalsIgnoreCase("high")) {
+                storyPoint = 6;
+            }
+        } else if (estimatedDays >= 8 && estimatedDays <= 18) {
+            if (difficulty.equalsIgnoreCase("low")) {
+                storyPoint = 7;
+            } else if (difficulty.equalsIgnoreCase("medium")) {
+                storyPoint = 8;
+            } else if (difficulty.equalsIgnoreCase("high")) {
+                storyPoint = 9;
+            }
+        } else if (estimatedDays >= 19 && estimatedDays <= 28) {
+            if (difficulty.equalsIgnoreCase("low")) {
+                storyPoint = 10;
+            } else if (difficulty.equalsIgnoreCase("medium")) {
+                storyPoint = 11;
+            } else if (difficulty.equalsIgnoreCase("high")) {
+                storyPoint = 12;
+            }
+        } else if (estimatedDays > 28) {
+            if (difficulty.equalsIgnoreCase("low")) {
+                storyPoint = 13;
+            } else if (difficulty.equalsIgnoreCase("medium")) {
+                storyPoint = 14;
+            } else if (difficulty.equalsIgnoreCase("high")) {
+                storyPoint = 15;
+            }
+        }
+        return storyPoint;
+    }
 
     private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
         fb.collection("projectTasks")
@@ -371,7 +391,8 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                                                                                         // Mark the prerequisite task as considered
                                                                                         consideredTasks.add(prerequisiteTaskId);
 
-                                                                                        Log.d("CalculateTime", "Prerequisite task processed. Highest estimated time so far: " + highestEstimatedTime);
+                                                                                        Log.d("CalculateTime", "Prerequisite task processed. " +
+                                                                                                "Highest estimated time so far: " + highestEstimatedTime);
 
                                                                                         // Check if all tasks have been processed
                                                                                         if (tasksProcessed.incrementAndGet() == totalTasks) {
@@ -379,14 +400,17 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                                                                                             updateProjectEndDate(projectId, highestEstimatedTime.get());
                                                                                         }
                                                                                     } else {
-                                                                                        Log.e("CalculateTime", "Prerequisite task's estimated time is null for task: " + prerequisiteTaskId);
+                                                                                        Log.e("CalculateTime", "Prerequisite task's estimated time is null for task:"
+                                                                                                + prerequisiteTaskId);
                                                                                     }
                                                                                 } else {
-                                                                                    Log.e("CalculateTime", "Prerequisite task document is null or doesn't exist for taskId: " + prerequisiteTaskId);
+                                                                                    Log.e("CalculateTime", "Prerequisite task document is null or doesn't exist for " +
+                                                                                            "taskId: " + prerequisiteTaskId);
                                                                                 }
                                                                             } else {
                                                                                 // Handle failure in fetching prerequisite task document
-                                                                                Log.e("CalculateTime", "Error fetching prerequisite task document", prerequisiteTaskDocumentTask.getException());
+                                                                                Log.e("CalculateTime", "Error fetching prerequisite task document",
+                                                                                        prerequisiteTaskDocumentTask.getException());
                                                                             }
                                                                         });
                                                             }
@@ -477,29 +501,51 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
     // Fetch task names from Firestore
     @NonNull
-    private List<String> getTaskNamesFromFirestore() {
+    private List<String> getTaskNamesFromFirestore(String projectId) {
         List<String> taskNames = new ArrayList<>();
-        taskNames.add("     ");
-        // Replace "Tasks" with the actual name of your collection
-        FirebaseFirestore.getInstance().collection("Tasks")
+        taskNames.add("   ");
+
+        // Query ProjectTasks collection to get tasks associated with the given projectId
+        FirebaseFirestore.getInstance().collection("projectTasks")
+                .whereEqualTo("projectId", projectId) // Filter by projectId
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Assuming you have a "taskDetails" field in your document
-                            String taskName = document.getString("taskName");
-                            if(!tasks.getTaskDetails().equalsIgnoreCase(taskName)){
-                                taskNames.add(taskName);
-                            }
+                            String taskId = document.getString("taskId");
+                            // Fetch task details from Tasks collection using taskId
+                            fetchTaskName(taskId, taskNames);
                         }
-                        // Notify the adapter that the data set has changed
-                        prerequisitesAdapter.notifyDataSetChanged();
                     } else {
+                        // Handle errors
                         Toast.makeText(getActivity(), "Failed to fetch task names", Toast.LENGTH_SHORT).show();
                     }
                 });
         return taskNames;
     }
+
+    // Helper method to fetch task names using taskId
+    private void fetchTaskName(String taskId, List<String> taskNames) {
+        FirebaseFirestore.getInstance().collection("Tasks")
+                .document(taskId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        if (document.exists()) {
+                            String taskName = document.getString("taskName");
+                            taskNames.add(taskName);
+                            // Notify the adapter that the data set has changed
+                            prerequisitesAdapter.notifyDataSetChanged();
+                        } else {
+                            Log.e("error", "No such document");
+                        }
+                    } else {
+                        Log.e("error", "get failed with ", task.getException());
+                    }
+                });
+    }
+
 
     // Fetch task ID from Firestore based on task name
     private void getTaskIdFromName(String selectedTaskName, BottomSheetFragmentAddTask.OnTaskIdFetchedListener listener) {
