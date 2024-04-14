@@ -5,6 +5,10 @@ import android.content.SharedPreferences;
 
 public class SharedPreferenceManager {
 
+    private static final String PREF_NAME = "GitHubPrefs";
+    private static final String KEY_CLIENT_SECRET = "client_secret";
+    private static final String KEY_ACCESS_TOKEN = "access_token";
+
     Context context;
 
     public SharedPreferenceManager(Context context) {
@@ -32,17 +36,6 @@ public class SharedPreferenceManager {
         editor.apply();
     }
 
-   /* public void saveTaskProgress(String taskDetails, boolean isComplete) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("TaskProgress", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean(taskDetails, isComplete);
-        editor.apply();
-    }
-
-    public boolean getTaskProgress(String taskDetails, boolean defaultValue) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("TaskProgress", Context.MODE_PRIVATE);
-        return sharedPreferences.getBoolean(taskDetails, defaultValue);
-    }*/
 
     public void saveNoteToSharedPreferencesForTask(String note, String taskId) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("Notes", Context.MODE_PRIVATE);
@@ -60,6 +53,58 @@ public class SharedPreferenceManager {
         SharedPreferences sharedPreferences = context.getSharedPreferences("Notes", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.remove("Note");
+        editor.apply();
+    }
+
+    // Method to save text in RichEditor to SharedPreferences for a specific file
+    public void saveRichEditorText(String fileDocId, String text) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("RichEditorContent", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(fileDocId, text); // Use fileDocId as the key to differentiate files
+        editor.apply();
+    }
+
+    // Method to retrieve text from SharedPreferences for a specific file
+    public String getRichEditorText(String fileDocId) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("RichEditorContent", Context.MODE_PRIVATE);
+        return sharedPreferences.getString(fileDocId, ""); // Use fileDocId as the key to retrieve specific file content
+    }
+
+    // Method to save client secret
+    public void saveClientSecret(String clientSecret) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_CLIENT_SECRET, clientSecret);
+        editor.apply();
+    }
+
+    // Method to retrieve client secret
+    public String getClientSecret() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_CLIENT_SECRET, null);
+    }
+
+    // Method to save access token
+    public void saveAccessToken(String accessToken) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_ACCESS_TOKEN, accessToken);
+        editor.apply();
+    }
+
+    // Method to retrieve access token
+    public String getAccessToken() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_ACCESS_TOKEN, null);
+    }
+
+    // Method to clear stored client secret, access token, and other data
+    public void clearStoredData() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove(KEY_CLIENT_SECRET);
+        editor.remove(KEY_ACCESS_TOKEN);
+        // Add more removals for other stored data if needed
         editor.apply();
     }
 

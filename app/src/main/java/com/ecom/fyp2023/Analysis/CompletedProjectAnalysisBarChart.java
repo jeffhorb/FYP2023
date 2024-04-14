@@ -60,7 +60,7 @@ public class CompletedProjectAnalysisBarChart extends AppCompatActivity {
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(CompletedProjectAnalysisBarChart.this, VelocityAnalysis.class);
+                Intent intent = new Intent(CompletedProjectAnalysisBarChart.this, CombinedLineAndBarChart.class);
                 startActivity(intent);
             }
         });
@@ -83,7 +83,7 @@ public class CompletedProjectAnalysisBarChart extends AppCompatActivity {
                                 projectsWithDates.add(project);
                             }
                         }
-                        updateBarChart(projectsWithDates);
+                        updateChart(projectsWithDates);
                     } else {
                         // Handle errors
                     }
@@ -96,7 +96,7 @@ public class CompletedProjectAnalysisBarChart extends AppCompatActivity {
 
     }
 
-    private void updateBarChart(@NonNull List<Projects> projects) {
+    private void updateChart(@NonNull List<Projects> projects) {
         if (projects.isEmpty()) {
             // Handle the case where there are no projects
             TextView textView = findViewById(R.id.dataNotAvailable);
@@ -113,19 +113,23 @@ public class CompletedProjectAnalysisBarChart extends AppCompatActivity {
         List<String> e = new ArrayList<>();
         List<String> a = new ArrayList<>();
 
+        Date estimatedEndDate = null;
+        Date actualEndDate = null;
+
+
         for (int i = 0; i < projects.size(); i++) {
             Projects project = projects.get(i);
 
-            Date estimatedEndDate = parseDate(project.getEndDate());
-            Date actualEndDate = project.getActualEndDate();
+             estimatedEndDate = parseDate(project.getEndDate());
+             actualEndDate = project.getActualEndDate();
 
             // Check if estimatedEndDate is not null and actualEndDate is a valid Date object
             if (estimatedEndDate != null && actualEndDate != null) {
                 // Create separate BarEntry objects for estimated and actual end dates
                 actualEntries.add(new BarEntry(i, actualEndDate.getTime()));
                 estimatedEntries.add(new BarEntry(i, estimatedEndDate.getTime()));
-                e.add(formatDateToString(estimatedEndDate));
                 a.add(formatDateToString(actualEndDate));
+                e.add(formatDateToString(estimatedEndDate));
 
                 // Store project titles for x-axis labels
                 title.add(project.getTitle());
@@ -141,12 +145,15 @@ public class CompletedProjectAnalysisBarChart extends AppCompatActivity {
         barChart.setDescription(description);
 
         BarDataSet estimatedDataSet = new BarDataSet(estimatedEntries, "Estimated End Date");
-        estimatedDataSet.setColor(Color.RED);
+        //estimatedDataSet.setColor(Color.RED);
+        estimatedDataSet.setColor(Color.argb(80, 255, 0, 0));
         estimatedDataSet.setValueFormatter(new DateValueFormatter(e));
 
         BarDataSet actualDataSet = new BarDataSet(actualEntries, "Actual End Date");
-        actualDataSet.setColor(Color.BLUE);
+        //actualDataSet.setColor(Color.BLUE);
+        actualDataSet.setColor(Color.rgb(0, 0, 255));
         actualDataSet.setValueFormatter(new DateValueFormatter(a));
+
 
         List<String> uniqueDatesList = new ArrayList<>(uniqueDates);
         barChart.getAxisLeft().setValueFormatter(new DateValueFormatter(uniqueDatesList) {
@@ -156,16 +163,15 @@ public class CompletedProjectAnalysisBarChart extends AppCompatActivity {
                 return formatDateToString((long) value);
             }
         });
-        // Set unique project titles as x-axis labels
+
         barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(title));
 
         List<IBarDataSet> dataSets = new ArrayList<>();
         dataSets.add(actualDataSet);
         dataSets.add(estimatedDataSet);
 
-
-
         BarData barData = new BarData(dataSets);
+
 
         // Customize the appearance of the chart
         barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
@@ -186,8 +192,8 @@ public class CompletedProjectAnalysisBarChart extends AppCompatActivity {
         barChart.setExtraRightOffset(20f);
 
         barChart.setData(barData);
-        barChart.getLegend().setEnabled(true); // Enable legend (project names)
-        barChart.invalidate(); // Refresh the chart
+        barChart.getLegend().setEnabled(true);
+        barChart.invalidate();
     }
 
     @NonNull

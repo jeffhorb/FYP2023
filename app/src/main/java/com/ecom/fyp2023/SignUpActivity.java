@@ -104,8 +104,6 @@ public class SignUpActivity extends AppCompatActivity {
         signupButn.setOnClickListener(view -> {
             String mail = email.getText().toString().trim();
             String pword = password.getText().toString().trim();
-            //String userN = userName.getText().toString();
-
 
             if (TextUtils.isEmpty(mail)) {
                 email.setError("Email Required");
@@ -235,36 +233,6 @@ public class SignUpActivity extends AppCompatActivity {
                     }
                 });
     }
-
-
-//    private void checkUsernameExists(String enteredUsername, String userEmail) {
-//        CollectionReference dbUsers = db.collection("Users");
-//
-//        // Query Firestore to check if the username already exists
-//        dbUsers.whereEqualTo("userName", enteredUsername)
-//                .get()
-//                .addOnCompleteListener(task -> {
-//                    if (task.isSuccessful()) {
-//                        if (task.getResult().size() > 0) {
-//                            // Username already exists, prompt the user to enter a new one
-//                            showUsernameExistsDialog();
-//                        } else {
-//                            // Username is unique, proceed with authentication
-//                            FirebaseMessaging.getInstance().getToken()
-//                                    .addOnCompleteListener(tokenTask -> {
-//                                        if (tokenTask.isSuccessful() && tokenTask.getResult() != null) {
-//                                            String fcmToken = tokenTask.getResult();
-//                                            // Call a method to store the FCM token in the Firestore users collection
-//                                            addUserToFirestore(enteredUsername, userEmail, fcmToken);
-//                                            Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
-//                                            Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
-//                                            startActivity(intent);
-//                                        }
-//                                    });
-//                        }
-//                    }
-//                });
-//    }
 
     private void showCancelWarningDialog() {
         // Create a warning dialog

@@ -146,7 +146,6 @@ public class Login_activity extends AppCompatActivity {
        });
     }
 
-
     private void updateFcmTokenInFirestore(String userEmail, String newFcmToken) {
         // Creating a reference to the Users collection in Firestore.
         CollectionReference dbUsers = db.collection("Users");

@@ -277,7 +277,6 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
             tasksRVAdapter.setSelectedProject(receivedProId);
 
             BottomSheetFragmentAddTask taskFragment = BottomSheetFragmentAddTask.newInstance();
-            //taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener//updatd end date in realtime
             Bundle bundle = new Bundle();
             bundle.putString(projectId_key, receivedProId);
             taskFragment.setArguments(bundle);
@@ -306,7 +305,6 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
                 String receivedProId = i1.getStringExtra(MESSAGE_KEY);
 
                 BottomSheetFragmentAddTask taskFragment = BottomSheetFragmentAddTask.newInstance();
-                //taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener
                 Bundle bundle = new Bundle();
                 bundle.putString(projectId_key, receivedProId);
                 taskFragment.setArguments(bundle);
@@ -326,7 +324,6 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
                         fetchAndDisplayTasks(documentId);
 
                         BottomSheetFragmentAddTask taskFragment = BottomSheetFragmentAddTask.newInstance();
-                        //taskFragment.setOnEndDateUpdateListener(ProjectActivity.this);  // Set the listener
                         Bundle bundle = new Bundle();
                         bundle.putString(p_key, documentId);
                         taskFragment.setArguments(bundle);

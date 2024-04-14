@@ -54,9 +54,6 @@ public class CommentRVAdapter extends RecyclerView.Adapter<CommentRVAdapter.View
             holder.userEmail.setText(comment.getUserName());
             holder.comment.setText(comment.getComment());
 
-//            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM", Locale.getDefault());
-//            String formattedDate = sdf.format(comment.getTimestamp());
-//            holder.timeAdded.setText(formattedDate);
             Date timestamp = comment.getTimestamp(); // Assuming comment.getTimestamp() returns a Date object
             String timeAgo = TimeUtils.getTimeAgo(timestamp);
             holder.timeAdded.setText(timeAgo);

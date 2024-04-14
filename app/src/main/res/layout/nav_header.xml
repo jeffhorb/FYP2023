@@ -13,22 +13,27 @@
     <ImageView
         android:layout_width="74dp"
         android:layout_height="81dp"
+        android:padding="6dp"
         android:background="@color/black"
         android:src="@drawable/baseline_account_circle_24" />
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="useremail"
-        android:textColor="@color/black"
-        android:textStyle="bold"/>
-
-    <TextView
+        android:id="@+id/uN"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="username"
         android:textColor="@color/black"
-        android:textSize="14sp"
-        android:layout_marginBottom="16dp"/>
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/uE"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="useremail"
+        android:layout_marginBottom="16dp"
+        android:textColor="@color/black"
+        android:textStyle="bold"/>
+
+
 
 </LinearLayout>

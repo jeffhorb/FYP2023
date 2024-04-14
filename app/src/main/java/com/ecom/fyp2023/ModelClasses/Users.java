@@ -8,6 +8,8 @@ public class Users {
 
     // Default constructor (needed for Firestore deserialization)
     public Users() {
+
+
     }
 
     public Users(String userName, String userEmail, String fcmToken,String userId) {

@@ -3,7 +3,7 @@
 
     <item
         android:id="@+id/downloadFile"
-        android:title="Download"
+        android:title="Download File"
         android:icon="@drawable/baseline_file_download_24"/>
 
 
@@ -12,11 +12,11 @@
 
     <item
         android:id="@+id/deleteFile"
-        android:title="Delete"
+        android:title="Delete File"
         android:icon="@drawable/baseline_delete_24"/>
     <item
-        android:id="@+id/editFile"
-        android:title="Change file Name" />
+        android:id="@+id/changeFileName"
+        android:title="Rename File" />
 
 
 </menu>

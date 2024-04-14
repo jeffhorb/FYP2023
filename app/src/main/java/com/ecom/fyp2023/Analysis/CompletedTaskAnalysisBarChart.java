@@ -1,3 +1,4 @@
+
 package com.ecom.fyp2023.Analysis;
 
 import android.content.Intent;
@@ -10,7 +11,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.ecom.fyp2023.AppManagers.StringValueFormatter;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
 import com.github.mikephil.charting.charts.BarChart;
@@ -20,7 +20,6 @@ import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
-import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -40,7 +39,7 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
 
     TextView next;
 
-   // private GestureDetector gestureDetector;
+    //private GestureDetector gestureDetector;
 
     String projectId;
 
@@ -115,6 +114,9 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
     }
 
     private void updateBarChart(@NonNull List<Tasks> tasksList) {
+        ArrayList<BarEntry> entries = new ArrayList<>();
+        ArrayList<String> labels = new ArrayList<>();
+
 
         if (tasksList.isEmpty()) {
             // Handle the case where there are no projects
@@ -125,39 +127,21 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
             return;
         }
 
-        List<BarEntry> estimatedTimeEntries = new ArrayList<>();
-        List<BarEntry> completedTimeEntries = new ArrayList<>();
-        List<String> tasksTitle = new ArrayList<>();
-
-        List<String> e = new ArrayList<>();
-        List<String> a = new ArrayList<>();
-
         for (int i = 0; i < tasksList.size(); i++) {
-            Tasks tasks = tasksList.get(i);
-            String estimatedT= tasks.getEstimatedTime();
-            String completedT = tasks.getCompletedTime();
+            Tasks task = tasksList.get(i);
+            String estimatedCompletion = task.getEstimatedTime();
+            String actualCompletion = task.getCompletedTime();
+            int estimatedDays = extractDaysFromString(estimatedCompletion);
 
-            // Check if estimatedT is not null
-            if (estimatedT != null) {
-                // Parse the numbers from the strings
-                int estimatedDays = extractDaysFromString(estimatedT);
-                // Create separate Entry object for estimated time
-                estimatedTimeEntries.add(new BarEntry(i, estimatedDays));
-                e.add(estimatedT);
+            // Adding estimated completion as a red bar
+            entries.add(new BarEntry(i * 2, estimatedDays));
+            labels.add("  " + task.getTaskName());
 
-                // Check if completedT is not null, then add completed time entry
-                if (completedT != null) {
-                    int completedDays = extractDaysFromString(completedT);
-                    completedTimeEntries.add(new BarEntry(i, completedDays));
-                    a.add(completedT);
-
-                } else {
-                    // If completedT is null, add a placeholder entry (you can customize this behavior)
-                    completedTimeEntries.add(new BarEntry(i, 0));
-                }
-
-                // Store task titles for x-axis labels
-                tasksTitle.add(tasks.getTaskName());
+            // Adding actual completion as a blue bar if not null
+            if (actualCompletion != null) {
+                int completedDays = extractDaysFromString(actualCompletion);
+                entries.add(new BarEntry(i * 2 + 1, completedDays));
+                labels.add("     ");
             }
         }
 
@@ -167,53 +151,146 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
         description.setTextSize(15f);
         barChart.setDescription(description);
 
-        List<IBarDataSet> dataSets = new ArrayList<>();
+        BarDataSet dataSet = new BarDataSet(entries, "Estimated Time   Completion Time");
+        dataSet.setColors(Color.RED, Color.BLUE);
 
-        BarDataSet actualDataSet = new BarDataSet(completedTimeEntries, "Completion Time(In Days)");
-        actualDataSet.setColor(Color.RED);
-        actualDataSet.setValueFormatter(new StringValueFormatter(a));
-        dataSets.add(actualDataSet);
-
-        BarDataSet estimatedDataSet = new BarDataSet(estimatedTimeEntries, "Estimated Time (In Days)");
-        estimatedDataSet.setColor(Color.BLUE);
-        dataSets.add(estimatedDataSet);
-        estimatedDataSet.setValueFormatter(new StringValueFormatter(e));
-
-
-
-        // Set unique project titles as x-axis labels
-        barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(tasksTitle));
-
-        BarData barData = new BarData(dataSets);
+        BarData barData = new BarData(dataSet);
+        barChart.setData(barData);
 
         // Customize the appearance of the chart
-        barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
+
         barChart.getXAxis().setAxisLineColor(Color.BLACK);
         barChart.getXAxis().setGranularity(1f);
-        barChart.getXAxis().setLabelCount(tasksTitle.size()); // Adjust label count as needed
+        //barChart.getXAxis().setLabelCount(tasksList.size()); // Adjust label count as needed
 
         barChart.setTouchEnabled(false);
-        //barChart.getXAxis().setLabelRotationAngle(45); title the project title
         barChart.getAxisRight().setEnabled(false); // Disable the right y-axis
         barChart.getAxisRight().setDrawLabels(false);
         barChart.getAxisLeft().setAxisLineColor(Color.BLACK);
 
         // Adjust the chart's viewport and margins to avoid labels being out of bounds
-        barChart.setExtraTopOffset(50f);
-        barChart.setExtraBottomOffset(20f);
-        barChart.setExtraLeftOffset(20f);
-        barChart.setExtraRightOffset(20f);
+        //barChart.setExtraTopOffset(50f);
+        //barChart.setExtraBottomOffset(20f);
+        //barChart.setExtraLeftOffset(20f);
+        //barChart.setExtraRightOffset(20f);
 
         barChart.setData(barData);
-        barChart.getLegend().setEnabled(true); // Enable legend (project names)
-        barChart.invalidate(); // Refresh the chart
-    }
+        barChart.getLegend().setEnabled(true);
+
+        barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
+        barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
+        barChart.getXAxis().setGranularity(1f);
+        barChart.getXAxis().setGranularityEnabled(true);
+        barChart.getXAxis().setLabelRotationAngle(-35);
+        barChart.getAxisLeft().setAxisMinimum(0f);
+        barChart.invalidate(); // Refresh chart
+        }
+
+
+//    private void updateBarChart(@NonNull List<Tasks> tasksList) {
+//
+//        if (tasksList.isEmpty()) {
+//            // Handle the case where there are no projects
+//            TextView textView = findViewById(R.id.dataNotAvailable);
+//            textView.setText("No Completed projects to display.");
+//            textView.setTextSize(20);
+//            barChart.setVisibility(View.GONE);
+//            return;
+//        }
+//
+//        List<BarEntry> estimatedTimeEntries = new ArrayList<>();
+//        List<BarEntry> completedTimeEntries = new ArrayList<>();
+//        List<String> tasksTitle = new ArrayList<>();
+//
+//        List<String> e = new ArrayList<>();
+//        List<String> a = new ArrayList<>();
+//
+//        for (int i = 0; i < tasksList.size(); i++) {
+//            Tasks tasks = tasksList.get(i);
+//            String estimatedT= tasks.getEstimatedTime();
+//            String completedT = tasks.getCompletedTime();
+//
+//            // Check if estimatedT is not null
+//            if (estimatedT != null) {
+//                // Parse the numbers from the strings
+//                int estimatedDays = extractDaysFromString(estimatedT);
+//
+//                // Create separate Entry object for estimated time
+//                estimatedTimeEntries.add(new BarEntry(i, estimatedDays));
+//
+//                // Check if completedT is not null, then add completed time entry
+//                if (completedT != null) {
+//                    int completedDays = extractDaysFromString(completedT);
+//                    completedTimeEntries.add(new BarEntry(i, completedDays));
+//                    a.add(completedT);
+//
+//                } else {
+//                    // If completedT is null, add a placeholder entry (you can customize this behavior)
+//                    completedTimeEntries.add(new BarEntry(i, 0));
+//                }
+//                e.add(estimatedT);
+//                // Store task titles for x-axis labels
+//                tasksTitle.add(tasks.getTaskName());
+//            }
+//        }
+//
+//        Description description = new Description();
+//        description.setText("Analysis of Completed Tasks Estimated vs Completion Time");
+//        description.setPosition(1070f, 70f);
+//        description.setTextSize(15f);
+//        barChart.setDescription(description);
+//
+//        BarDataSet estimatedDataSet = new BarDataSet(estimatedTimeEntries, "Estimated Time (In Days)");
+//        estimatedDataSet.setColor(Color.BLUE);
+//        //estimatedDataSet.setValueFormatter(new StringValueFormatter(e));
+//
+//        BarDataSet actualDataSet = new BarDataSet(completedTimeEntries, "Completion Time(In Days)");
+//        actualDataSet.setColor(Color.RED);
+//        //estimatedDataSet.setValueFormatter(new StringValueFormatter(a));
+//
+//
+//        estimatedDataSet.setValueFormatter(new StringValueFormatter(e));
+//        actualDataSet.setValueFormatter(new StringValueFormatter(a));
+//        // Set unique project titles as x-axis labels
+//        barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(tasksTitle));
+//
+//        List<IBarDataSet> dataSets = new ArrayList<>();
+//        dataSets.add(estimatedDataSet);
+//        dataSets.add(actualDataSet);
+//
+//        BarData barData = new BarData(dataSets);
+//
+//        // Customize the appearance of the chart
+//        barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
+//
+//        barChart.getXAxis().setAxisLineColor(Color.BLACK);
+//        barChart.getXAxis().setGranularity(1f);
+//        barChart.getXAxis().setLabelCount(tasksTitle.size()); // Adjust label count as needed
+//
+//        barChart.setTouchEnabled(false);
+//        //barChart.getXAxis().setLabelRotationAngle(45); title the project title
+//        barChart.getAxisRight().setEnabled(false); // Disable the right y-axis
+//        barChart.getAxisRight().setDrawLabels(false);
+//        barChart.getAxisLeft().setAxisLineColor(Color.BLACK);
+//
+//        // Adjust the chart's viewport and margins to avoid labels being out of bounds
+//        barChart.setExtraTopOffset(50f);
+//        barChart.setExtraBottomOffset(20f);
+//        barChart.setExtraLeftOffset(20f);
+//        barChart.setExtraRightOffset(20f);
+//
+//        barChart.setData(barData);
+//        barChart.getLegend().setEnabled(true); // Enable legend (project names)
+//        barChart.invalidate(); // Refresh the chart
+//    }
+
+
 
     private int extractDaysFromString(@NonNull String timeString) {
         // Extract the numeric value from the string, considering both "day(s)" and "week(s)"
         try {
             int numericValue;
-            if (timeString.contains("day") ) {
+            if (timeString.contains("day")) {
                 numericValue = Integer.parseInt(timeString.replaceAll("[^0-9]", ""));
             } else if (timeString.contains("week")) {
                 int weeks = Integer.parseInt(timeString.replaceAll("[^0-9]", ""));

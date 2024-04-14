@@ -1,19 +1,19 @@
 package com.ecom.fyp2023.Analysis;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.icu.util.Calendar;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.ecom.fyp2023.AppManagers.TimeConverter;
-import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.R;
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -30,19 +30,19 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class BurndownChart extends AppCompatActivity {
     private static final String TAG = "BurndownChartActivity";
 
-
     private FirebaseFirestore db;
-    private List<Projects> projects;
     private List<Tasks> allTasks;
+    private LineChart chart;
+
+    String projectId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,24 +51,41 @@ public class BurndownChart extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
+        TextView next = findViewById(R.id.nextAnalysis);
+
+        if (getIntent().hasExtra("PROID")) {
+            // Retrieve the data using the key
+            projectId = getIntent().getStringExtra("PROID");
+        }
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(BurndownChart.this, TasksProgressAnalysis.class);
+                startActivity(intent);
+                projectId = intent.getStringExtra("PROID");
+            }
+        });
+
+
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
-
-        projects = new ArrayList<>();
         allTasks = new ArrayList<>();
+        chart = findViewById(R.id.lineChart); // Assuming you have a LineChart view in your layout with id lineChart
 
-        // Retrieve all projects
+        retrieveProjects();
+    }
+
+    private void retrieveProjects() {
         CollectionReference projectRef = db.collection("Projects");
-        projectRef.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        projectRef.document(projectId).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                 if (task.isSuccessful()) {
-                    for (QueryDocumentSnapshot projectDocument : task.getResult()) {
-                        String projectId = projectDocument.getId();
-                        String projectName = projectDocument.getString("title");
+                    DocumentSnapshot projectDocument = task.getResult();
+                    if (projectDocument.exists()) {
                         Date startDate = convertToDate(projectDocument.getString("startDate"));
                         Date endDate = convertToDate(projectDocument.getString("endDate")); // Use actual end date if available, otherwise use estimated end date
 
@@ -92,39 +109,36 @@ public class BurndownChart extends AppCompatActivity {
                             }
                         });
 
+                    } else {
+                        Log.d(TAG, "Project document does not exist");
                     }
                 } else {
-                    Log.d(TAG, "Error getting documents: ", task.getException());
+                    Log.d(TAG, "Error getting project document: ", task.getException());
                 }
             }
         });
     }
 
+
     private void retrieveTasks(@NonNull List<String> taskIds, Date startDate, Date endDate) {
         CollectionReference taskRef = db.collection("Tasks");
 
         for (String taskId : taskIds) {
-            // Query the tasks collection to find the document with the given task ID
             taskRef.document(taskId).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                 @Override
                 public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                     if (task.isSuccessful()) {
                         DocumentSnapshot taskDocument = task.getResult();
                         if (taskDocument.exists()) {
-                            String taskName = taskDocument.getString("taskName");
-                            String progress = taskDocument.getString("progress");
-                            Date taskStartDate = taskDocument.getDate("startDate");
-                            Date estimatedEndDate = taskDocument.getDate("estimatedEndDate");
-                            Date actualEndDate = taskDocument.getDate("EndDate");
-                            String estimatedCompletionTime = taskDocument.getString("estimatedTime");
-                            String actualCompletionTime = taskDocument.getString("completedTime");
-                            int storyPoints = taskDocument.getLong("storyPoints").intValue();
+                            // Parse task data and add to allTasks list
+                            Tasks t = taskDocument.toObject(Tasks.class);
+                            allTasks.add(t);
 
-                            // Convert estimated completion time and actual completion time to days
-                            long estimatedCompletionTimeInDays = TimeConverter.convertToDays(estimatedCompletionTime);
-                            long actualCompletionTimeInDays = TimeConverter.convertToDays(actualCompletionTime);
-
-                            // Create Task object and add it to allTasks list
+                            // Check if all tasks have been retrieved
+                            if (allTasks.size() == taskIds.size()) {
+                                // Calculate remaining work and display burndown chart
+                                calculateAndDisplayBurndownChart(allTasks, startDate, endDate);
+                            }
                         }
                     } else {
                         Log.d(TAG, "Error getting document: ", task.getException());
@@ -134,35 +148,78 @@ public class BurndownChart extends AppCompatActivity {
         }
     }
 
-    @NonNull
-    private Map<Date, Integer> calculateRemainingWork(@NonNull List<Tasks> sprintTasks, Date sprintStartDate, Date sprintEndDate) {
-        // Calculate total work
-        int totalWork = 0;
-        for (Tasks task : sprintTasks) {
-            totalWork += task.getStoryPoints();
+    private void calculateAndDisplayBurndownChart(@NonNull List<Tasks> allTasks, Date startDate, Date endDate) {
+        // Calculate the total estimated work
+        int totalEstimatedWork = 0;
+        for (Tasks task : allTasks) {
+            totalEstimatedWork += task.getStoryPoints();
         }
 
-        // Calculate remaining work for each day during the sprint
-        Map<Date, Integer> remainingWorkPerDay = new HashMap<>();
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(sprintStartDate); // Start from sprint start date
+        // Calculate the duration of the project in days
+        long durationInMillis = endDate.getTime() - startDate.getTime();
+        long durationInDays = TimeUnit.MILLISECONDS.toDays(durationInMillis);
 
-        while (calendar.getTime().before(sprintEndDate) || calendar.getTime().equals(sprintEndDate)) {
+        // Calculate the remaining work for each day
+        // Calculate the remaining work for each day
+        List<Entry> entries = new ArrayList<>();
+        int remainingWork = totalEstimatedWork;
+        for (int day = 0; day <= durationInDays; day++) {
+            // Calculate the date for the current day
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(startDate);
+            calendar.add(Calendar.DAY_OF_MONTH, day);
+            Date currentDate = calendar.getTime();
+
+            // Count completed tasks for the current day
             int completedWork = 0;
-            for (Tasks task : sprintTasks) {
-                if ((task.getEndDate() != null && task.getEndDate().before(calendar.getTime())) || (task.getEndDate() != null && task.getEndDate().equals(calendar.getTime()))) {
-                    completedWork += task.getStoryPoints();
+            for (Tasks task : allTasks) {
+                Date taskEndDate = task.getEndDate() != null ? task.getEndDate() : task.getEstimatedEndDate();
+                if (taskEndDate != null && !taskEndDate.after(endDate)) {
+                    // Include the task if it's completed by the project's end date or within the project's duration
+                    if (taskEndDate.before(currentDate) || taskEndDate.equals(currentDate)) {
+                        completedWork += task.getStoryPoints();
+                    } else {
+                        // Include the remaining work of the task if its actual end date is beyond the project's duration
+                        completedWork += task.getStoryPoints() * (1 - (float) day / durationInDays);
+                    }
                 }
             }
-            int remainingWork = totalWork - completedWork;
-            remainingWorkPerDay.put(calendar.getTime(), remainingWork);
-            calendar.add(Calendar.DAY_OF_MONTH, 1);
+
+            // Update remaining work
+            remainingWork -= completedWork;
+
+            // Add entry for the current day to the chart
+            entries.add(new Entry(day, remainingWork));
         }
 
-        return remainingWorkPerDay;
+        // Create a LineDataSet from the entries
+        LineDataSet dataSet = new LineDataSet(entries, "Remaining Work");
+        dataSet.setColor(Color.BLUE);
+        dataSet.setCircleColor(Color.BLUE);
+        dataSet.setCircleRadius(4f);
+        dataSet.setLineWidth(2f);
+        dataSet.setDrawValues(false);
+
+        // Create a LineData object with the LineDataSet
+        LineData lineData = new LineData(dataSet);
+
+        // Set up the LineChart
+        chart.setData(lineData);
+        chart.getDescription().setEnabled(false);
+        chart.getXAxis().setLabelCount((int) (durationInDays + 1), true);
+        chart.getXAxis().setValueFormatter(new IndexAxisValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                // Format x-axis labels to display dates
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(startDate);
+                calendar.add(Calendar.DAY_OF_MONTH, (int) value);
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd", Locale.getDefault());
+                return sdf.format(calendar.getTime());
+            }
+        });
+        chart.invalidate(); // Refresh the chart
     }
-
-
 
     // Convert string date to Date object
     private Date convertToDate(@NonNull String dateString) {
@@ -179,51 +236,4 @@ public class BurndownChart extends AppCompatActivity {
         // Return the Date object
         return calendar.getTime();
     }
-
-    private void displayBurndownChart(@NonNull Map<Date, Integer> remainingWorkPerDay) {
-        LineChart chart = findViewById(R.id.lineChart); // Assuming you have a LineChart view in your layout with id chart
-
-        // Convert Map<Date, Integer> to List<Entry> for plotting
-        List<Entry> entries = new ArrayList<>();
-        int dayIndex = 0;
-        for (Map.Entry<Date, Integer> entry : remainingWorkPerDay.entrySet()) {
-            entries.add(new Entry(dayIndex, entry.getValue()));
-            dayIndex++;
-        }
-
-        // Create a dataset from the entries
-        LineDataSet dataSet = new LineDataSet(entries, "Remaining Work");
-        dataSet.setColor(Color.BLUE);
-        dataSet.setValueTextColor(Color.BLACK);
-
-        // Create a LineData object from the dataset
-        LineData lineData = new LineData(dataSet);
-
-        // Set the LineData to the chart
-        chart.setData(lineData);
-
-        // Customize chart appearance and behavior
-        chart.getDescription().setEnabled(false);
-        chart.setDrawGridBackground(false);
-        chart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        chart.getXAxis().setLabelCount(entries.size(), true);
-        chart.getXAxis().setValueFormatter(new IndexAxisValueFormatter() {
-            @Override
-            public String getFormattedValue(float value) {
-                // Convert float index back to date string for labeling X axis
-                int index = (int) value;
-                if (index >= 0 && index < entries.size()) {
-                    Date date = remainingWorkPerDay.keySet().toArray(new Date[0])[(int) value];
-                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd", Locale.getDefault());
-                    return sdf.format(date);
-                }
-                return "";
-            }
-        });
-
-        // Refresh chart
-        chart.invalidate();
-    }
-
-
 }

@@ -1,13 +1,20 @@
 package com.ecom.fyp2023;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.view.GravityCompat;
@@ -16,18 +23,27 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.ProjectsRVAdapter;
+import com.ecom.fyp2023.AiIntegration.SentimentAnalysisActivity;
 import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
+import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
 import com.ecom.fyp2023.ModelClasses.Projects;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HomeScreen extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -43,24 +59,19 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
     SharedPreferenceManager sharedPrefManager;
 
-    private SearchView searchView;
-    //private GoogleCalendarAPI googleCalendarAPI;
 
+    private boolean manageAccountClicked = false;
+
+    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-//        FirebaseApp.initializeApp(this);
-
-        // Initialize GoogleCalendarAPI instance
-        //googleCalendarAPI = new GoogleCalendarAPI(this);
-
         db = FirebaseFirestore.getInstance();
 
         projectsArrayList = new ArrayList<>();
-
 
         recyclerView = findViewById(R.id.recyclerView);
 
@@ -73,6 +84,10 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
         //search method
         setupSearchView();
+
+
+        setUserDetailsInNavHeader();
+
 
         recyclerAdapter = new ProjectsRVAdapter(projectsArrayList, HomeScreen.this);
         recyclerView.setAdapter(recyclerAdapter);
@@ -99,7 +114,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                     }
                 });
 
-
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -110,12 +124,10 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         navigationView.setNavigationItemSelectedListener(this);
         navigationView.bringToFront();
 
-
         actionBarDrawerToggle = new ActionBarDrawerToggle(
                 this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close);
         drawerLayout.addDrawerListener(actionBarDrawerToggle);
         actionBarDrawerToggle.syncState();
-
 
     }
 
@@ -140,29 +152,30 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
             // Add your custom logic here
             return true;
         }
-        // Add more if statements for additional menu options if needed
-
         return super.onOptionsItemSelected(item);
     }
 
-
-    //bottom navigation
+    //bottom navigation to add project
     public void addPro(MenuItem menuitem) {
         BottomSheetDialogAddProject bottomSheetDialogFragment = BottomSheetDialogAddProject.newInstance();
         bottomSheetDialogFragment.show(getSupportFragmentManager(), bottomSheetDialogFragment.getTag());
 
     }
 
+    //bottom nav to open project analysis
     public void analysePro(MenuItem menuitem) {
         Intent intent = new Intent(HomeScreen.this, ProjectProgressAnalysis.class);
         startActivity(intent);
-        finish();
     }
 
     public void openDocument(MenuItem menuitem) {
         Intent intent = new Intent(HomeScreen.this, DocumentActivity.class);
         startActivity(intent);
-        finish();
+    }
+
+    public void Git(MenuItem menuitem) {
+        Intent intent = new Intent(HomeScreen.this, SentimentAnalysisActivity.class);
+        startActivity(intent);
     }
 
     private void setupSearchView() {
@@ -199,10 +212,13 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
         if (itemId == R.id.nav_home) {
             Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show();
-        } else if (itemId == R.id.nav_settings) {
-            Toast.makeText(HomeScreen.this, "Settings clicked", Toast.LENGTH_SHORT).show();
-        } else if (itemId == R.id.nav_about) {
-            Toast.makeText(this, "About Us clicked", Toast.LENGTH_SHORT).show();
+
+        } else if (itemId == R.id.manageAccount) {
+            // Declare a boolean variable to track whether the "Manage Account" option is clicked
+            manageAccountClicked = true;
+            // Update the user details in the navigation header
+            setUserDetailsInNavHeader();
+
         } else if (itemId == R.id.nav_logout) {
 
             sharedPrefManager.clearSession();
@@ -227,16 +243,147 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         }
     }
 
-//    // Handle the result of the sign-in intent
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//
-//        if (requestCode == GoogleCalendarAPI.RC_SIGN_IN) {
-//            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-//            googleCalendarAPI.handleSignInResult(task);
-//
-//        }
-//
-//    }
+    // Method to set user details in the navigation header
+    private void setUserDetailsInNavHeader() {
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        View headerView = navigationView.getHeaderView(0);
+
+        // Find TextViews in the header layout
+        TextView name = headerView.findViewById(R.id.uN);
+        TextView email = headerView.findViewById(R.id.uE);
+
+        // Get the current user's ID
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+
+            // Define onCompleteListener
+            OnCompleteListener<QuerySnapshot> onCompleteListener = new OnCompleteListener<QuerySnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot querySnapshot = task.getResult();
+                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                            // Customer document exists, retrieve its details
+                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                            String userName = document.getString("userName");
+                            String userEmail = document.getString("userEmail");
+
+                            // Set user details in the TextViews
+                            name.setText(userName);
+                            email.setText(userEmail);
+
+
+                            if (manageAccountClicked) {
+                                // If "Manage Account" is clicked, show the update account dialog
+                                showUpdateAccountDialog(document.getId());
+                                // Reset manageAccountClicked back to false
+                                manageAccountClicked = false;
+                            }
+                        } else {
+                            // Customer document does not exist
+                            Log.d("HomePage", "No such document");
+                        }
+                    } else {
+                        // Error occurred while retrieving customer document
+                        Log.d("HomePage", "Error getting customer document", task.getException());
+                    }
+                }
+            };
+
+            // Call getCustomerDocumentId with onCompleteListener
+            getCustomerDocumentId(userId, onCompleteListener);
+        } else {
+            // Current user is null
+            Log.d("HomePage", "No user signed in");
+        }
+    }
+
+    private void showUpdateAccountDialog(String id) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.update_account_dialog, null);
+        builder.setView(dialogView);
+
+        // Find EditTexts in the dialog layout
+        EditText newNameEditText = dialogView.findViewById(R.id.newNameEditText);
+        EditText newEmailEditText = dialogView.findViewById(R.id.newEmailEditText);
+
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            getCustomerDocumentId(userId, new OnCompleteListener<QuerySnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot querySnapshot = task.getResult();
+                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                            // Customer document exists, retrieve its details
+                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                            String userName = document.getString("userName");
+                            String userEmail = document.getString("userEmail");
+
+
+                            // Set current details in EditText fields
+                            newNameEditText.setText(userName);
+                            newEmailEditText.setText(userEmail);
+
+                        } else {
+                            // Document does not exist
+                            Log.d("HomePage", "No such document");
+                        }
+                    } else {
+                        // Error getting document
+                        Log.d("HomePage", "Error getting document", task.getException());
+                    }
+                }
+            });
+        }
+
+        FirestoreManager firestoreManager = new FirestoreManager();
+
+        builder.setPositiveButton("Update", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Update user's details in Firestore
+                Map<String, Object> updatedData = new HashMap<>();
+                updatedData.put("userName", newNameEditText.getText().toString());
+                updatedData.put("userEmail", newEmailEditText.getText().toString());
+
+
+                firestoreManager.updateDocument("Users", id, updatedData, new FirestoreManager.OnUpdateCompleteListener() {
+                    @Override
+                    public void onUpdateComplete(boolean success) {
+                        if (success) {
+                            Toast.makeText(HomeScreen.this, "User details updated successfully", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(HomeScreen.this, "Failed to update user details", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void getCustomerDocumentId(String userId, OnCompleteListener<QuerySnapshot> onCompleteListener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference customersRef = db.collection("Users");
+
+        customersRef.whereEqualTo("userId", userId)
+                .limit(1)
+                .get()
+                .addOnCompleteListener(onCompleteListener);
+    }
+
 }

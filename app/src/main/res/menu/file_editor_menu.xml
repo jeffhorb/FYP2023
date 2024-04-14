@@ -7,6 +7,35 @@
         android:title="Save"
         android:icon="@drawable/baseline_save_24"
         app:showAsAction="always"/>
+    <item
+        android:id="@+id/saveChanges"
+        android:title="Save Changes"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/latestVersion"
+        android:title="Pull Latest Version"
+        app:showAsAction="never"/>
+
+
+
+    <item
+        android:id="@+id/updateOriginalFile"
+        android:title="Update Original File "
+        app:showAsAction="never"/>
+    <item
+        android:title=""
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/openVersions"
+        android:title="Version History"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/revert"
+        android:title="Rollback to Previous Version "
+        app:showAsAction="never"
+        android:visible="false"/>
 
 
 </menu>

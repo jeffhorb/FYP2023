@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".VersionControlClasses.VersionDifference">
+
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/blue"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            android:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary" />
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="?android:attr/dividerHorizontal"
+            android:showDividers="middle"
+            android:dividerPadding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Previous version:"
+                android:layout_marginTop="5dp"
+                android:layout_marginStart="5dp"
+                android:textColor="@color/black"
+                android:textStyle="italic"/>
+
+            <TextView
+                android:id="@+id/previous_version_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFF6F6"
+                android:textSize="16sp"
+                android:padding="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Current version:"
+                android:layout_marginTop="5dp"
+                android:layout_marginStart="5dp"
+                android:textColor="@color/black"
+                android:textStyle="italic"/>
+
+            <TextView
+                android:id="@+id/current_version_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#F6F9FF"
+                android:textSize="16sp"
+                android:padding="16dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Computed Difference:"
+                android:layout_marginTop="5dp"
+                android:layout_marginStart="5dp"
+                android:textColor="@color/black"
+                android:textStyle="italic"/>
+
+            <TextView
+                android:id="@+id/diff_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:textSize="16sp"
+                android:padding="16dp" />
+        </LinearLayout>
+    </ScrollView>
+
+
+</LinearLayout>

@@ -1,12 +1,9 @@
 package com.ecom.fyp2023.AppManagers;
 
-import androidx.annotation.NonNull;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.Map;
 
 public class FirestoreManager {
 
@@ -35,6 +32,27 @@ public class FirestoreManager {
                         }
                     }
                 });
+    }
+
+    // Method to update document in Firestore
+    public void updateDocument(String collectionPath, String documentId, Map<String, Object> data, OnUpdateCompleteListener listener) {
+        firestore.collection(collectionPath)
+                .document(documentId)
+                .update(data)
+                .addOnCompleteListener(task -> {
+                    if (listener != null) {
+                        if (task.isSuccessful()) {
+                            listener.onUpdateComplete(true);
+                        } else {
+                            listener.onUpdateComplete(false);
+                        }
+                    }
+                });
+    }
+
+
+    public interface OnUpdateCompleteListener {
+        void onUpdateComplete(boolean success);
     }
 
     public interface OnDocumentIdRetrievedListener {
