@@ -3,31 +3,29 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/idProjectItems"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="65dp"
     android:layout_margin="5dp"
     app:cardCornerRadius="6dp"
     app:cardElevation="10dp">
 
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/projectTitle"
+            android:layout_width="246dp"
             android:layout_height="wrap_content"
-            android:elevation="8dp">
+            android:layout_gravity="center"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:padding="8dp"
+            android:text="ProjectTitle"
+            android:textColor="@color/black"
+            android:textSize="18sp" />
 
-            <TextView
-                android:id="@+id/projectTitle"
-                android:layout_width="246dp"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:padding="8dp"
-                android:text="ProjectTitle"
-                android:textColor="@color/black"
-                android:textSize="18sp" />
-
-        </LinearLayout>
+    </LinearLayout>
 
 
         <LinearLayout

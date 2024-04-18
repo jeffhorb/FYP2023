@@ -64,11 +64,12 @@ dependencies {
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("com.github.AnyChart:AnyChart-Android:1.1.5")
     implementation("jp.wasabeef:richeditor-android:2.0.0")
-    implementation("org.eclipse.jgit:org.eclipse.jgit:5.11.0.202103091610-r")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation ("org.tensorflow:tensorflow-lite:2.15.0")
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation ("com.knuddels:jtokkit:1.0.0")
+    implementation ("com.github.netless-io:whiteboard-android:2.16.84")
+    implementation ("com.github.netless-io:fastboard-android:1.2.0")
+
 
 }

@@ -28,6 +28,11 @@ import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
+import com.ecom.fyp2023.MiroWhiteBoardIntegration.Board;
+import com.ecom.fyp2023.MiroWhiteBoardIntegration.MiroApiService;
+import com.ecom.fyp2023.MiroWhiteBoardIntegration.RetrofitClient;
+import com.ecom.fyp2023.MiroWhiteBoardIntegration.Whiteboard;
+import com.ecom.fyp2023.MiroWhiteBoardIntegration.WhiteboardActivity;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -45,6 +50,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class HomeScreen extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     public DrawerLayout drawerLayout;
@@ -59,6 +68,9 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
     SharedPreferenceManager sharedPrefManager;
 
+    private MiroApiService miroApiService;
+
+
 
     private boolean manageAccountClicked = false;
 
@@ -72,6 +84,9 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         db = FirebaseFirestore.getInstance();
 
         projectsArrayList = new ArrayList<>();
+
+        // Initialize Retrofit client
+        miroApiService = RetrofitClient.getClient();
 
         recyclerView = findViewById(R.id.recyclerView);
 
@@ -148,8 +163,13 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
             return true;
         } else if (itemId == R.id.imageNotification) {
             // Handle the action for menu option 2
-            Toast.makeText(this, "Menu Option 2 clicked", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "Menu Option 2 clicked", Toast.LENGTH_SHORT).show();
             // Add your custom logic here
+            //createWhiteboard();
+            Intent intent = new Intent(HomeScreen.this, Board.class);
+            //intent.putExtra("whiteboardUrl", whiteboardUrl);
+            startActivity(intent);
+
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -251,6 +271,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         // Find TextViews in the header layout
         TextView name = headerView.findViewById(R.id.uN);
         TextView email = headerView.findViewById(R.id.uE);
+        TextView r = headerView.findViewById(R.id.role);
 
         // Get the current user's ID
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -268,10 +289,16 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                             DocumentSnapshot document = querySnapshot.getDocuments().get(0);
                             String userName = document.getString("userName");
                             String userEmail = document.getString("userEmail");
+                            String role = document.getString("role");
+
 
                             // Set user details in the TextViews
                             name.setText(userName);
                             email.setText(userEmail);
+
+                            if (role != null){
+                                r.setText(role);
+                            }
 
 
                             if (manageAccountClicked) {
@@ -308,6 +335,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         // Find EditTexts in the dialog layout
         EditText newNameEditText = dialogView.findViewById(R.id.newNameEditText);
         EditText newEmailEditText = dialogView.findViewById(R.id.newEmailEditText);
+        EditText newRole = dialogView.findViewById(R.id.newRoleEditText);
 
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -323,11 +351,17 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                             DocumentSnapshot document = querySnapshot.getDocuments().get(0);
                             String userName = document.getString("userName");
                             String userEmail = document.getString("userEmail");
+                            String userRole = document.getString("role");
 
 
                             // Set current details in EditText fields
                             newNameEditText.setText(userName);
                             newEmailEditText.setText(userEmail);
+                            if (userRole !=null){
+
+                                newRole.setText(userRole);
+
+                            }
 
                         } else {
                             // Document does not exist
@@ -350,13 +384,14 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                 Map<String, Object> updatedData = new HashMap<>();
                 updatedData.put("userName", newNameEditText.getText().toString());
                 updatedData.put("userEmail", newEmailEditText.getText().toString());
-
+                updatedData.put("role",newRole.getText().toString());
 
                 firestoreManager.updateDocument("Users", id, updatedData, new FirestoreManager.OnUpdateCompleteListener() {
                     @Override
                     public void onUpdateComplete(boolean success) {
                         if (success) {
                             Toast.makeText(HomeScreen.this, "User details updated successfully", Toast.LENGTH_SHORT).show();
+
                         } else {
                             Toast.makeText(HomeScreen.this, "Failed to update user details", Toast.LENGTH_SHORT).show();
                         }
@@ -386,4 +421,34 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                 .addOnCompleteListener(onCompleteListener);
     }
 
+
+
+
+    private void createWhiteboard() {
+        // Make API call to create a new whiteboard
+        Call<Whiteboard> call = miroApiService.createBoard("Bearer " + "eyJtaXJvLm9yaWdpbiI6ImV1MDEifQ_aEu3Celsd3E30h0fJSzSIk_gIIU");
+        call.enqueue(new Callback<Whiteboard>() {
+            @Override
+            public void onResponse(Call<Whiteboard> call, Response<Whiteboard> response) {
+                if (response.isSuccessful()) {
+                    Whiteboard whiteboard = response.body();
+                    // Open the whiteboard URL in a WebView
+                    openWhiteboardInWebView(whiteboard.getViewLink());
+                } else {
+                    // Handle API error
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Whiteboard> call, Throwable t) {
+                // Handle network failure
+            }
+        });
+    }
+
+    private void openWhiteboardInWebView(String whiteboardUrl) {
+        Intent intent = new Intent(this, WhiteboardActivity.class);
+        intent.putExtra("whiteboardUrl", whiteboardUrl);
+        startActivity(intent);
+    }
 }

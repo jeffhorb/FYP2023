@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# SDK model
+-keep class com.herewhite.** { *; }
+# Application classes that will be serialized/deserialized over Gson

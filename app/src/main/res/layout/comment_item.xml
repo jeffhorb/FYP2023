@@ -7,40 +7,40 @@
     android:padding="8dp">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/commentUserName"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="Username"
             android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/timeAdded"
-            android:layout_width="275dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="timeAdded"
             android:textColor="@color/black"
-            android:textSize="16sp"
-            android:layout_marginStart="15dp"
-            android:layout_marginEnd="1dp"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/deleteComment"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:layout_gravity="end"
             android:src="@drawable/baseline_delete_24"
             android:contentDescription="Delete Comment"
             android:clickable="true"
             android:focusable="true"/>
 
     </LinearLayout>
+
 
 
     <TextView

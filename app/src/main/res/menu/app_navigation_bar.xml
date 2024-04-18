@@ -18,7 +18,7 @@
         <item
             android:id="@+id/manageAccount"
             android:icon="@drawable/nav_account_circle"
-            android:title="About Us"/>
+            android:title="Manage Account"/>
     </group>
     <item
         android:title="">

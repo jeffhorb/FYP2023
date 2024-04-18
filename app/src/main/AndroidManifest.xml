@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
@@ -20,6 +20,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/status_bar_color">
+        <activity
+            android:name=".MiroWhiteBoardIntegration.Board"
+            android:exported="false" />
+        <activity
+            android:name=".MiroWhiteBoardIntegration.WhiteboardActivity"
+            android:exported="false" />
         <activity
             android:name=".Analysis.CombinedLineAndBarChart"
             android:exported="false" />
@@ -55,7 +61,6 @@
             android:name=".Analysis.VelocityAnalysis"
             android:exported="false"
             android:label="Project Velocity Analysis" />
-
         <activity
             android:name=".Analysis.CompletedTaskAnalysisBarChart"
             android:exported="false"

@@ -318,3 +318,59 @@ exports.sendTaskReminders = functions.pubsub.schedule("every 24 hours")
       return Promise.all(reminderPromises);
     });
 
+
+ const axios = require("axios");
+
+ exports.createRoom = functions.https.onRequest(async (req, res) => {
+  const sdkToken = functions.config().agora.sdk_token;
+  const options = {
+    method: "POST",
+    url: "https://api.netless.link/v5/rooms",
+    headers: {
+      "token": sdkToken,
+      "Content-Type": "application/json",
+      "region": "us-sv",
+    },
+    data: JSON.stringify({
+      isRecord: false,
+    }),
+  };
+
+  try {
+    const response = await axios(options);
+    res.send(response.data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while creating the room.");
+  }
+ });
+
+const axios = require("axios");
+
+exports.generateToken = functions.https.onRequest(async (req, res) => {
+  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
+  const sdkToken = functions.config().agora.sdk_token;
+
+  const options = {
+    method: "POST",
+    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
+    headers: {
+      "token": sdkToken,
+      "Content-Type": "application/json",
+      "region": "us-sv",
+    },
+    data: JSON.stringify({
+      lifespan: 3600000,
+      role: "admin",
+    }),
+  };
+
+  try {
+    const response = await axios(options);
+    res.send(response.data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while generating the token.");
+  }
+});
+

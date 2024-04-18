@@ -15,11 +15,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ecom.fyp2023.Adapters.SentimentRvAdapter;
 import com.ecom.fyp2023.ModelClasses.Sentiments;
 import com.ecom.fyp2023.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.common.reflect.TypeToken;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.gson.Gson;
 
 import org.tensorflow.lite.Interpreter;
@@ -41,7 +44,7 @@ import java.util.Objects;
 
 public class SentimentAnalysisActivity extends AppCompatActivity {
 
-    private TextView sentimentResult,seeHistory;
+    private TextView sentimentResult,seeHistory,clearHistory;
 
     RecyclerView historyRecycler;
     private Interpreter tflite;
@@ -61,6 +64,7 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
 
         sentimentResult = findViewById(R.id.textview);
         seeHistory = findViewById(R.id.history);
+        clearHistory = findViewById(R.id.clearHistory);
         historyRecycler = findViewById(R.id.historyRecyclerview);
 
         historyRecycler.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
@@ -74,14 +78,8 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
-        seeHistory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
 
 
-                historyRecycler.setVisibility(View.VISIBLE);
-            }
-        });
 
 
         try {
@@ -126,31 +124,72 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
                     }
                 });
 
-        fetchSentimentsFromFirestore();
+        clearHistory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearHistory();
+                historyRecycler.setVisibility(View.INVISIBLE);
+                adapter.update(sentimentsArrayList);
+            }
+        });
+
+        seeHistory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                historyRecycler.setVisibility(View.VISIBLE);
+                fetchSentimentsFromFirestore();
+            }
+        });
 
     }
 
-    // Method to fetch sentiments and timestamps from Firestore
-    private void fetchSentimentsFromFirestore() {
-        db.collection("Sentiments")
-                .orderBy("timestamp", Query.Direction.DESCENDING) // Order by timestamp in descending order
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Retrieve sentiment and timestamp from Firestore document
-                            String sentiment = document.getString("sentiment");
-                            Date timestamp = document.getDate("timestamp");
-
-                            // Create a Sentiments object and add it to sentimentsArrayList
-                            sentimentsArrayList.add(new Sentiments(sentiment, timestamp));
-                        }
-                        // Notify adapter after adding all sentiments
-                        adapter.notifyDataSetChanged();
-                    } else {
-                        Log.d("FirestoreData", "Error getting documents: ", task.getException());
+    // Method to clear history
+    private void clearHistory() {
+        // Get all documents from Sentiments collection
+        db.collection("Sentiments").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    // Loop through each document and delete it
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        document.getReference().delete();
                     }
-                });
+
+                } else {
+                    Log.d("TAG", "Error getting documents: ", task.getException());
+                }
+            }
+        });
+    }
+
+    private void fetchSentimentsFromFirestore() {
+        Query query = db.collection("Sentiments")
+                .orderBy("timestamp", Query.Direction.DESCENDING);
+
+        query.addSnapshotListener((value, error) -> {
+            if (error != null) {
+                Log.e("Firestore", "Error getting notes: " + error.getMessage());
+                //Toast.makeText(getActivity(), "Error getting notes: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (value != null && !value.isEmpty()) {
+               // List<Sentiments> sentiments = new ArrayList<>();
+                for (QueryDocumentSnapshot document : value) {
+                    String sentiment = document.getString("sentiment");
+                    Date timestamp = document.getDate("timestamp");
+
+                    // Create a Sentiments object and add it to sentimentsArrayList
+                    sentimentsArrayList.add(new Sentiments(sentiment, timestamp));
+
+                    if(timestamp != null){
+                        clearHistory.setVisibility(View.VISIBLE);
+                    }
+
+                }
+            }
+            adapter.notifyDataSetChanged();
+        });
     }
 
     // Method to check if the preprocessed comment contains recognized words
@@ -277,6 +316,4 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
             return -1;
         }
     }
-
-
 }
