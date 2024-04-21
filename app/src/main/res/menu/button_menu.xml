@@ -5,7 +5,19 @@
     <item
         android:title="Group"
         android:icon="@drawable/baseline_group_24"
-        android:onClick="Git"/>
+        android:onClick="Group"/>
+
+
+    <item
+        android:title="Sentiment"
+        android:icon="@drawable/chat_intelligence_svgrepo_com"
+        android:onClick="Sentiment"/>
+
+
+    <item
+        android:title="Add"
+        android:icon="@drawable/twotone_add_circle_24"
+        android:onClick="addPro" />
 
 
 
@@ -20,9 +32,5 @@
         android:icon="@drawable/_849788_folder_document_multimedia_icon"
         android:onClick="openDocument"/>
 
-    <item
-        android:title="Add"
-        android:icon="@drawable/twotone_add_circle_24"
-        android:onClick="addPro" />
 
 </menu>

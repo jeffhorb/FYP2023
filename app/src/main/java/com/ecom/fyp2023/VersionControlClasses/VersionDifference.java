@@ -7,11 +7,14 @@ import android.text.SpannableStringBuilder;
 import android.text.style.BackgroundColorSpan;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.AppManagers.DiffComputation;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.R;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -28,7 +31,11 @@ public class VersionDifference extends AppCompatActivity {
     String currentContent, fileId;
     Date currentTimestamp;
 
+    //String groupId; //= GroupIdGlobalVariable.getInstance().getGlobalData();
+
     private FirebaseFirestore db;
+
+    SharedPreferenceManager sharedPrefManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,10 +48,15 @@ public class VersionDifference extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
+
+       // sharedPrefManager = new SharedPreferenceManager(this);
+
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
+
+        //groupId = sharedPrefManager.getGroupId();
 
         if (getIntent().hasExtra("content") && getIntent().hasExtra("timestamp") && getIntent().hasExtra("fileId")) {
 
@@ -57,6 +69,57 @@ public class VersionDifference extends AppCompatActivity {
             fetchPreviousVersionContent();
         }
     }
+
+//    private void fetchPreviousVersionContent() {
+//        db.collection("files").document(fileId)
+//                .get()
+//                .addOnSuccessListener(documentSnapshot -> {
+//                    if (documentSnapshot.exists()) {
+//                        String groupId = documentSnapshot.getString("groupId");
+//                        String userAuthIdOfDocument = documentSnapshot.getString("userAuthId");
+//                        Query query;
+////                        if (groupId != null) {
+////                            // Load files belonging to the group
+////                            query = db.collection("files").document(fileId).collection("versions").whereEqualTo("groupId", groupId);
+////                        } else {
+////                            // Load files belonging to the user's private space
+////                            String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+////                            query = db.collection("files").document(fileId).collection("versions").whereEqualTo("userAuthId", userAuthId);
+////                        }
+//
+//                        query.whereLessThan("timestamp", currentTimestamp)
+//                                .orderBy("timestamp", Query.Direction.DESCENDING)
+//                                .limit(1)
+//                                .get()
+//                                .addOnSuccessListener(queryDocumentSnapshots -> {
+//                                    if (!queryDocumentSnapshots.isEmpty()) {
+//                                        DocumentSnapshot documentSnapshot1 = queryDocumentSnapshots.getDocuments().get(0);
+//                                        String previousContent = documentSnapshot1.getString("content");
+//                                        previousVersionTextView.setText(previousContent);
+//                                        currentVersionTextView.setText(currentContent);
+//
+//                                        // Show differences between previous and current content
+//                                        assert previousContent != null;
+//                                        compareVersions(previousContent, currentContent);
+//                                    } else {
+//                                        // Document does not belong to the user's group or private space
+//                                        // Handle this case, maybe show an error message or take appropriate action
+//                                    }
+//                                })
+//                                .addOnFailureListener(e -> {
+//                                    // Handle errors
+//                                });
+//                    } else {
+//                        // File document does not exist, handle this case
+//                    }
+//                })
+//                .addOnFailureListener(e -> {
+//                    // Handle errors
+//                });
+//    }
+
+
+
 
     private void fetchPreviousVersionContent() {
         db.collection("files").document(fileId).collection("versions")

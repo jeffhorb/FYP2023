@@ -6,14 +6,35 @@ public class FileModel {
 
     private String filePath;
 
+    private String userAuthId;
+
+    String groupId;
     public FileModel() {
         // Default constructor required for Firebase
     }
 
-    public FileModel(String fileName, String downloadUrl,  String filePath) {
+    public FileModel(String fileName, String downloadUrl,  String filePath,String groupId,String userAuthId) {
         this.fileName = fileName;
         this.downloadUrl = downloadUrl;
         this.filePath = filePath;
+        this.groupId = groupId;
+        this.userAuthId = userAuthId;
+    }
+
+    public String getUserAuthId() {
+        return userAuthId;
+    }
+
+    public void setUserAuthId(String userAuthId) {
+        this.userAuthId = userAuthId;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     public String getFileName() {

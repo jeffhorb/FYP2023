@@ -58,6 +58,8 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
     int sP;
 
+    String userAuthId,groupId;
+
     ArrayAdapter<String> prerequisitesAdapter;
     private final List<String> selectedPrerequisites = new ArrayList<>();
 
@@ -236,7 +238,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
                         }
                         // Task name is unique, proceed with updating the task
                         performTaskUpdate(tasks, taskNames, taskDetails, tasksDiff, progress, taskEtime,
-                                prerequisite, completeT, sD, eD, estED, sP);
+                                prerequisite, completeT, sD, eD, estED, sP,userAuthId,groupId);
                         dismiss();
                     } else {
                         // Handle errors
@@ -246,7 +248,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
     }
 
     private void performTaskUpdate(@NonNull Tasks task, String taskN, String taskDetails, String tasksDiff, String progres,
-                                   @NonNull String taskEtime, List<String> prerequisite, String completeT, Date sD, Date eD, Date estED, int sP) {
+                                   @NonNull String taskEtime, List<String> prerequisite, String completeT, Date sD, Date eD, Date estED, int sP,String userAuthId,String groupId) {
 
         // Convert to days using the TimeConverter class
         long estimatedDays = TimeConverter.convertToDays(taskEtime);
@@ -267,7 +269,7 @@ public class UpdateTaskFragment extends BottomSheetDialogFragment implements Cus
 
         // Create the updated task with the new estimated end date and StoryPoint
         Tasks updateTasks = new Tasks(taskN, taskDetails, tasksDiff, existingProgress, taskEtime, prerequisite,
-                existingCompletedTime, existingStartDate, existingEndDate, updatedEstimatedEndDate, updatedStoryPoint);
+                existingCompletedTime, existingStartDate, existingEndDate, updatedEstimatedEndDate, updatedStoryPoint,userAuthId,groupId);
 
         fb.collection("Tasks")
                 .document(task.getTaskId())

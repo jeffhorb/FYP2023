@@ -22,6 +22,8 @@ import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -63,6 +65,7 @@ public class UpdateProject extends BottomSheetDialogFragment {
     Projects project;
 
     Date actualEndD;
+
     private FirebaseFirestore fb;
 
     @Nullable
@@ -214,34 +217,6 @@ public class UpdateProject extends BottomSheetDialogFragment {
         }
     }
 
-//    private void updateProject(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
-//
-//        String existingProgress = projects.getProgress();
-//        String existingEndDate = projects.getEndDate();
-//        Date existingActualEndDate = projects.getActualEndDate();
-//
-//        // Create the updated project with the existing progress value
-//        Projects udpatedPorject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress, existingActualEndDate);
-//
-//        fb.collection("Projects").
-//                document(projects.getProjectId()).
-//                set(udpatedPorject).
-//                addOnSuccessListener(new OnSuccessListener<Void>() {
-//                    @Override
-//                    public void onSuccess(Void aVoid) {
-//                        String id = project.getProjectId();
-//                        calculateTotalEstimatedTimeAndEndDate(id);
-//
-//                        Toast.makeText(requireContext(), "Project has been updated..", Toast.LENGTH_SHORT).show();
-//                    }
-//                }).addOnFailureListener(new OnFailureListener() {
-//                    @Override
-//                    public void onFailure(@NonNull Exception e) {
-//
-//                        Toast.makeText(requireContext(), "Fail to update the data..", Toast.LENGTH_SHORT).show();
-//                    }
-//                });
-//    }
 private void updateProject(@NonNull Projects projects, String proTitle, String proD, String priority, String startDate, String endDate, String progres, Date actualEdate) {
     // Query Projects collection to check if a project with the new title exists
     FirebaseFirestore.getInstance().collection("Projects")
@@ -270,9 +245,14 @@ private void updateProject(@NonNull Projects projects, String proTitle, String p
         String existingProgress = projects.getProgress();
         String existingEndDate = projects.getEndDate();
         Date existingActualEndDate = projects.getActualEndDate();
+        String existingGroupId = projects.getGroupId();
+        String existingUserAuhtId = projects.getUserAuthId();
+
+        //FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        ///String userAuthId = currentUser.getUid();
 
         // Create the updated project with the existing progress value
-        Projects updatedProject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress, existingActualEndDate);
+        Projects updatedProject = new Projects(proTitle, proD, priority, startDate, existingEndDate, existingProgress, existingActualEndDate,existingGroupId,existingUserAuhtId);
 
         fb.collection("Projects")
                 .document(projects.getProjectId())

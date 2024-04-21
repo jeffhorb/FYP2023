@@ -17,11 +17,13 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -54,6 +56,12 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
     FirebaseFirestore fb;
     private FirebaseAuth mAuth;
 
+    //String groupId = GroupIdGlobalVariable.getInstance().getGlobalData();
+
+    SharedPreferenceManager sharedPrefManager;
+
+    String groupId;
+
     @NonNull
     @Contract(" -> new")
     public static BottomSheetDialogAddProject newInstance() {
@@ -74,6 +82,8 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
 
         addPro = view.findViewById(R.id.addProButn);
 
+        sharedPrefManager = new SharedPreferenceManager(requireContext());
+
         fb = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
 
@@ -84,6 +94,8 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
             // Close the BottomSheetDialogFragment when the close icon is clicked
             dismiss();
         });
+
+        groupId = sharedPrefManager.getGroupId();
 
         addPro.setOnClickListener(v -> {
 
@@ -172,7 +184,18 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
 
         CollectionReference dbProjects = fb.collection("Projects");
 
-        Projects projs = new Projects(title, description, priority, startDate, endDate,progres,actualEDate);
+        String userAuthId;
+        if(groupId == null){
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            userAuthId = currentUser.getUid();
+
+        }else {
+            userAuthId = "";
+        }
+
+
+
+        Projects projs = new Projects(title, description, priority, startDate, endDate,progres,actualEDate,groupId,userAuthId);
         dbProjects.add(projs).addOnSuccessListener(documentReference -> {
 
             userId = Objects.requireNonNull(mAuth.getCurrentUser()).getUid();

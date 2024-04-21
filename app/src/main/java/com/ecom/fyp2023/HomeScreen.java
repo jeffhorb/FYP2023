@@ -9,6 +9,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +29,10 @@ import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
+import com.ecom.fyp2023.Fragments.UsersListFragment;
+import com.ecom.fyp2023.InvitationClass.CreateGroupActivity;
+import com.ecom.fyp2023.InvitationClass.GroupMembers;
+import com.ecom.fyp2023.InvitationClass.PendingGroupInvitations;
 import com.ecom.fyp2023.MiroWhiteBoardIntegration.Board;
 import com.ecom.fyp2023.MiroWhiteBoardIntegration.MiroApiService;
 import com.ecom.fyp2023.MiroWhiteBoardIntegration.RetrofitClient;
@@ -66,11 +71,14 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     FirebaseFirestore db;
     NavigationView navigationView;
 
+    String savedGroupId,savedAuthId;
+
     SharedPreferenceManager sharedPrefManager;
 
     private MiroApiService miroApiService;
 
 
+    TextView groupN,options;
 
     private boolean manageAccountClicked = false;
 
@@ -81,9 +89,15 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        groupN = findViewById(R.id.groupName);
+        options = findViewById(R.id.options);
+
         db = FirebaseFirestore.getInstance();
 
         projectsArrayList = new ArrayList<>();
+
+        sharedPrefManager = new SharedPreferenceManager(this);
+
 
         // Initialize Retrofit client
         miroApiService = RetrofitClient.getClient();
@@ -95,19 +109,123 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         LinearLayoutManager layoutManager = new LinearLayoutManager(HomeScreen.this, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
-        sharedPrefManager = new SharedPreferenceManager(this);
+//        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+//        String userAuthId = currentUser.getUid();
+
+        savedAuthId = sharedPrefManager.getUserAuthId();
+
+        savedGroupId = sharedPrefManager.getGroupId();
+
+
+        retrievePersonalData();
+
+        if(savedAuthId != null){
+
+            retrievePersonalData();
+
+        } else if (savedGroupId != null) {
+            retrieveGroupData();
+            String groupName = sharedPrefManager.getGroupName();
+            String groupDes = sharedPrefManager.getGroupDescription();
+            groupN.setText(groupName);
+            options.setVisibility(View.VISIBLE);
+            options.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    PopupMenu popupMenu = new PopupMenu(HomeScreen.this, v);
+                    popupMenu.getMenu().add("Send Invite");
+                    popupMenu.getMenu().add("Pending Invitations");
+                    popupMenu.getMenu().add("Group Members");
+
+                    popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                        @Override
+                        public boolean onMenuItemClick(MenuItem item) {
+                            String selectedItem = item.getTitle().toString();
+                            if (selectedItem.equals("Pending Invitations")) {
+                                // Handle Pending Invitations option
+                                Intent intent = new Intent(HomeScreen.this, PendingGroupInvitations.class);
+                                startActivity(intent);
+                            } else if (selectedItem.equals("Group Members")) {
+                                // Handle Group Members option
+                                Intent intent = new Intent(HomeScreen.this, GroupMembers.class);
+                                startActivity(intent);
+                            } else if (selectedItem.equals("Send Invite")) {
+
+                                UsersListFragment usersListFragment = UsersListFragment.newInstance();
+                                Bundle bundle = new Bundle();
+                                bundle.putString("groupId", savedGroupId);
+                                bundle.putString("groupName", groupName);
+                                bundle.putString("groupDes",groupDes);
+                                usersListFragment.setArguments(bundle);
+                                usersListFragment.show(getSupportFragmentManager(), usersListFragment.getTag());
+
+                            }
+                            return true;
+                        }
+                    });
+
+                    popupMenu.show();
+                }
+            });
+
+        }
 
         //search method
         setupSearchView();
 
-
         setUserDetailsInNavHeader();
-
 
         recyclerAdapter = new ProjectsRVAdapter(projectsArrayList, HomeScreen.this);
         recyclerView.setAdapter(recyclerAdapter);
 
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        drawerLayout = findViewById(R.id.drawer);
+
+        navigationView = findViewById(R.id.nav_view);
+
+        navigationView.setNavigationItemSelectedListener(this);
+        navigationView.bringToFront();
+
+        actionBarDrawerToggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close);
+        drawerLayout.addDrawerListener(actionBarDrawerToggle);
+        actionBarDrawerToggle.syncState();
+
+    }
+
+    public void retrieveGroupData(){
+
         db.collection("Projects")
+                .whereEqualTo("groupId", savedGroupId) // Filter projects by groupId
+                .whereIn("progress", Arrays.asList("In Progress", "Incomplete"))
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Toast.makeText(HomeScreen.this, "Error getting data: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (value != null) {
+                        projectsArrayList.clear();
+                        for (DocumentSnapshot document : value) {
+                            Projects project = document.toObject(Projects.class);
+                            if (project != null) {
+                                project.setProjectId(document.getId());
+                                projectsArrayList.add(project);
+                            }else {
+
+                            }
+                        }
+                        recyclerAdapter.notifyDataSetChanged();
+                    }
+                });
+    }
+
+
+    public void retrievePersonalData(){
+        db.collection("Projects")
+                .whereEqualTo("userAuthId", savedAuthId)
                 .whereIn("progress", Arrays.asList("In Progress", "Incomplete"))
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
@@ -128,22 +246,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
                     }
                 });
-
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        drawerLayout = findViewById(R.id.drawer);
-
-        navigationView = findViewById(R.id.nav_view);
-
-        navigationView.setNavigationItemSelectedListener(this);
-        navigationView.bringToFront();
-
-        actionBarDrawerToggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close);
-        drawerLayout.addDrawerListener(actionBarDrawerToggle);
-        actionBarDrawerToggle.syncState();
-
     }
 
     @Override
@@ -159,12 +261,10 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
         if (itemId == R.id.completedP) {
             Intent intent = new Intent(HomeScreen.this, CompletedProjects.class);
+            //TODO: intent.putExtra("groupId",groupId);
             startActivity(intent);
             return true;
         } else if (itemId == R.id.imageNotification) {
-            // Handle the action for menu option 2
-            //Toast.makeText(this, "Menu Option 2 clicked", Toast.LENGTH_SHORT).show();
-            // Add your custom logic here
             //createWhiteboard();
             Intent intent = new Intent(HomeScreen.this, Board.class);
             //intent.putExtra("whiteboardUrl", whiteboardUrl);
@@ -193,10 +293,16 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         startActivity(intent);
     }
 
-    public void Git(MenuItem menuitem) {
+    public void Sentiment(MenuItem menuitem) {
         Intent intent = new Intent(HomeScreen.this, SentimentAnalysisActivity.class);
         startActivity(intent);
     }
+
+    public void Group(MenuItem menuitem) {
+        Intent intent = new Intent(HomeScreen.this, CreateGroupActivity.class);
+        startActivity(intent);
+    }
+
 
     private void setupSearchView() {
         searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {

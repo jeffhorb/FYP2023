@@ -9,6 +9,13 @@ public class SharedPreferenceManager {
     private static final String KEY_CLIENT_SECRET = "client_secret";
     private static final String KEY_ACCESS_TOKEN = "access_token";
 
+    private static final String KEY_GROUP_ID = "groupId";
+    private static final String KEY_USER_AUTH_ID = "userAuthId";
+
+    private static final String KEY_GROUP_NAME = "groupName";
+    private static final String KEY_GROUP_DESCRIPTION = "groupDescription";
+
+
     Context context;
 
     public SharedPreferenceManager(Context context) {
@@ -19,6 +26,65 @@ public class SharedPreferenceManager {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("Email", email);
         editor.putString("Password", password);
+        editor.apply();
+    }
+
+    public void saveGroupId(String groupId) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_GROUP_ID, groupId);
+        editor.apply();
+    }
+
+    public String getGroupId() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_GROUP_ID, null);
+    }
+
+    public void saveGroupName(String groupName) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_GROUP_NAME, groupName);
+        editor.apply();
+    }
+
+    public String getGroupName() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_GROUP_NAME, null);
+    }
+
+    public void saveGroupDescription (String groupDescription) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_GROUP_DESCRIPTION, groupDescription);
+        editor.apply();
+    }
+
+    public String getGroupDescription() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_GROUP_DESCRIPTION, null);
+    }
+
+
+    public void saveUserAuthId(String userAuthId) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_USER_AUTH_ID, userAuthId);
+        editor.apply();
+    }
+
+    public String getUserAuthId() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_AUTH_ID, null);
+    }
+
+    public void clearSavedIds() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove(KEY_GROUP_ID);
+        editor.remove(KEY_USER_AUTH_ID);
+        editor.remove(KEY_GROUP_NAME);
+        editor.remove(KEY_GROUP_DESCRIPTION);
         editor.apply();
     }
 

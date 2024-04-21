@@ -32,7 +32,10 @@ import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.ModelClasses.Notes;
 import com.ecom.fyp2023.ModelClasses.Tasks;
+import com.ecom.fyp2023.ModelClasses.Users;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -41,6 +44,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +67,9 @@ public class TaskActivity extends AppCompatActivity {
     String nId,notesContent;
 
     FirebaseFirestore fb;
+
+    //TODO: PASS GROUPID
+    private String groupId;
 
     SharedPreferenceManager sharedPreferenceManager;
 
@@ -924,7 +931,9 @@ public class TaskActivity extends AppCompatActivity {
 
         CollectionReference dbTasks = fb.collection("Notes");
 
-        Notes notes = new Notes(note);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String userAuthId = currentUser.getUid();
+        Notes notes = new Notes(note, groupId,userAuthId);
         dbTasks.add(notes).addOnSuccessListener(documentReference -> {
             Toast.makeText(TaskActivity.this, "Notes saved", Toast.LENGTH_SHORT).show();
             String notesId = documentReference.getId();

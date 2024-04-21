@@ -13,12 +13,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.SentimentRvAdapter;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
+import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Sentiments;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.common.reflect.TypeToken;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -27,7 +31,9 @@ import com.google.gson.Gson;
 
 import org.tensorflow.lite.Interpreter;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -44,23 +50,30 @@ import java.util.Objects;
 
 public class SentimentAnalysisActivity extends AppCompatActivity {
 
-    private TextView sentimentResult,seeHistory,clearHistory;
+    private TextView sentimentResult, seeHistory, clearHistory;
 
     RecyclerView historyRecycler;
     private Interpreter tflite;
     private FirebaseFirestore db;
 
 
+    //TODO: pass groupid
+    //String groupId = GroupIdGlobalVariable.getInstance().getGlobalData();
     SentimentRvAdapter adapter;
+
+    SharedPreferenceManager sharedPreferenceManager;
 
     ArrayList<Sentiments> sentimentsArrayList;
 
     private HashMap<String, Integer> vocabulary;
 
+    String groupId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sentiment_analysis);
+
 
         sentimentResult = findViewById(R.id.textview);
         seeHistory = findViewById(R.id.history);
@@ -70,161 +83,100 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         historyRecycler.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
         sentimentsArrayList = new ArrayList<>();
 
-        adapter = new SentimentRvAdapter(sentimentsArrayList,this);
+        adapter = new SentimentRvAdapter(sentimentsArrayList, this);
         historyRecycler.setAdapter(adapter);
+
+
+        sharedPreferenceManager = new SharedPreferenceManager(this);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
-
-
-
+        groupId = sharedPreferenceManager.getGroupId();
 
         try {
-            tflite = new Interpreter(loadModelFile());
+            loadModel(); // Load the TensorFlow Lite model during activity creation
             db = FirebaseFirestore.getInstance();
             vocabulary = loadVocabulary();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
-        db.collection("Comments")
+        db.collection("Comments").whereEqualTo("groupId", groupId)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        if (task.getResult().isEmpty()) {
-                            // No comments found for sentiment analysis
-                            sentimentResult.setText("No comments for Sentiment analysis.");
-                        } else {
-                            boolean hasRecognizedWords = false; // Flag to track if any recognized words are found
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                String comment = document.getString("comment");
-                                // Perform sentiment analysis on each comment
-                                float[] preprocessedComment = preprocessComment(comment);
-                                boolean containsRecognizedWords = checkRecognizedWords(preprocessedComment);
-                                if (containsRecognizedWords) {
-                                    hasRecognizedWords = true; // Set the flag to true if recognized words are found
-                                    float[][] outputVal = new float[1][1];
-                                    tflite.run(preprocessedComment, outputVal);
-                                    int predictedSentiment = (outputVal[0][0] > 0.5) ? 1 : 0;
-                                    String sentiment = predictedSentiment == 0 ? "Positive" : "Negative";
-                                    sentimentResult.setText("Predicted Team Communication sentiment : " + sentiment);
-                                    saveSentimentAndTimestamp(sentiment);
-                                }
-                            }
-                            // If no recognized words are found in any comment, set sentiment to neutral
-                            if (!hasRecognizedWords) {
-                                sentimentResult.setText("Predicted sentiment: Neutral or Comment(s) can not be recognised by the trained model");
-                            }
+                        List<String> allComments = new ArrayList<>();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            String comment = document.getString("comment");
+                            allComments.add(comment);
                         }
+                        loadModel();
+                        // Perform sentiment analysis on all comments collectively
+                        analyzeComments(allComments);
                     } else {
                         System.out.println("Error getting documents: " + task.getException());
                     }
                 });
 
-        clearHistory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                clearHistory();
-                historyRecycler.setVisibility(View.INVISIBLE);
-                adapter.update(sentimentsArrayList);
-            }
+        clearHistory.setOnClickListener(v -> {
+            clearHistory();
+            historyRecycler.setVisibility(View.INVISIBLE);
+            adapter.update(sentimentsArrayList);
         });
 
-        seeHistory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                historyRecycler.setVisibility(View.VISIBLE);
-                fetchSentimentsFromFirestore();
-            }
-        });
-
-    }
-
-    // Method to clear history
-    private void clearHistory() {
-        // Get all documents from Sentiments collection
-        db.collection("Sentiments").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                if (task.isSuccessful()) {
-                    // Loop through each document and delete it
-                    for (QueryDocumentSnapshot document : task.getResult()) {
-                        document.getReference().delete();
-                    }
-
-                } else {
-                    Log.d("TAG", "Error getting documents: ", task.getException());
-                }
-            }
+        seeHistory.setOnClickListener(v -> {
+            historyRecycler.setVisibility(View.VISIBLE);
+            fetchSentimentsFromFirestore();
         });
     }
 
-    private void fetchSentimentsFromFirestore() {
-        Query query = db.collection("Sentiments")
-                .orderBy("timestamp", Query.Direction.DESCENDING);
-
-        query.addSnapshotListener((value, error) -> {
-            if (error != null) {
-                Log.e("Firestore", "Error getting notes: " + error.getMessage());
-                //Toast.makeText(getActivity(), "Error getting notes: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (value != null && !value.isEmpty()) {
-               // List<Sentiments> sentiments = new ArrayList<>();
-                for (QueryDocumentSnapshot document : value) {
-                    String sentiment = document.getString("sentiment");
-                    Date timestamp = document.getDate("timestamp");
-
-                    // Create a Sentiments object and add it to sentimentsArrayList
-                    sentimentsArrayList.add(new Sentiments(sentiment, timestamp));
-
-                    if(timestamp != null){
-                        clearHistory.setVisibility(View.VISIBLE);
-                    }
-
-                }
-            }
-            adapter.notifyDataSetChanged();
-        });
-    }
-
-    // Method to check if the preprocessed comment contains recognized words
-    private boolean checkRecognizedWords (@NonNull float[] preprocessedComment){
-        for (float word : preprocessedComment) {
-            if (word == 1) {
-                // If at least one word is recognized (indicated by 1 in oneHot encoding), return true
-                return true;
-            }
+    // Method to load the TensorFlow Lite model
+    private void loadModel() {
+        try {
+            tflite = new Interpreter(loadModelFile());
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-        //no recognized words are found
-        return false;
     }
 
-    // Method to save sentiment and timestamp in Firestore
-    private void saveSentimentAndTimestamp(String sentiment) {
-        // Get the current timestamp
-        Date currentTimestamp = new Date();
+//    // Clear model cache
+//    private void clearModelCache() {
+//        File cacheDir = getCacheDir();
+//        if (cacheDir != null) {
+//            File[] cachedFiles = cacheDir.listFiles(new FilenameFilter() {
+//                @Override
+//                public boolean accept(File dir, String name) {
+//                    // Filter files with .tflite extension
+//                    return name.endsWith(".tflite");
+//                }
+//            });
+//            if (cachedFiles != null) {
+//                for (File cachedFile : cachedFiles) {
+//                    if (cachedFile.delete()) {
+//                        Log.d("Sentiment", "Deleted cached model file: " + cachedFile.getName());
+//                    } else {
+//                        Log.e("sentiment", "Failed to delete cached model file: " + cachedFile.getName());
+//                    }
+//                }
+//            }
+//        }
+//    }
 
-        // Create a new document in the "Sentiments" collection with sentiment and timestamp
-        Map<String, Object> sentimentData = new HashMap<>();
-        sentimentData.put("sentiment", sentiment);
-        sentimentData.put("timestamp", currentTimestamp);
 
-        db.collection("Sentiments")
-                .add(sentimentData)
-                .addOnSuccessListener(documentReference -> {
-                    Log.d("SentimentHistory", "Sentiment document added with ID: " + documentReference.getId());
-                })
-                .addOnFailureListener(e -> {
-                    Log.w("SentimentHistory", "Error adding sentiment document", e);
-                });
+    @Override
+    protected void onDestroy() {
+        // Release TensorFlow Lite interpreter resources
+        if (tflite != null) {
+            tflite.close();
+            tflite = null;
+        }
+        super.onDestroy();
     }
 
-        //load tensorFlow lite file for trained model in assets folder
+    // Method to load the TensorFlow Lite model file
     private MappedByteBuffer loadModelFile() throws IOException {
         AssetFileDescriptor fileDescriptor = this.getAssets().openFd("model.tflite");
         FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
@@ -234,7 +186,7 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
     }
 
-    //read the vocabulary.json file from the assets folder and parses it into a HashMap
+    // Method to read the vocabulary JSON file and parse it into a HashMap
     private HashMap<String, Integer> loadVocabulary() throws IOException {
         AssetManager assetManager = getAssets();
         InputStream inputStream = assetManager.open("vocabulary.json");
@@ -244,11 +196,11 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         inputStream.close();
         String json = new String(buffer, StandardCharsets.UTF_8);
         Gson gson = new Gson();
-        Type type = new TypeToken<HashMap<String, Integer>>(){}.getType();
+        Type type = new TypeToken<HashMap<String, Integer>>() {}.getType();
         return gson.fromJson(json, type);
     }
 
-    //preprocess comments to prepare it for sentiment analysis
+    // Method to preprocess comments for sentiment analysis
     @NonNull
     private float[] preprocessComment(String comment) {
         // Preprocess the comment similar to your Python code
@@ -294,7 +246,7 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         return text;
     }
 
-    // conversion to return a float array to be fed into the model
+    // Method to convert processed comment to a float array
     @NonNull
     private float[] convertToFloatArray(@NonNull String text) {
         String[] words = text.split("\\s+");
@@ -307,13 +259,129 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         }
         return oneHot;
     }
-    //this method to returns the index of the word in your vocabulary
+
+    // Method to get the index of the word in the vocabulary
     private int getWordIndex(String word) {
-        // Return -1 if the word is not in your vocabulary
+        // Return -1 if the word is not in the vocabulary
         if (vocabulary.containsKey(word)) {
             return vocabulary.get(word);
         } else {
             return -1;
         }
+    }
+
+    // Method to analyze comments for sentiment
+    private void analyzeComments(@NonNull List<String> allComments) {
+        if (allComments.isEmpty()) {
+            // No comments found for sentiment analysis
+            sentimentResult.setText("No comments for Sentiment analysis.");
+            return;
+        }
+
+        boolean hasRecognizedWords = false; // Flag to track if any recognized words are found
+        //for (String comment : allComments) {
+            // Perform sentiment analysis on each comment
+        //clearModelCache();
+        loadModel();
+        float[] preprocessedComment = preprocessComment(allComments.toString());
+        seeHistory.setText(allComments.toString());
+        boolean containsRecognizedWords = checkRecognizedWords(preprocessedComment);
+        if (containsRecognizedWords) {
+            hasRecognizedWords = true; // Set the flag to true if recognized words are found
+            float[][] outputVal = new float[1][1];
+            tflite.run(preprocessedComment, outputVal);
+            int predictedSentiment = (outputVal[0][0] > 0.5) ? 1 : 0;
+            String sentiment = predictedSentiment == 0 ? "Positive" : "Negative";
+            sentimentResult.setText("Predicted Team Communication sentiment: " + sentiment);
+            saveSentimentAndTimestamp(sentiment);
+            //we break here.
+            // break;
+            // }
+        }
+        // If no recognized words are found in any comment, set sentiment to neutral
+        if (!hasRecognizedWords) {
+            sentimentResult.setText("Predicted sentiment: Neutral or Comment(s) can not be recognised");
+        }
+    }
+
+    // Method to check if the preprocessed comment contains recognized words
+    private boolean checkRecognizedWords(@NonNull float[] preprocessedComment) {
+        for (float word : preprocessedComment) {
+            if (word == 1) {
+                // If at least one word is recognized (indicated by 1 in oneHot encoding), return true
+                return true;
+            }
+        }
+        // No recognized words are found
+        return false;
+    }
+
+    // Method to clear history
+    private void clearHistory() {
+        // Get all documents from Sentiments collection
+        db.collection("Sentiments").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                // Loop through each document and delete it
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    document.getReference().delete();
+                }
+            } else {
+                Log.d("TAG", "Error getting documents: ", task.getException());
+            }
+        });
+    }
+
+    // Method to fetch sentiments from Firestore
+    private void fetchSentimentsFromFirestore() {
+        Query query = db.collection("Sentiments").whereEqualTo("groupId", groupId)
+                .orderBy("timestamp", Query.Direction.DESCENDING);
+
+        query.addSnapshotListener((value, error) -> {
+            if (error != null) {
+                Log.e("Firestore", "Error getting notes: " + error.getMessage());
+                return;
+            }
+            if (value != null && !value.isEmpty()) {
+                for (QueryDocumentSnapshot document : value) {
+                    String sentiment = document.getString("sentiment");
+                    Date timestamp = document.getDate("timestamp");
+
+                    Sentiments sentiments = document.toObject(Sentiments.class);
+                    if (sentiments != null) {
+                        sentimentsArrayList.add(sentiments);
+                        adapter.notifyDataSetChanged();
+                    }
+
+                    if (timestamp != null) {
+                        clearHistory.setVisibility(View.VISIBLE);
+                    }
+                }
+            }
+            adapter.notifyDataSetChanged();
+        });
+    }
+
+    // Method to save sentiment and timestamp in Firestore
+    private void saveSentimentAndTimestamp(String sentiment) {
+        // Get the current timestamp
+        Date currentTimestamp = new Date();
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String userAuthId = currentUser != null ? currentUser.getUid() : "";
+
+        // Create a new document in the "Sentiments" collection with sentiment and timestamp
+        Map<String, Object> sentimentData = new HashMap<>();
+        sentimentData.put("sentiment", sentiment);
+        sentimentData.put("timestamp", currentTimestamp);
+        sentimentData.put("groupId", groupId);
+
+        db.collection("Sentiments")
+                .add(sentimentData)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d("SentimentHistory", "Sentiment document added with ID: " + documentReference.getId());
+                })
+                .addOnFailureListener(e -> {
+                    Log.w("SentimentHistory", "Error adding sentiment document", e);
+                });
     }
 }

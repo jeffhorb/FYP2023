@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:layout_margin="10dp"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/text_view_group_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="groupName"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:padding="2dp"/>
+
+    <TextView
+        android:id="@+id/text_view_group_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No Description"
+        android:textStyle="bold"
+        android:padding="2dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/button_show_members"
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:text="Show Members"
+            android:layout_weight="1"
+            android:layout_margin="4dp"/>
+
+        <Button
+            android:id="@+id/leaveGroup"
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:text="Leave group"
+            android:background="@color/red"
+            android:layout_weight="1"
+            android:layout_margin="4dp"/>
+
+
+
+    </LinearLayout>
+
+
+</LinearLayout>

@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
@@ -21,14 +22,36 @@
         android:supportsRtl="true"
         android:theme="@style/status_bar_color">
         <activity
-            android:name=".MiroWhiteBoardIntegration.Board"
+            android:name=".InvitationClass.GroupMembers"
             android:exported="false" />
+        <activity
+            android:name=".InvitationClass.PendingGroupInvitations"
+            android:exported="false" />
+        <activity
+            android:name=".InvitationClass.PendingInvitesActivity"
+            android:exported="false"
+            android:label="Pending Invitation">
+            <intent-filter>
+                <action android:name="OPEN_PENDING_INVITES_ACTIVITY" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".InvitationClass.CreateGroupActivity"
+            android:exported="false"
+            android:label="Groups" />
+        <activity
+            android:name=".MiroWhiteBoardIntegration.Board"
+            android:exported="false"
+            android:label="WhiteBoard" />
         <activity
             android:name=".MiroWhiteBoardIntegration.WhiteboardActivity"
             android:exported="false" />
         <activity
             android:name=".Analysis.CombinedLineAndBarChart"
-            android:exported="false" />
+            android:exported="false"
+            android:label="Projects Analysis" />
         <activity
             android:name=".VersionControlClasses.VersionDifference"
             android:exported="false"

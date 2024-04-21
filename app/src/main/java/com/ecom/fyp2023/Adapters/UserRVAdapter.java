@@ -14,10 +14,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Analysis.TeamMemberEvaluation;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
+import com.ecom.fyp2023.ModelClasses.Invitation;
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.ecom.fyp2023.R;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +29,7 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
     private final List<Users> userList;
     private final Context context;
 
-    private String taskId,projectId;
+    private String taskId,projectId,groupId,groupName,groupDescription;
 
     public void setSelectedTaskId(String selectedTaskId) {
         this.taskId = selectedTaskId;
@@ -41,6 +43,19 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
         this.userList = userList;
         this.context = context;
     }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public void setGroupDescription(String groupDescription) {
+        this.groupDescription = groupDescription;
+    }
+
 
     @NonNull
     @Override
@@ -64,13 +79,19 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
                     if (documentId != null) {
                         if (taskId != null){
                             AssignUserTask(documentId,taskId);
+
+                        }else if(groupId != null&& groupName != null) {
+
+                            SendInvitationToUser(documentId,groupId,groupName,groupDescription, user.getUserName(), user.getUserEmail());
+
                         }else {
-                            // Create an Intent
-                            Intent intent = new Intent(context, TeamMemberEvaluation.class);
-                            intent.putExtra("userID", documentId);
-                            intent.putExtra("userName", user.getUserName());
-                            intent.putExtra("projID",projectId);
-                            context.startActivity(intent);
+                                // Create an Intent
+                                Intent intent = new Intent(context, TeamMemberEvaluation.class);
+                                intent.putExtra("userID", documentId);
+                                intent.putExtra("userName", user.getUserName());
+                                intent.putExtra("projID",projectId);
+                                context.startActivity(intent);
+
                         }
                     }  // Handle the case where the document ID couldn't be retrieved
                 });
@@ -84,8 +105,6 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
     }
 
 
-
-
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView username,userEmail;
 
@@ -95,6 +114,31 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
             userEmail = itemView.findViewById(R.id.userEmail);
         }
     }
+
+    public void SendInvitationToUser(String userId,String groupId,String groupName,String groupDescription,String userName,String userEmail) {
+
+        // Initialize Firestore
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Get the current timestamp
+        Date timestamp = new Date(System.currentTimeMillis());
+
+        // Create an invitation object
+        Invitation invitation = new Invitation(groupId, userId, timestamp,groupName,groupDescription,"Pending",userName,userEmail);
+
+        // Add the invitation to Firestore
+        db.collection("invitations")
+                .add(invitation)
+                .addOnSuccessListener(documentReference -> {
+                    // Invitation added successfully
+                    Toast.makeText(context, "Invitation sent to user!", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    // Failed to add invitation
+                    Toast.makeText(context, "Failed to send invitation: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
 
     private void AssignUserTask(String userId, String taskId) {
         FirebaseFirestore fb = FirebaseFirestore.getInstance();

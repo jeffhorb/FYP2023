@@ -25,6 +25,8 @@ import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -53,6 +55,8 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
     Button save;
     String taskId, projectId,timeEstimate;
     Date estimatedEDate;
+
+    String groupId;
     int StoryPoint;
     FirebaseFirestore fb;
     ArrayAdapter<String> prerequisitesAdapter;
@@ -219,10 +223,13 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         // Calculate estimated end date
         Date estimatedEndDate = calculateEstimatedEndDate(startDate, estimatedDays);
 
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String userAuthId = currentUser.getUid();
+
         // Calculate StoryPoint based on difficulty level and estimated time
         int storyPoint = calculateStoryPoint(diff, estimatedDays);
 
-        Tasks tasks = new Tasks(tN, d, diff, prog, estT, prerequisites, completedTime, startDate, endDate, estimatedEndDate, storyPoint);
+        Tasks tasks = new Tasks(tN, d, diff, prog, estT, prerequisites, completedTime, startDate, endDate, estimatedEndDate, storyPoint,userAuthId,groupId);
         dbTasks.add(tasks).addOnSuccessListener(documentReference -> {
 
             Toast.makeText(getActivity(), "Task saved", Toast.LENGTH_SHORT).show();

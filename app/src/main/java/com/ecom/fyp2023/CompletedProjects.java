@@ -9,21 +9,35 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.CompletedProjectsAdapter;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
+import com.ecom.fyp2023.ModelClasses.FileModel;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class CompletedProjects extends AppCompatActivity {
 
+    //String groupId = GroupIdGlobalVariable.getInstance().getGlobalData();;
+
+
+    SharedPreferenceManager sharedPrefManager;
+    String groupId;
     CompletedProjectsAdapter recyclerAdapter;
 
     private ArrayList<Projects> projectsArrayList;
     RecyclerView recyclerView;
     FirebaseFirestore db;
+    String savedGroupId,savedAuthId;
+
 
     private SearchView searchView;
 
@@ -33,6 +47,9 @@ public class CompletedProjects extends AppCompatActivity {
         setContentView(R.layout.projects_completed);
 
         db = FirebaseFirestore.getInstance();
+
+        sharedPrefManager = new SharedPreferenceManager(this);
+
 
         projectsArrayList = new ArrayList<>();
         recyclerView = findViewById(R.id.CompletedRecyclerView);
@@ -53,27 +70,84 @@ public class CompletedProjects extends AppCompatActivity {
         recyclerAdapter = new CompletedProjectsAdapter(projectsArrayList,CompletedProjects.this);
         recyclerView.setAdapter(recyclerAdapter);
 
-        db.collection("Projects")
-                .whereEqualTo("progress", "Complete")
-                .addSnapshotListener((value, error) -> {
-                    if (error != null) {
-                        Toast.makeText(CompletedProjects.this, "Error getting data: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+        fetchCompletedFromFirestore();
 
-                    if (value != null) {
-                        projectsArrayList.clear();
-                        for (DocumentSnapshot document : value) {
-                            Projects project = document.toObject(Projects.class);
-                            if (project != null) {
-                                project.setProjectId(document.getId());
-                                projectsArrayList.add(project);
-                            }
-                        }
-                        recyclerAdapter.notifyDataSetChanged();
-                    }
-                });
+        groupId = sharedPrefManager.getGroupId();
+//
+//        savedGroupId = sharedPrefManager.getGroupId();
+//        retrievePersonalData();
+//
+//        if(savedAuthId != null){
+//
+//            retrievePersonalData();
+//
+//        } else if (savedGroupId != null) {
+//            retrieveGroupData();
+//
+//        }
     }
+
+
+    private void fetchCompletedFromFirestore() {
+        CollectionReference filesCollection = db.collection("Projects");
+
+        Query query;
+        if (groupId != null) {
+            // Retrieve files belonging to the provided groupId
+            query = filesCollection.whereEqualTo("groupId", groupId);
+        } else {
+            // Retrieve files belonging to the provided userAuthId
+            String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            query = filesCollection.whereEqualTo("userAuthId", userAuthId);
+        }
+
+        query.addSnapshotListener((value, error) -> {
+            if (error != null) {
+                // Handle errors
+                Toast.makeText(getApplicationContext(), "Failed to fetch files from Firestore: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (value != null) {
+                projectsArrayList.clear(); // Clear the existing list
+                for (QueryDocumentSnapshot document : value) {
+                    Projects projects = document.toObject(Projects.class);
+                    projectsArrayList.add(projects);
+                }
+                recyclerAdapter.updateList(projectsArrayList);
+            }
+        });
+    }
+
+//    public void retrieveGroupData(){
+//
+//        db.collection("Projects")
+//                .whereEqualTo("groupId", savedGroupId) // Filter projects by groupId
+//                .whereIn("progress", Arrays.asList("In Progress", "Incomplete"))
+//                .addSnapshotListener((value, error) -> {
+//                    if (error != null) {
+//                        return;
+//                    }
+//
+//                    if (value != null) {
+//                        projectsArrayList.clear();
+//                        for (DocumentSnapshot document : value) {
+//                            Projects project = document.toObject(Projects.class);
+//                            if (project != null) {
+//                                project.setProjectId(document.getId());
+//                                projectsArrayList.add(project);
+//                            }else {
+//
+//
+//
+//                            }
+//                        }
+//                        recyclerAdapter.notifyDataSetChanged();
+//                    }
+//                });
+//
+//    }
+
 
     private void setupSearchView() {
         searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {

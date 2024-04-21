@@ -8,20 +8,32 @@ public class VersionModel {
     private Date timestamp;
     private String content;
     private String message;
+    private String groupId;
 
     // Default constructor required for Firestore
     public VersionModel() {
     }
 
     // Constructor
-    public VersionModel(String userId, Date timestamp, String content, String message) {
+    public VersionModel(String userId, Date timestamp, String content, String message,String groupId) {
         this.userId = userId;
         this.timestamp = timestamp;
         this.content = content;
         this.message = message;
+        this.groupId = groupId;
     }
 
     // Getters and setters
+
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
     public String getUserId() {
         return userId;
     }

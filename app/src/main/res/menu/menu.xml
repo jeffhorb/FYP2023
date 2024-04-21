@@ -10,5 +10,5 @@
         android:id="@+id/imageNotification"
         android:orderInCategory="100"
         app:showAsAction="ifRoom"
-        android:icon="@drawable/baseline_notifications_none_24"/>
+        android:icon="@drawable/whiteboard_svgrepo_com"/>
 </menu>

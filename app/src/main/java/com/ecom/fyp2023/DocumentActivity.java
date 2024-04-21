@@ -21,18 +21,26 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.FilesAdapter;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.ModelClasses.FileModel;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -43,7 +51,13 @@ public class DocumentActivity extends AppCompatActivity {
     List<FileModel> fileList;
     FilesAdapter filesAdapter;
 
-    String id;
+    SharedPreferenceManager sharedPrefManager;
+
+
+    //TODO: PASS GROUPID
+     String groupId;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,12 +68,16 @@ public class DocumentActivity extends AppCompatActivity {
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
+        sharedPrefManager = new SharedPreferenceManager(this);
+
         recyclerView = findViewById(R.id.recycler_files);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         fileList = new ArrayList<>();
         filesAdapter = new FilesAdapter(fileList, DocumentActivity.this);
         recyclerView.setAdapter(filesAdapter);
+
+        groupId = sharedPrefManager.getGroupId();
 
         // Fetch files from Firestore
         fetchFilesFromFirestore();
@@ -70,7 +88,19 @@ public class DocumentActivity extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference filesCollection = db.collection("files");
 
-        filesCollection.addSnapshotListener((value, error) -> {
+        String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // Query files based on groupId if available, otherwise query based on userAuthId
+        Query query;
+        if (groupId != null) {
+            // Retrieve files belonging to the provided groupId
+            query = filesCollection.whereEqualTo("groupId", groupId);
+        } else {
+            // Retrieve files belonging to the provided userAuthId
+            query = filesCollection.whereEqualTo("userAuthId", userAuthId);
+        }
+
+        query.addSnapshotListener((value, error) -> {
             if (error != null) {
                 // Handle errors
                 Toast.makeText(getApplicationContext(), "Failed to fetch files from Firestore: " + error.getMessage(), Toast.LENGTH_SHORT).show();
@@ -81,18 +111,27 @@ public class DocumentActivity extends AppCompatActivity {
                 fileList.clear(); // Clear the existing list
                 for (QueryDocumentSnapshot document : value) {
                     FileModel file = document.toObject(FileModel.class);
-                    fileList.add(file);
+                    // Check if the file belongs to the user's private space
+                    if (file.getGroupId() == null && file.getUserAuthId().equals(userAuthId)) {
+                        fileList.add(file);
+                    } else if (file.getGroupId() != null && file.getGroupId().equals(groupId)) {
+                        // Check if the file belongs to the provided groupId
+                        fileList.add(file);
+                    }
                 }
                 filesAdapter.updateList(fileList);
             }
         });
     }
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.document_menu, menu);
         return true;
     }
+
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -106,6 +145,9 @@ public class DocumentActivity extends AppCompatActivity {
     }
 
     private void uploadFileToFirebaseStorage(@NonNull Uri fileUri) {
+        // Get the group ID
+
+        // Firebase Storage references
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
@@ -117,6 +159,25 @@ public class DocumentActivity extends AppCompatActivity {
 
         // Upload file to Firebase Storage
         UploadTask uploadTask = fileRef.putFile(fileUri);
+
+        String userAuthId;
+        if(groupId == null){
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            userAuthId = currentUser.getUid();
+
+        }else {
+            userAuthId = null;
+        }
+
+
+        // Add group ID as metadata
+        StorageMetadata metadata = new StorageMetadata.Builder()
+                .setCustomMetadata("groupId", groupId)
+                .setCustomMetadata("userId",userAuthId)
+                .build();
+
+        // Upload with metadata
+        uploadTask = fileRef.putFile(fileUri, metadata);
         uploadTask.addOnSuccessListener(taskSnapshot -> {
             // File uploaded successfully, get the download URL
             fileRef.getDownloadUrl().addOnSuccessListener(uri -> {
@@ -137,9 +198,19 @@ public class DocumentActivity extends AppCompatActivity {
         // Get reference to Firestore collection where you want to store file metadata
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference filesCollection = db.collection("files");
+        // Get the current user's ID
+        String userAuthId;
+        if(groupId == null){
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            userAuthId = currentUser.getUid();
+
+        }else {
+            userAuthId = "";
+        }
+
 
         // Create a new FileModel object with file metadata
-        FileModel file = new FileModel(fileName, downloadUrl, filePath);
+        FileModel file = new FileModel(fileName, downloadUrl, filePath,groupId, userAuthId);
 
         // Add the file metadata to Firestore
         filesCollection.add(file)
@@ -183,7 +254,8 @@ public class DocumentActivity extends AppCompatActivity {
         if (itemId == R.id.upload) {
             // Launch file picker intent
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.setType("*/*"); // Allow all file types
+            intent.setType("text/plain");
+            //intent.setType("*/*"); // Allow all file types
             startActivityForResult(intent, FILE_PICKER_REQUEST_CODE);
             return true;
         } else if (itemId == R.id.createNewFile) {
@@ -245,6 +317,4 @@ public class DocumentActivity extends AppCompatActivity {
             return null;
         }
     }
-
-
 }

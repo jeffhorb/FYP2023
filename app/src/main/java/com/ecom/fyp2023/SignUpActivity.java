@@ -36,6 +36,7 @@ public class SignUpActivity extends AppCompatActivity {
     TextView loginN, num, atoz, AtoZ, symbols;
     Button signupButn;
     FirebaseAuth authicate;
+
     ProgressBar pBar;
 
     FirebaseFirestore db;
@@ -280,7 +281,7 @@ public class SignUpActivity extends AppCompatActivity {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String userId = currentUser.getUid();
         // adding our data to our courses object class.
-        Users users = new Users(userName, userEmail, fcmToken,userId);
+        Users users = new Users(userName, userEmail, fcmToken,userId,null);
 
         // below method is use to add data to Firebase Firestore.
         dbUsers.add(users).addOnSuccessListener(documentReference -> {

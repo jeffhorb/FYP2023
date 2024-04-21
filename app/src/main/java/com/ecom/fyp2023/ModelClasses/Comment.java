@@ -14,21 +14,31 @@ public class Comment implements Serializable {
     private String userEmail;
     private  String userName;
 
+    private String groupId;
+
     // Default constructor
     public Comment() {
         // Default constructor is needed for Firebase or other data binding frameworks
     }
 
     // Parameterized constructor
-    public Comment(String comment, Date timeStamp,String currentUserId,String userEmail,String userName) {
+    public Comment(String comment, Date timeStamp,String currentUserId,String userEmail,String userName,String groupId) {
         this.Comment = comment;
         this.timestamp = timeStamp;
         this.currentUserId = currentUserId;
         this.userEmail = userEmail;
         this.userName = userName;
+        this.groupId = groupId;
 
     }
 
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
 
     public Date getTimestamp() {
         return timestamp;

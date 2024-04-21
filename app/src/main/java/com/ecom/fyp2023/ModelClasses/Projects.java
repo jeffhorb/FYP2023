@@ -15,6 +15,10 @@ public class Projects implements Serializable {
     private String endDate;
     private Date actualEndDate;
 
+    private String groupId;
+
+    private String userAuthId;
+
     private transient String projectId;
 
 
@@ -24,7 +28,7 @@ public class Projects implements Serializable {
     }
 
     // Parameterized constructor
-    public Projects(String title, String description, String  priority, String startDate, String endDate,String progress, Date timestamp) {
+    public Projects(String title, String description, String  priority, String startDate, String endDate,String progress, Date timestamp,String groupId,String userAuthId) {
         this.title = title;
         this.description = description;
         this.priority = priority;
@@ -32,6 +36,24 @@ public class Projects implements Serializable {
         this.endDate = endDate;
         this.progress = progress;
         this.actualEndDate = timestamp;
+        this.groupId = groupId;
+        this.userAuthId = userAuthId;
+    }
+
+    public String getUserAuthId() {
+        return userAuthId;
+    }
+
+    public void setUserAuthId(String userAuthId) {
+        this.userAuthId = userAuthId;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     // Getter and Setter methods for title

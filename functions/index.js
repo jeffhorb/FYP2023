@@ -247,6 +247,46 @@ exports.sendNotificationOnTaskCompletion = functions.firestore
       return null; // No notifications not updated to "Complete"
     });
 
+exports.sendGroupInvitationNotification = functions.firestore
+    .document("invitations/{invitationId}")
+    .onCreate((snapshot, context) => {
+      const invitation = snapshot.data();
+      const { userId } = invitation;
+      const { groupId } = invitation;
+      const { groupName } = invitation;
+
+      // Retrieve the user's FCM token
+      return admin.firestore().collection("Users").doc(userId).get()
+          .then((userDoc) => {
+            const userData = userDoc.data();
+            const { fcmToken } = userData;
+
+            if (fcmToken) {
+              // Construct the notification payload
+              const payload = {
+                notification: {
+                  title: "You have a new group invitation",
+                  body: `You have been invited to join the group: ${groupName}`,
+                  // clickAction: 'FLUTTER_NOTIFICATION_CLICK'
+                },
+                data: {
+                  groupId,
+                  click_action: "OPEN_PENDING_INVITES_ACTIVITY",
+                },
+              };
+
+              // Send the notification
+              return admin.messaging().sendToDevice(fcmToken, payload);
+            }
+            console.log("User does not have an FCM token");
+            return null;
+          })
+          .catch((error) => {
+            console.error("Error fetching user data:", error);
+            return null;
+          });
+    });
+
 exports.sendTaskReminders = functions.pubsub.schedule("every 24 hours")
     .timeZone("UTC").onRun(async (context) => {
       const currentDate = new Date();
@@ -319,58 +359,58 @@ exports.sendTaskReminders = functions.pubsub.schedule("every 24 hours")
     });
 
 
- const axios = require("axios");
-
- exports.createRoom = functions.https.onRequest(async (req, res) => {
-  const sdkToken = functions.config().agora.sdk_token;
-  const options = {
-    method: "POST",
-    url: "https://api.netless.link/v5/rooms",
-    headers: {
-      "token": sdkToken,
-      "Content-Type": "application/json",
-      "region": "us-sv",
-    },
-    data: JSON.stringify({
-      isRecord: false,
-    }),
-  };
-
-  try {
-    const response = await axios(options);
-    res.send(response.data);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred while creating the room.");
-  }
- });
-
-const axios = require("axios");
-
-exports.generateToken = functions.https.onRequest(async (req, res) => {
-  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
-  const sdkToken = functions.config().agora.sdk_token;
-
-  const options = {
-    method: "POST",
-    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
-    headers: {
-      "token": sdkToken,
-      "Content-Type": "application/json",
-      "region": "us-sv",
-    },
-    data: JSON.stringify({
-      lifespan: 3600000,
-      role: "admin",
-    }),
-  };
-
-  try {
-    const response = await axios(options);
-    res.send(response.data);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred while generating the token.");
-  }
-});
+// const axios = require("axios");
+//
+// exports.createRoom = functions.https.onRequest(async (req, res) => {
+//  const sdkToken = functions.config().agora.sdk_token;
+//  const options = {
+//    method: "POST",
+//    url: "https://api.netless.link/v5/rooms",
+//    headers: {
+//      "token": sdkToken,
+//      "Content-Type": "application/json",
+//      "region": "us-sv",
+//    },
+//    data: JSON.stringify({
+//      isRecord: false,
+//    }),
+//  };
+//
+//  try {
+//    const response = await axios(options);
+//    res.send(response.data);
+//  } catch (error) {
+//    console.error(error);
+//    res.status(500).send("An error occurred while creating the room.");
+//  }
+// });
+//
+// const axios = require("axios");
+//
+// exports.generateToken = functions.https.onRequest(async (req, res) => {
+//  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
+//  const sdkToken = functions.config().agora.sdk_token;
+//
+//  const options = {
+//    method: "POST",
+//    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
+//    headers: {
+//      "token": sdkToken,
+//      "Content-Type": "application/json",
+//      "region": "us-sv",
+//    },
+//    data: JSON.stringify({
+//      lifespan: 3600000,
+//      role: "admin",
+//    }),
+//  };
+//
+//  try {
+//    const response = await axios(options);
+//    res.send(response.data);
+//  } catch (error) {
+//    console.error(error);
+//    res.status(500).send("An error occurred while generating the token.");
+//  }
+// });
 

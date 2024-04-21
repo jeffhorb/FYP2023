@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -31,44 +32,42 @@
             android:padding="4dp"
             android:textSize="16sp"
             android:textColor="@color/black"
-            android:layout_marginTop="100dp"/>
+            android:layout_marginTop="20dp"/>
 
         <TextView
             android:id="@+id/history"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="200dp"
             android:layout_marginTop="30dp"
-            android:layout_below="@+id/textview"
-            android:textColor="@color/black"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:textSize="16sp"
-            android:layout_marginStart="250dp"
-            android:text="see sentiment history"
-            android:clickable="true"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/historyRecyclerview"
-            android:layout_width="match_parent"
-            android:layout_height="640dp"
-            android:padding="10dp"
-            android:visibility="invisible"
-            android:layout_below="@+id/history"
-            android:layout_marginTop="10dp"/>
-
-        <TextView
-            android:id="@+id/clearHistory"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/historyRecyclerview"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginEnd="150dp"
+            android:layout_marginEnd="10dp"
             android:clickable="true"
-            android:visibility="invisible"
-            android:text="Clear History"
+            android:gravity="center"
+            android:text="see sentiment history"
             android:textColor="@color/black"
             android:textSize="16sp"
             android:textStyle="bold" />
 
-</RelativeLayout>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/historyRecyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="580dp"
+            android:visibility="invisible"
+            android:layout_marginTop="10dp"/>
+
+        <TextView
+            android:id="@+id/clearHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="50dp"
+            android:layout_marginEnd="50dp"
+            android:clickable="true"
+            android:layout_gravity="bottom"
+            android:gravity="center"
+            android:text="@string/clear_history"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="invisible" />
+
+</LinearLayout>

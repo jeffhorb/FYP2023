@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.CommentRVAdapter;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.ModelClasses.Comment;
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.ecom.fyp2023.R;
@@ -60,6 +61,11 @@ public class CommentListFragment extends BottomSheetDialogFragment {
     String commentId, projectId, userId;
     private FirebaseAuth mAuth;
 
+    //String groupId = GroupIdGlobalVariable.getInstance().getGlobalData();
+
+    SharedPreferenceManager sharedPrefManager;
+
+    private String groupId;
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -74,11 +80,15 @@ public class CommentListFragment extends BottomSheetDialogFragment {
 
         commentList = new ArrayList<>();
 
+        sharedPrefManager = new SharedPreferenceManager(requireContext());
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
         commentRVAdapter = new CommentRVAdapter(commentList, requireContext());
         recyclerView.setAdapter(commentRVAdapter);
+
+        groupId = sharedPrefManager.getGroupId();
 
         Bundle args = getArguments();
         if (args != null && args.containsKey(projectId_key)) {
@@ -135,10 +145,11 @@ public class CommentListFragment extends BottomSheetDialogFragment {
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //TODO: PASS GroupId into the variable
                 String comment = commentText.getText().toString();
                 userId = mAuth.getCurrentUser().getUid();
                 String userEmail = mAuth.getCurrentUser().getEmail();
-                AddComment(comment,userId,userEmail);
+                AddComment(comment,userId,userEmail,groupId);
                 commentText.setText(null);
             }
         });
@@ -156,7 +167,7 @@ public class CommentListFragment extends BottomSheetDialogFragment {
         return view;
     }
 
-    public void AddComment(String c,String currentUserId,String userEmail) {
+    public void AddComment(String c,String currentUserId,String userEmail,String groupId) {
 
         String cUserId = mAuth.getCurrentUser().getUid();
 
@@ -171,7 +182,7 @@ public class CommentListFragment extends BottomSheetDialogFragment {
 
                         CollectionReference dbComment = fb.collection("Comments");
 
-                        Comment comment = new Comment(c, Calendar.getInstance().getTime(), currentUserId,userEmail,userName);
+                        Comment comment = new Comment(c, Calendar.getInstance().getTime(), currentUserId,userEmail,userName,groupId);
                         dbComment.add(comment).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                             @Override
                             public void onSuccess(DocumentReference documentReference) {
@@ -249,54 +260,83 @@ public class CommentListFragment extends BottomSheetDialogFragment {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String currentUserId = currentUser != null ? currentUser.getUid() : null;
 
-        // Query Firestore to fetch all users
-        FirebaseFirestore.getInstance().collection("Users")
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        if (groupId == null) {
+            Log.e("FetchUsers", "groupId is null");
+            // Handle the case where groupId is null, such as displaying an error message
+            return;
+        }
+
+        // Query the Groups collection to get the list of members for the specified group
+        db.collection("groups")
+                .document(groupId)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<Users> userList = new ArrayList<>();
-                    for (DocumentSnapshot document : queryDocumentSnapshots) {
-                        // Convert each document to a User object
-                        Users user = document.toObject(Users.class);
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        List<String> memberIds = (List<String>) documentSnapshot.get("members");
+                        List<Users> userList = new ArrayList<>();
 
-                        // Check if the user is not the current user
-                        if (!user.getUserId().equals(currentUserId)) {
-                            userList.add(user);
+                        if (memberIds != null && !memberIds.isEmpty()) {
+                            // Fetch user data for each member ID
+                            for (String memberId : memberIds) {
+                                db.collection("Users")
+                                        .whereEqualTo("userId", memberId)
+                                        .get()
+                                        .addOnSuccessListener(querySnapshot -> {
+                                            for (QueryDocumentSnapshot userDocument : querySnapshot) {
+                                                Users user = userDocument.toObject(Users.class);
+
+                                                // Check if the user is not the current user
+                                                if (!user.getUserId().equals(currentUserId)) {
+                                                    userList.add(user);
+                                                }
+                                            }
+
+                                            // Create a string array to store user emails for dialog selection
+                                            String[] userNames = new String[userList.size()];
+                                            for (int i = 0; i < userList.size(); i++) {
+                                                userNames[i] = userList.get(i).getUserName();
+                                            }
+
+                                            // Display the list of user emails in a dialog for selection
+                                            AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+                                            builder.setTitle("Select User");
+                                            builder.setItems(userNames, (dialog, which) -> {
+                                                // Append the selected user's email to the comment text
+                                                String selectedUserName = userNames[which];
+                                                String currentText = commentText.getText().toString();
+                                                if (currentText.startsWith("@")) {
+                                                    // If the text starts with '@', append the selected user's name directly
+                                                    commentText.setText("@" + selectedUserName + " " + currentText.substring(1));
+                                                } else {
+                                                    // If no '@' symbol found, append the selected user's name with '@'
+                                                    commentText.setText("@" + selectedUserName + " " + currentText);
+                                                }
+                                                // Move the cursor to the end of the text
+                                                commentText.setSelection(commentText.getText().length());
+                                            });
+                                            builder.show();
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            // Handle failure to fetch user data
+                                            Log.e("FetchUsers", "Failed to fetch user data: " + e.getMessage());
+                                        });
+                            }
                         }
+                    } else {
+                        // Handle case where document does not exist
+                        Log.e("FetchUsers", "Group document does not exist");
                     }
-
-                    // Create a string array to store user emails for dialog selection
-                    String[] userNames = new String[userList.size()];
-                    for (int i = 0; i < userList.size(); i++) {
-                        userNames[i] = userList.get(i).getUserName();
-                    }
-
-                    // Display the list of user emails in a dialog for selection
-                    AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-                    builder.setTitle("Select User");
-                    builder.setItems(userNames, (dialog, which) -> {
-                        // Append the selected user's email to the comment text
-                        String selectedUserName = userNames[which];
-                        String currentText = commentText.getText().toString();
-                        if (currentText.startsWith("@")) {
-                            // If the text starts with '@', append the selected user's name directly
-                            commentText.setText("@" + selectedUserName + " " + currentText.substring(1));
-                        } else {
-                            // If no '@' symbol found, append the selected user's name with '@'
-                            commentText.setText("@" + selectedUserName + " " + currentText);
-                        }
-                        // Move the cursor to the end of the text
-                        commentText.setSelection(commentText.getText().length());
-                    });
-                    builder.show();
                 })
                 .addOnFailureListener(e -> {
-                    // Handle failure in fetching users
-                    Log.e("FetchUsers", "Error fetching users", e);
-                    Toast.makeText(requireContext(), "Error fetching users", Toast.LENGTH_SHORT).show();
+                    // Handle failure in fetching groups
+                    Log.e("FetchUsers", "Error fetching group: " + e.getMessage());
+                    Toast.makeText(requireContext(), "Error fetching group", Toast.LENGTH_SHORT).show();
                 });
     }
 
-    private void fetchAndDisplayComments(String projectId) {
+        private void fetchAndDisplayComments(String projectId) {
         CollectionReference projectCommentsCollection = fb.collection("ProjectComments");
         Query query = projectCommentsCollection
                 .whereEqualTo("projectId", projectId)
