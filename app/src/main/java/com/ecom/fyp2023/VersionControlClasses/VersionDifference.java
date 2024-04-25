@@ -1,28 +1,21 @@
 package com.ecom.fyp2023.VersionControlClasses;
 
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.BackgroundColorSpan;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.text.HtmlCompat;
 
 import com.ecom.fyp2023.AppManagers.DiffComputation;
-import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.ModelClasses.Diff;
 import com.ecom.fyp2023.R;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-
-import org.xml.sax.XMLReader;
 
 import java.util.Date;
 import java.util.LinkedList;

@@ -17,17 +17,11 @@ public class TimeConverter {
 
         // Calculate end dates
         LocalDate currentDate = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            currentDate = LocalDate.now();
-        }
+        currentDate = LocalDate.now();
         LocalDate endDateWithDays = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            endDateWithDays = currentDate.plusDays(days);
-        }
+        endDateWithDays = currentDate.plusDays(days);
         LocalDate endDateWithWeeks = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            endDateWithWeeks = currentDate.plusDays(weeks);
-        }
+        endDateWithWeeks = currentDate.plusDays(weeks);
 
     }
 

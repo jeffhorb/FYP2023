@@ -10,15 +10,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.CompletedProjectsAdapter;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
-import com.ecom.fyp2023.ModelClasses.FileModel;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.Arrays;

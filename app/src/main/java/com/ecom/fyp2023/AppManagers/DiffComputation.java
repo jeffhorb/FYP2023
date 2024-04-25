@@ -887,8 +887,10 @@ public class DiffComputation {
     thisDiff = pointer.hasNext() ? pointer.next() : null;
     Diff nextDiff = pointer.hasNext() ? pointer.next() : null;
     while (nextDiff != null) {
+      assert prevDiff != null;
       if (prevDiff.operation == Operation.EQUAL &&
           nextDiff.operation == Operation.EQUAL) {
+        assert thisDiff != null;
         if (thisDiff.text.endsWith(prevDiff.text)) {
           thisDiff.text = prevDiff.text + thisDiff.text.substring(0, thisDiff.text.length() - prevDiff.text.length());
           nextDiff.text = prevDiff.text + nextDiff.text;

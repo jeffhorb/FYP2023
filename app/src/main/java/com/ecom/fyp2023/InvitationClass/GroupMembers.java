@@ -1,17 +1,14 @@
 package com.ecom.fyp2023.InvitationClass;
 
+import android.os.Bundle;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.os.Bundle;
-import android.util.Log;
-import android.widget.TextView;
-
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
-import com.ecom.fyp2023.ModelClasses.Group;
-import com.ecom.fyp2023.ModelClasses.Invitation;
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnFailureListener;
