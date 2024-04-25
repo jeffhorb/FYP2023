@@ -1,36 +1,32 @@
-<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
-
     <item
+        android:id="@+id/group"
         android:title="Group"
         android:icon="@drawable/baseline_group_24"
-        android:onClick="Group"/>
-
+        android:onClick="Group" />
 
     <item
+        android:id="@+id/sentiment"
         android:title="Sentiment"
+        android:visible="false"
         android:icon="@drawable/chat_intelligence_svgrepo_com"
-        android:onClick="Sentiment"/>
-
+        android:onClick="Sentiment" />
 
     <item
+        android:id="@+id/add"
         android:title="Add"
         android:icon="@drawable/twotone_add_circle_24"
         android:onClick="addPro" />
 
-
-
-
     <item
+        android:id="@+id/analytics"
         android:title="Analytics"
         android:icon="@drawable/baseline_analytics_24"
-        android:onClick="analysePro"/>
+        android:onClick="analysePro" />
 
     <item
+        android:id="@+id/documents"
         android:title="Documents"
         android:icon="@drawable/_849788_folder_document_multimedia_icon"
-        android:onClick="openDocument"/>
-
-
+        android:onClick="openDocument" />
 </menu>

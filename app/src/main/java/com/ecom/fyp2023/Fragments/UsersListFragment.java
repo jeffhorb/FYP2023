@@ -43,8 +43,6 @@ public class UsersListFragment extends BottomSheetDialogFragment {
 
     String groupId;
 
-    //String groupId = GroupIdGlobalVariable.getInstance().getGlobalData();
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,7 +59,7 @@ public class UsersListFragment extends BottomSheetDialogFragment {
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
-        userAdapter = new UserRVAdapter(userList, requireContext());
+        userAdapter = new UserRVAdapter(userList, requireContext(),this);
         recyclerView.setAdapter(userAdapter);
 
         sharedPrefManager = new SharedPreferenceManager(requireContext());
@@ -81,20 +79,20 @@ public class UsersListFragment extends BottomSheetDialogFragment {
         if (argument1 != null && argument1.containsKey("proTid")) {
             proId = argument1.getString("proTid");
             userAdapter.setSelectedProjectId(proId);
-            fetchUserData(groupId);
-
-
+            fetchGroupMember(groupId);
         }
 
         Bundle bundle = getArguments();
         if (bundle != null && bundle.containsKey("TASKID")) {
             taskId = bundle.getString("TASKID");
             userAdapter.setSelectedTaskId(taskId);
-            fetchUserData(groupId);
+            fetchGroupMember(groupId);
         }
 
         if(getArguments() != null && getArguments().containsKey("groupId")&& getArguments().containsKey("groupName")&&getArguments().containsKey("groupDes")){
-            String groupId = getArguments().getString("groupId");
+            //String groupId = getArguments().getString("groupId");
+            SharedPreferenceManager sharedPreferenceManager = new SharedPreferenceManager(getContext());
+            String groupId = sharedPreferenceManager.getGroupId();
             String groupName = getArguments().getString("groupName");
             String groupDescription = getArguments().getString("groupDes");
             userAdapter.setGroupId(groupId);
@@ -107,7 +105,9 @@ public class UsersListFragment extends BottomSheetDialogFragment {
     return view;
     }
 
-    private void fetchUserData(String groupId) {
+
+
+    private void fetchGroupMember(String groupId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         if (groupId == null) {
@@ -156,6 +156,7 @@ public class UsersListFragment extends BottomSheetDialogFragment {
     }
 
 
+
     private void fetchUsers(String groupId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -173,30 +174,26 @@ public class UsersListFragment extends BottomSheetDialogFragment {
                     if (documentSnapshot.exists()) {
                         List<String> memberIds = (List<String>) documentSnapshot.get("members");
 
-                        if (memberIds != null && !memberIds.isEmpty()) {
-                            // Fetch user data for each member ID
-                            for (String memberId : memberIds) {
-                                db.collection("Users")
-                                        .get()
-                                        .addOnSuccessListener(querySnapshot -> {
-                                            for (QueryDocumentSnapshot userDocument : querySnapshot) {
-                                                Users user = userDocument.toObject(Users.class);
-                                                String userId = userDocument.getString("userId");
-                                                if (!memberId.equals(userId)){
-                                                    userList.add(user);
-                                                }
+                        // Fetch all users from the "Users" collection
+                        db.collection("Users")
+                                .get()
+                                .addOnSuccessListener(querySnapshot -> {
+                                    for (QueryDocumentSnapshot userDocument : querySnapshot) {
+                                        Users user = userDocument.toObject(Users.class);
+                                        String userId = userDocument.getString("userId"); // Assuming the document ID is the user ID
 
-                                            }
-                                            userAdapter.notifyDataSetChanged();
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            // Handle failure to fetch user data
-                                            Log.e("userList", "Failed to fetch user data: " + e.getMessage());
-                                        });
-                            }
-                        } else {
-                            //case where the group has no members
-                        }
+                                        // Check if the user ID is not in the list of member IDs
+                                        assert memberIds != null;
+                                        if (!memberIds.contains(userId)) {
+                                            userList.add(user);
+                                        }
+                                    }
+                                    userAdapter.notifyDataSetChanged();
+                                })
+                                .addOnFailureListener(e -> {
+                                    // Handle failure to fetch user data
+                                    Log.e("userList", "Failed to fetch user data: " + e.getMessage());
+                                });
                     } else {
                         // Handle case where the group document does not exist
                     }
@@ -206,6 +203,61 @@ public class UsersListFragment extends BottomSheetDialogFragment {
                     Log.e("userList", "Failed to fetch group data: " + e.getMessage());
                 });
     }
+
+
+
+//    private void fetchUsers(String groupId) {
+//        FirebaseFirestore db = FirebaseFirestore.getInstance();
+//
+//        if (groupId == null) {
+//            Log.e("FetchUsers", "groupId is null");
+//            // Handle the case where groupId is null, such as displaying an error message
+//            return;
+//        }
+//
+//        // Query the Groups collection to get the list of members for the specified group
+//        db.collection("groups")
+//                .document(groupId)
+//                .get()
+//                .addOnSuccessListener(documentSnapshot -> {
+//                    if (documentSnapshot.exists()) {
+//                        List<String> memberIds = (List<String>) documentSnapshot.get("members");
+//
+//                        if (memberIds != null && !memberIds.isEmpty()) {
+//                            // Fetch user data for each member ID
+//                            for (String memberId : memberIds) {
+//                                db.collection("Users")
+//                                        .get()
+//                                        .addOnSuccessListener(querySnapshot -> {
+//                                            for (QueryDocumentSnapshot userDocument : querySnapshot) {
+//                                                Users user = userDocument.toObject(Users.class);
+//                                                String userId = userDocument.getString("userId");
+//
+//                                                if (!memberId.equals(userId)){
+//                                                    userList.add(user);
+//                                                }
+//
+//                                            }
+//                                            userAdapter.notifyDataSetChanged();
+//                                        })
+//                                        .addOnFailureListener(e -> {
+//                                            // Handle failure to fetch user data
+//                                            Log.e("userList", "Failed to fetch user data: " + e.getMessage());
+//                                        });
+//                            }
+//                        } else {
+//                            //case where the group has no members
+//                        }
+//                    } else {
+//                        // Handle case where the group document does not exist
+//                    }
+//                })
+//                .addOnFailureListener(e -> {
+//                    // Handle failure to fetch group data
+//                    Log.e("userList", "Failed to fetch group data: " + e.getMessage());
+//                });
+//    }
+
 
 //    private void fetchUserData() {
 //        FirebaseFirestore db = FirebaseFirestore.getInstance();

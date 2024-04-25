@@ -48,7 +48,7 @@ public class CreateGroupActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
-    private Button createGroupButton,pendingInvites;
+    private TextView createGroupButton,pendingInvites;
     private RecyclerView recyclerView;
     private GroupAdapter groupAdapter;
     private List<Group> groupList;
@@ -164,6 +164,7 @@ public class CreateGroupActivity extends AppCompatActivity {
         group.setGroupName(groupName);
         group.setDescription(groupDescription);
         group.addMember(userId); // Add current user as a member
+        group.addAmins(userId);// the creator of the group will automatically become admin
 
         // Add group to Firestore
         CollectionReference groupsRef = db.collection("groups");

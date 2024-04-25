@@ -60,16 +60,16 @@ public class VersionHistoryActivity extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         CollectionReference versionsCollection = db.collection("files").document(fileId).collection("versions");
 
-//        // Add groupId or userAuthId field to the query to restrict access to files belonging to the group or user's private space
-//        String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-////        Query query;
-////        if (groupId != null) {
-////            // Load files belonging to the group
-////            query = versionsCollection.whereEqualTo("groupId", groupId).orderBy("timestamp", Query.Direction.DESCENDING);
-////        } else {
-////            // Load files belonging to the user's private space
-////            query = versionsCollection.whereEqualTo("userAuthId", userAuthId).orderBy("timestamp", Query.Direction.DESCENDING);
-////        }
+        // Add groupId or userAuthId field to the query to restrict access to files belonging to the group or user's private space
+        //String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+//        Query query;
+//        if (groupId != null) {
+//            // Load files belonging to the group
+//            query = versionsCollection.whereEqualTo("groupId", groupId).orderBy("timestamp", Query.Direction.DESCENDING);
+//        } else {
+//            // Load files belonging to the user's private space
+//            query = versionsCollection.whereEqualTo("userAuthId", userAuthId).orderBy("timestamp", Query.Direction.DESCENDING);
+//        }
 
         versionsCollection.get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -77,6 +77,8 @@ public class VersionHistoryActivity extends AppCompatActivity {
                     for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
                         VersionModel version = documentSnapshot.toObject(VersionModel.class);
                         versionList.add(version);
+                        versionList.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
+
                     }
                     versionAdapter.notifyDataSetChanged();
                 })

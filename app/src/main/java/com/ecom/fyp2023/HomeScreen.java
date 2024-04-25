@@ -24,7 +24,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.ProjectsRVAdapter;
-import com.ecom.fyp2023.AiIntegration.SentimentAnalysisActivity;
 import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
@@ -33,15 +32,13 @@ import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.InvitationClass.CreateGroupActivity;
 import com.ecom.fyp2023.InvitationClass.GroupMembers;
 import com.ecom.fyp2023.InvitationClass.PendingGroupInvitations;
-import com.ecom.fyp2023.MiroWhiteBoardIntegration.Board;
-import com.ecom.fyp2023.MiroWhiteBoardIntegration.MiroApiService;
-import com.ecom.fyp2023.MiroWhiteBoardIntegration.RetrofitClient;
-import com.ecom.fyp2023.MiroWhiteBoardIntegration.Whiteboard;
-import com.ecom.fyp2023.MiroWhiteBoardIntegration.WhiteboardActivity;
+import com.ecom.fyp2023.FastbaordSDK.CollabrativeWhiteboard;
 import com.ecom.fyp2023.ModelClasses.Projects;
+import com.ecom.fyp2023.SentimentAnalysis.SentimentAnalysisActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -54,10 +51,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class HomeScreen extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -75,14 +68,12 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
     SharedPreferenceManager sharedPrefManager;
 
-    private MiroApiService miroApiService;
-
-
     TextView groupN,options;
 
     private boolean manageAccountClicked = false;
 
     private SearchView searchView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,19 +89,12 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
         sharedPrefManager = new SharedPreferenceManager(this);
 
-
-        // Initialize Retrofit client
-        miroApiService = RetrofitClient.getClient();
-
         recyclerView = findViewById(R.id.recyclerView);
 
         searchView = findViewById(R.id.searchView);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(HomeScreen.this, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-
-//        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-//        String userAuthId = currentUser.getUid();
 
         savedAuthId = sharedPrefManager.getUserAuthId();
 
@@ -149,6 +133,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                                 // Handle Group Members option
                                 Intent intent = new Intent(HomeScreen.this, GroupMembers.class);
                                 startActivity(intent);
+
                             } else if (selectedItem.equals("Send Invite")) {
 
                                 UsersListFragment usersListFragment = UsersListFragment.newInstance();
@@ -194,6 +179,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         actionBarDrawerToggle.syncState();
 
     }
+
 
     public void retrieveGroupData(){
 
@@ -264,10 +250,12 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
             //TODO: intent.putExtra("groupId",groupId);
             startActivity(intent);
             return true;
-        } else if (itemId == R.id.imageNotification) {
+        } else if (itemId == R.id.whiteboard) {
+            String groupName = sharedPrefManager.getGroupName();
             //createWhiteboard();
-            Intent intent = new Intent(HomeScreen.this, Board.class);
-            //intent.putExtra("whiteboardUrl", whiteboardUrl);
+            Intent intent = new Intent(HomeScreen.this, CollabrativeWhiteboard.class);
+            intent.putExtra("groupName", groupName);
+            //intent.putExtra("userName",userName);
             startActivity(intent);
 
             return true;
@@ -301,6 +289,27 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     public void Group(MenuItem menuitem) {
         Intent intent = new Intent(HomeScreen.this, CreateGroupActivity.class);
         startActivity(intent);
+    }
+
+    //hide sentiment analysis for private space
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        // Hide the sentimentMenuItem if the groupId is null
+        boolean isGroupIdNotNull = savedGroupId != null;
+
+        // Get the bottom navigation menu
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+
+        // Find the sentiment item in the bottom navigation menu
+        MenuItem sentimentMenuItem = bottomNavigationView.getMenu().findItem(R.id.sentiment);
+
+        // Set the visibility of the sentimentMenuItem
+        if (sentimentMenuItem != null) {
+            sentimentMenuItem.setVisible(isGroupIdNotNull);
+        }
+
+        // Return false to allow normal menu processing to proceed
+        return false;
     }
 
 
@@ -377,7 +386,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         // Find TextViews in the header layout
         TextView name = headerView.findViewById(R.id.uN);
         TextView email = headerView.findViewById(R.id.uE);
-        TextView r = headerView.findViewById(R.id.role);
+        TextView skill = headerView.findViewById(R.id.skill);
 
         // Get the current user's ID
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -395,18 +404,15 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                             DocumentSnapshot document = querySnapshot.getDocuments().get(0);
                             String userName = document.getString("userName");
                             String userEmail = document.getString("userEmail");
-                            String role = document.getString("role");
-
+                            String skl = document.getString("occupation");
 
                             // Set user details in the TextViews
                             name.setText(userName);
                             email.setText(userEmail);
 
-                            if (role != null){
-                                r.setText(role);
+                            if (skill != null){
+                                skill.setText(skl);
                             }
-
-
                             if (manageAccountClicked) {
                                 // If "Manage Account" is clicked, show the update account dialog
                                 showUpdateAccountDialog(document.getId());
@@ -457,16 +463,13 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                             DocumentSnapshot document = querySnapshot.getDocuments().get(0);
                             String userName = document.getString("userName");
                             String userEmail = document.getString("userEmail");
-                            String userRole = document.getString("role");
-
+                            String userRole = document.getString("occupation");
 
                             // Set current details in EditText fields
                             newNameEditText.setText(userName);
                             newEmailEditText.setText(userEmail);
                             if (userRole !=null){
-
                                 newRole.setText(userRole);
-
                             }
 
                         } else {
@@ -490,7 +493,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                 Map<String, Object> updatedData = new HashMap<>();
                 updatedData.put("userName", newNameEditText.getText().toString());
                 updatedData.put("userEmail", newEmailEditText.getText().toString());
-                updatedData.put("role",newRole.getText().toString());
+                updatedData.put("occupation",newRole.getText().toString());
 
                 firestoreManager.updateDocument("Users", id, updatedData, new FirestoreManager.OnUpdateCompleteListener() {
                     @Override
@@ -525,36 +528,5 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                 .limit(1)
                 .get()
                 .addOnCompleteListener(onCompleteListener);
-    }
-
-
-
-
-    private void createWhiteboard() {
-        // Make API call to create a new whiteboard
-        Call<Whiteboard> call = miroApiService.createBoard("Bearer " + "eyJtaXJvLm9yaWdpbiI6ImV1MDEifQ_aEu3Celsd3E30h0fJSzSIk_gIIU");
-        call.enqueue(new Callback<Whiteboard>() {
-            @Override
-            public void onResponse(Call<Whiteboard> call, Response<Whiteboard> response) {
-                if (response.isSuccessful()) {
-                    Whiteboard whiteboard = response.body();
-                    // Open the whiteboard URL in a WebView
-                    openWhiteboardInWebView(whiteboard.getViewLink());
-                } else {
-                    // Handle API error
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Whiteboard> call, Throwable t) {
-                // Handle network failure
-            }
-        });
-    }
-
-    private void openWhiteboardInWebView(String whiteboardUrl) {
-        Intent intent = new Intent(this, WhiteboardActivity.class);
-        intent.putExtra("whiteboardUrl", whiteboardUrl);
-        startActivity(intent);
     }
 }

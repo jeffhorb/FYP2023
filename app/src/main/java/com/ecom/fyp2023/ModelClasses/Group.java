@@ -7,16 +7,26 @@ public class Group {
     private String groupName;
     private String description;
     private List<String> members; // List of user IDs who are members of the group
+    List <String> admins;
 
     // Constructors
     public Group() {
         // Default constructor required for Firestore
     }
 
-    public Group(String groupName, String description, List<String> members) {
+    public Group(String groupName, String description, List<String> members,List<String> admins) {
         this.groupName = groupName;
         this.description = description;
         this.members = members;
+        this.admins = admins;
+    }
+
+    public List<String> getAdmins() {
+        return admins;
+    }
+
+    public void setAdmins(List<String> admins) {
+        this.admins = admins;
     }
 
     // Getters and Setters
@@ -50,6 +60,14 @@ public class Group {
             members = new ArrayList<>();
         }
         members.add(memberId);
+    }
+
+    // Add a member to the group
+    public void addAmins(String memberId) {
+        if (admins == null) {
+            admins = new ArrayList<>();
+        }
+        admins.add(memberId);
     }
 
     // Remove a member from the group

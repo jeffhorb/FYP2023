@@ -1,4 +1,4 @@
-package com.ecom.fyp2023.MiroWhiteBoardIntegration;
+package com.ecom.fyp2023.FastbaordSDK;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -19,8 +20,6 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import org.jetbrains.annotations.Contract;
-
 import java.util.Objects;
 
 import io.agora.board.fast.FastRoom;
@@ -30,11 +29,13 @@ import io.agora.board.fast.model.FastInsertDocParams;
 import io.agora.board.fast.model.FastRegion;
 import io.agora.board.fast.model.FastRoomOptions;
 
-public class Board extends AppCompatActivity {
+public class CollabrativeWhiteboard extends AppCompatActivity {
 
     private FastRoom fastRoom;
-    LinearLayout video, document, image;
+    LinearLayout document, image;
     // Request codes for file selection
+
+    TextView groupN,userName;
     private static final int PICK_IMAGE_REQUEST = 1;
     private static final int PICK_VIDEO_REQUEST = 2;
     private static final int PICK_DOCUMENT_REQUEST = 3;
@@ -55,12 +56,23 @@ public class Board extends AppCompatActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setupFastboard();
 
-        document = findViewById(R.id.link);
-        video = findViewById(R.id.video);
+        document = findViewById(R.id.file);
         image = findViewById(R.id.image);
+        groupN = findViewById(R.id.groupName);
+        userName = findViewById(R.id.userName);
 
+        if (getIntent().hasExtra("groupName")){
+
+            String groupName = getIntent().getStringExtra("groupName");
+            //String userName = getIntent().getStringExtra("userName");
+            if (groupName != null){
+                groupN.setText(groupName);
+            }
+            else {
+                groupN.setVisibility(View.GONE);
+            }
+        }
         image.setOnClickListener(v -> pickFileFromDevice("image/*", PICK_IMAGE_REQUEST));
-        video.setOnClickListener(v -> pickFileFromDevice("video/*", PICK_VIDEO_REQUEST));
         document.setOnClickListener(v -> pickFileFromDevice("*/*", PICK_DOCUMENT_REQUEST, new String[]{"application/pdf", "application/msword", "application/vnd.ms-powerpoint", "text/plain"}));
     }
 
@@ -106,8 +118,6 @@ public class Board extends AppCompatActivity {
             if (requestCode == PICK_IMAGE_REQUEST) {
                 // Upload image to Firestore Storage and get URL
                 uploadImageToFirestore(selectedFileUri);
-            } else if (requestCode == PICK_VIDEO_REQUEST) {
-                addVideoToBoard(selectedFileUri);
             } else if (requestCode == PICK_DOCUMENT_REQUEST) {
                 //TODO: Create FastInsertDocParams and FastResult objects
                 // addDocumentToBoard(params, result);
@@ -116,68 +126,60 @@ public class Board extends AppCompatActivity {
     }
 
     private void uploadImageToFirestore(Uri imageUri) {
-        // Obtain a reference to the Firebase Storage instance
         StorageReference storageRef = FirebaseStorage.getInstance().getReference();
-
-        // Create a reference to the image file to be uploaded
         String imageName = "image_" + System.currentTimeMillis() + ".jpg";
         StorageReference imageRef = storageRef.child("images/" + imageName);
 
-        // Upload the image file to Firebase Cloud Storage
         imageRef.putFile(imageUri)
                 .addOnSuccessListener(taskSnapshot -> {
                     // Image upload successful, get the URL of the uploaded image
                     imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        // Log the obtained URL
+                        Log.d("Image URL", uri.toString());
                         // Use the obtained URL to insert the image into the Fastboard
                         addImageToBoard(uri, 500, 500); // example dimensions
                     }).addOnFailureListener(e -> {
                         // Handle failure to get the download URL
-                        Toast.makeText(Board.this, "Failed to get image URL", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CollabrativeWhiteboard.this, "Failed to get image URL", Toast.LENGTH_SHORT).show();
                     });
                 })
                 .addOnFailureListener(e -> {
                     // Handle image upload failure
-                    Toast.makeText(Board.this, "Failed to upload image", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CollabrativeWhiteboard.this, "Failed to upload image", Toast.LENGTH_SHORT).show();
+                    Log.e("Upload Error", e.getMessage()); // Log the error message
                 });
     }
+
+
+//    private void uploadImageToFirestore(Uri imageUri) {
+//        // Obtain a reference to the Firebase Storage instance
+//        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+//
+//        // Create a reference to the image file to be uploaded
+//        String imageName = "image_" + System.currentTimeMillis() + ".jpg";
+//        StorageReference imageRef = storageRef.child("images/" + imageName);
+//
+//        // Upload the image file to Firebase Cloud Storage
+//        imageRef.putFile(imageUri)
+//                .addOnSuccessListener(taskSnapshot -> {
+//                    // Image upload successful, get the URL of the uploaded image
+//                    imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+//                        // Use the obtained URL to insert the image into the Fastboard
+//                        addImageToBoard(uri, 500, 500); // example dimensions
+//                    }).addOnFailureListener(e -> {
+//                        // Handle failure to get the download URL
+//                        Toast.makeText(CollabrativeWhiteboard.this, "Failed to get image URL", Toast.LENGTH_SHORT).show();
+//                    });
+//                })
+//                .addOnFailureListener(e -> {
+//                    // Handle image upload failure
+//                    Toast.makeText(CollabrativeWhiteboard.this, "Failed to upload image", Toast.LENGTH_SHORT).show();
+//                });
+//    }
 
     private void addImageToBoard(@NonNull Uri imageUrl, int width, int height) {
         fastRoom.insertImage(imageUrl.toString(), width, height);
     }
-
-    private void addVideoToBoard(Uri videoUri) {
-        String title = getVideoTitle(videoUri);
-        String videoPath = getPathFromUri(videoUri);
-        fastRoom.insertVideo(videoPath, title);
-    }
-
-    private String getPathFromUri(Uri uri) {
-        String path = null;
-        String[] projection = { MediaStore.Images.Media.DATA };
-        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-                path = cursor.getString(columnIndex);
-            }
-            cursor.close();
-        }
-        return path;
-    }
-
-    private String getVideoTitle(Uri uri) {
-        String title = null;
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-        if (cursor != null) {
-            int titleIndex = cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME);
-            if (cursor.moveToFirst()) {
-                title = cursor.getString(titleIndex);
-            }
-            cursor.close();
-        }
-        return title;
-    }
-
     private void addDocumentToBoard(FastInsertDocParams params, FastResult<String> result) {
         fastRoom.insertDocs(params, result);
     }

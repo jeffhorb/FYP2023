@@ -110,7 +110,7 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
     static class GroupViewHolder extends RecyclerView.ViewHolder {
         TextView groupNameTextView;
         TextView groupDescriptionTextView;
-        Button showMembersButton;
+        TextView showMembersButton;
 
         GroupViewHolder(@NonNull View itemView) {
             super(itemView);

@@ -1,6 +1,7 @@
 package com.ecom.fyp2023.VersionControlClasses;
 
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -9,15 +10,19 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.text.HtmlCompat;
 
 import com.ecom.fyp2023.AppManagers.DiffComputation;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
+import com.ecom.fyp2023.ModelClasses.Diff;
 import com.ecom.fyp2023.R;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+
+import org.xml.sax.XMLReader;
 
 import java.util.Date;
 import java.util.LinkedList;
@@ -31,11 +36,8 @@ public class VersionDifference extends AppCompatActivity {
     String currentContent, fileId;
     Date currentTimestamp;
 
-    //String groupId; //= GroupIdGlobalVariable.getInstance().getGlobalData();
-
     private FirebaseFirestore db;
 
-    SharedPreferenceManager sharedPrefManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,15 +50,11 @@ public class VersionDifference extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-
-       // sharedPrefManager = new SharedPreferenceManager(this);
-
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
-        //groupId = sharedPrefManager.getGroupId();
 
         if (getIntent().hasExtra("content") && getIntent().hasExtra("timestamp") && getIntent().hasExtra("fileId")) {
 
@@ -69,56 +67,6 @@ public class VersionDifference extends AppCompatActivity {
             fetchPreviousVersionContent();
         }
     }
-
-//    private void fetchPreviousVersionContent() {
-//        db.collection("files").document(fileId)
-//                .get()
-//                .addOnSuccessListener(documentSnapshot -> {
-//                    if (documentSnapshot.exists()) {
-//                        String groupId = documentSnapshot.getString("groupId");
-//                        String userAuthIdOfDocument = documentSnapshot.getString("userAuthId");
-//                        Query query;
-////                        if (groupId != null) {
-////                            // Load files belonging to the group
-////                            query = db.collection("files").document(fileId).collection("versions").whereEqualTo("groupId", groupId);
-////                        } else {
-////                            // Load files belonging to the user's private space
-////                            String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-////                            query = db.collection("files").document(fileId).collection("versions").whereEqualTo("userAuthId", userAuthId);
-////                        }
-//
-//                        query.whereLessThan("timestamp", currentTimestamp)
-//                                .orderBy("timestamp", Query.Direction.DESCENDING)
-//                                .limit(1)
-//                                .get()
-//                                .addOnSuccessListener(queryDocumentSnapshots -> {
-//                                    if (!queryDocumentSnapshots.isEmpty()) {
-//                                        DocumentSnapshot documentSnapshot1 = queryDocumentSnapshots.getDocuments().get(0);
-//                                        String previousContent = documentSnapshot1.getString("content");
-//                                        previousVersionTextView.setText(previousContent);
-//                                        currentVersionTextView.setText(currentContent);
-//
-//                                        // Show differences between previous and current content
-//                                        assert previousContent != null;
-//                                        compareVersions(previousContent, currentContent);
-//                                    } else {
-//                                        // Document does not belong to the user's group or private space
-//                                        // Handle this case, maybe show an error message or take appropriate action
-//                                    }
-//                                })
-//                                .addOnFailureListener(e -> {
-//                                    // Handle errors
-//                                });
-//                    } else {
-//                        // File document does not exist, handle this case
-//                    }
-//                })
-//                .addOnFailureListener(e -> {
-//                    // Handle errors
-//                });
-//    }
-
-
 
 
     private void fetchPreviousVersionContent() {
@@ -133,13 +81,15 @@ public class VersionDifference extends AppCompatActivity {
                         String previousContent = documentSnapshot.getString("content");
                         previousVersionTextView.setText(previousContent);
                         currentVersionTextView.setText(currentContent);
-
+                        assert previousContent != null;
+                        previousVersionTextView.setText(HtmlCompat.fromHtml(previousContent, HtmlCompat.FROM_HTML_MODE_COMPACT));
+                        currentVersionTextView.setText(HtmlCompat.fromHtml(currentContent, HtmlCompat.FROM_HTML_MODE_COMPACT));
                         // Show differences between previous and current content
                         assert previousContent != null;
                         compareVersions(previousContent,currentContent);
                     } else {
                         // No previous version found, handle this case
-                        currentVersionTextView.setText(currentContent);
+                        currentVersionTextView.setText(HtmlCompat.fromHtml(currentContent, HtmlCompat.FROM_HTML_MODE_COMPACT));
                         // Clear the previous version TextView
                         previousVersionTextView.setText("");
                     }
@@ -151,18 +101,16 @@ public class VersionDifference extends AppCompatActivity {
 
     private void compareVersions(String previousContent, String currentContent) {
         DiffComputation diffComputation = new DiffComputation();
-        LinkedList<DiffComputation.Diff> diffs = diffComputation.diff_main(previousContent, currentContent);
+        LinkedList<Diff> diffs = diffComputation.diff_main(previousContent, currentContent);
 
         // Perform a semantic cleanup to increase human readability
         diffComputation.diff_cleanupSemantic(diffs);
-
         // Initialize SpannableStringBuilder for the diffs
         SpannableStringBuilder diffSpannable = new SpannableStringBuilder();
-
         // Iterate over the diffs and apply formatting
-        for (DiffComputation.Diff diff : diffs) {
+        for (Diff diff : diffs) {
             int start = diffSpannable.length();
-            diffSpannable.append(Html.fromHtml(diff.text)); // Convert HTML tags to spans
+            diffSpannable.append(HtmlCompat.fromHtml(diff.text, HtmlCompat.FROM_HTML_MODE_COMPACT));
             int end = diffSpannable.length();
 
             if (diff.operation == DiffComputation.Operation.INSERT) {
@@ -171,11 +119,11 @@ public class VersionDifference extends AppCompatActivity {
                 diffSpannable.setSpan(new BackgroundColorSpan(getResources().getColor(R.color.red)), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
         }
-
         // Update the TextViews with the respective contents
         runOnUiThread(() -> {
-            previousVersionTextView.setText(Html.fromHtml(previousContent)); // Convert HTML tags for previous content
-            currentVersionTextView.setText(Html.fromHtml(currentContent)); // Convert HTML tags for current content
+            // Use HtmlCompat.fromHtml with FROM_HTML_MODE_COMPACT
+            previousVersionTextView.setText(HtmlCompat.fromHtml(previousContent, HtmlCompat.FROM_HTML_MODE_COMPACT));
+            currentVersionTextView.setText(HtmlCompat.fromHtml(currentContent, HtmlCompat.FROM_HTML_MODE_COMPACT));
             diffTextView.setText(diffSpannable);
         });
     }

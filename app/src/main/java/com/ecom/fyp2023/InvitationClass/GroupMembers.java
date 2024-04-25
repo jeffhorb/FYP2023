@@ -45,7 +45,7 @@ public class GroupMembers extends AppCompatActivity {
 
         usersList = new ArrayList<>();
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, RecyclerView.VERTICAL, false);
-        adapter = new GroupMembersAdapter(usersList, this);
+        adapter = new GroupMembersAdapter(usersList,new ArrayList<>(), this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
 
@@ -75,6 +75,7 @@ public class GroupMembers extends AppCompatActivity {
                     public void onSuccess(DocumentSnapshot documentSnapshot) {
                         if (documentSnapshot.exists()) {
                             List<String> memberIds = (List<String>) documentSnapshot.get("members");
+                            List<String> adminIds = (List<String>) documentSnapshot.get("admins"); // Fetch the admin IDs
                             if (memberIds != null && !memberIds.isEmpty()) {
                                 // Retrieve users from the Users collection based on the memberIds
                                 for (String memberId : memberIds) {
@@ -88,6 +89,7 @@ public class GroupMembers extends AppCompatActivity {
                                                         Users user = userSnapshot.toObject(Users.class);
                                                         usersList.add(user);
                                                     }
+                                                    adapter.updateAdminList(adminIds); // Update the admin list in the adapter
                                                     adapter.notifyDataSetChanged();
                                                 }
                                             })
@@ -109,4 +111,52 @@ public class GroupMembers extends AppCompatActivity {
                     }
                 });
     }
+
+
+//    private void retrieveGroupMembers(String groupId) {
+//        FirebaseFirestore db = FirebaseFirestore.getInstance();
+//
+//        // Query the groups collection to get the member list for the provided groupId
+//        db.collection("groups")
+//                .document(groupId)
+//                .get()
+//                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+//                    @Override
+//                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+//                        if (documentSnapshot.exists()) {
+//                            List<String> memberIds = (List<String>) documentSnapshot.get("members");
+//                            if (memberIds != null && !memberIds.isEmpty()) {
+//                                // Retrieve users from the Users collection based on the memberIds
+//                                for (String memberId : memberIds) {
+//                                    db.collection("Users")
+//                                            .whereEqualTo("userId", memberId)
+//                                            .get()
+//                                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+//                                                @Override
+//                                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+//                                                    for (QueryDocumentSnapshot userSnapshot : queryDocumentSnapshots) {
+//                                                        Users user = userSnapshot.toObject(Users.class);
+//                                                        usersList.add(user);
+//                                                    }
+//                                                    adapter.notifyDataSetChanged();
+//                                                }
+//                                            })
+//                                            .addOnFailureListener(new OnFailureListener() {
+//                                                @Override
+//                                                public void onFailure(@NonNull Exception e) {
+//                                                    Log.e("GroupMembers", "Failed to retrieve user: " + e.getMessage());
+//                                                }
+//                                            });
+//                                }
+//                            }
+//                        }
+//                    }
+//                })
+//                .addOnFailureListener(new OnFailureListener() {
+//                    @Override
+//                    public void onFailure(@NonNull Exception e) {
+//                        Log.e("GroupMembers", "Failed to retrieve group members: " + e.getMessage());
+//                    }
+//                });
+//    }
 }

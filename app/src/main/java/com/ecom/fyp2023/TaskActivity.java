@@ -8,6 +8,7 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -32,7 +33,6 @@ import com.ecom.fyp2023.Fragments.UpdateTaskFragment;
 import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.ModelClasses.Notes;
 import com.ecom.fyp2023.ModelClasses.Tasks;
-import com.ecom.fyp2023.ModelClasses.Users;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -44,7 +44,6 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +66,7 @@ public class TaskActivity extends AppCompatActivity {
     String nId,notesContent;
 
     FirebaseFirestore fb;
+    TextView assignedTitle;
 
     //TODO: PASS GROUPID
     private String groupId;
@@ -99,6 +99,8 @@ public class TaskActivity extends AppCompatActivity {
         completedTime = findViewById(R.id.cTime);
         storyPints =   findViewById(R.id.storyPoint);
         help = findViewById(R.id.help);
+        assignedTitle = findViewById(R.id.assignTitle);
+
 
         fb = FirebaseFirestore.getInstance();
 
@@ -124,6 +126,15 @@ public class TaskActivity extends AppCompatActivity {
         });
 
         sharedPreferenceManager = new SharedPreferenceManager(this);
+
+        String groupId = sharedPreferenceManager.getGroupId();
+
+        if (groupId == null){
+
+            commentFrag.setVisibility(View.GONE);
+            assignedTitle.setVisibility(View.GONE);
+            userAssigned.setVisibility(View.GONE);
+        }
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -360,6 +371,15 @@ public class TaskActivity extends AppCompatActivity {
     private void showPopupMenuForOption(View view) {
         PopupMenu popupMenu = new PopupMenu(this, view);
         popupMenu.inflate(R.menu.task_menu);
+
+        Menu menu = popupMenu.getMenu();
+
+        // Check if groupId is null and set the visibility of teamAnalysis accordingly
+        String groupId = sharedPreferenceManager.getGroupId();
+        MenuItem assignTask = menu.findItem(R.id.assignTask);
+        MenuItem unassignTask = menu.findItem(R.id.UnAssignTask);
+        assignTask.setVisible(groupId != null);
+        unassignTask.setVisible(groupId!= null);
 
         popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override

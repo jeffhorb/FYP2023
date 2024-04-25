@@ -29,9 +29,6 @@ public class TimeConverter {
             endDateWithWeeks = currentDate.plusDays(weeks);
         }
 
-        // Print results
-        System.out.println("End date with days: " + endDateWithDays);
-        System.out.println("End date with weeks: " + endDateWithWeeks);
     }
 
    public static long convertToDays(@NonNull String timeValue) {

@@ -65,7 +65,6 @@ public class TeamMemberEvaluation extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
 
-        // Retrieve the intent that started this activity
         Intent intent = getIntent();
         if (intent.hasExtra("projID")){
             projectId = intent.getStringExtra("projID");
@@ -74,11 +73,10 @@ public class TeamMemberEvaluation extends AppCompatActivity {
                 // Retrieve the data using the key you used when putting the data
                 userId = intent.getStringExtra("userID");
                 userName = intent.getStringExtra("userName");
-                memberName.setText(userName);
+                memberName.setText(projectId);
 
             }
         }
-
         Intent intent2 = getIntent();
         if (intent2.hasExtra("projectId")){
             projectId = intent2.getStringExtra("projectId");
@@ -121,33 +119,80 @@ public class TeamMemberEvaluation extends AppCompatActivity {
                     projectTaskIds.add(document.getString("taskId"));
                 }
                 // Further filter taskIds associated with the user
-                Query userQuery = userTasksCollection.whereEqualTo("userId", userId)
-                        .whereIn("taskId", projectTaskIds);
-                userQuery.get().addOnCompleteListener(userTask -> {
-                    if (userTask.isSuccessful()) {
-                        List<String> userTaskIds = new ArrayList<>();
-                        for (QueryDocumentSnapshot document : userTask.getResult()) {
-                            userTaskIds.add(document.getString("taskId"));
-                        }
-                        // Step 3: Retrieve task details for the filtered taskIds
-                        List<Tasks> tasksList = new ArrayList<>();
-                        List<String > list = new ArrayList<>();
-                        for (String taskId : userTaskIds) {
-                            retrieveTaskDetails(taskId, tasksList);
-                            list.add(taskId);
-                        }
-                        noTasks.setText( String.valueOf(list.size()));
+                Query userQuery;
+                if (!projectTaskIds.isEmpty()) { // Check if the list is not empty
+                    userQuery = userTasksCollection.whereEqualTo("userId", userId)
+                            .whereIn("taskId", projectTaskIds);
+                    userQuery.get().addOnCompleteListener(userTask -> {
+                        if (userTask.isSuccessful()) {
+                            List<String> userTaskIds = new ArrayList<>();
+                            for (QueryDocumentSnapshot document : userTask.getResult()) {
+                                userTaskIds.add(document.getString("taskId"));
+                            }
+                            // Step 3: Retrieve task details for the filtered taskIds
+                            List<Tasks> tasksList = new ArrayList<>();
+                            List<String> list = new ArrayList<>();
+                            for (String taskId : userTaskIds) {
+                                retrieveTaskDetails(taskId, tasksList);
+                                list.add(taskId);
+                            }
+                            noTasks.setText(String.valueOf(list.size()));
 
-                    } else {
-                        Log.e("Firestore", "Error fetching user tasks: " + userTask.getException());
-                    }
-                });
+                        } else {
+                            Log.e("Firestore", "Error fetching user tasks: " + userTask.getException());
+                        }
+                    });
+                } else {
+                    Log.e("Firestore", "Error fetching user tasks: Project task ids list is empty");
+                }
             } else {
                 Log.e("Firestore", "Error fetching project tasks: " + task.getException());
             }
         });
 
     }
+
+
+//    private void retrieveTasksForProjectAndUser(String projectId, String userId) {
+//        CollectionReference projectTasksCollection = FirebaseFirestore.getInstance().collection("projectTasks");
+//        CollectionReference userTasksCollection = FirebaseFirestore.getInstance().collection("userTasks");
+//
+//        // Filter taskIds associated with the project
+//        Query projectQuery = projectTasksCollection.whereEqualTo("projectId", projectId);
+//        projectQuery.get().addOnCompleteListener(task -> {
+//            if (task.isSuccessful()) {
+//                List<String> projectTaskIds = new ArrayList<>();
+//                for (QueryDocumentSnapshot document : task.getResult()) {
+//                    projectTaskIds.add(document.getString("taskId"));
+//                }
+//                // Further filter taskIds associated with the user
+//                Query userQuery = userTasksCollection.whereEqualTo("userId", userId)
+//                        .whereIn("taskId", projectTaskIds);
+//                userQuery.get().addOnCompleteListener(userTask -> {
+//                    if (userTask.isSuccessful()) {
+//                        List<String> userTaskIds = new ArrayList<>();
+//                        for (QueryDocumentSnapshot document : userTask.getResult()) {
+//                            userTaskIds.add(document.getString("taskId"));
+//                        }
+//                        // Step 3: Retrieve task details for the filtered taskIds
+//                        List<Tasks> tasksList = new ArrayList<>();
+//                        List<String > list = new ArrayList<>();
+//                        for (String taskId : userTaskIds) {
+//                            retrieveTaskDetails(taskId, tasksList);
+//                            list.add(taskId);
+//                        }
+//                        noTasks.setText( String.valueOf(list.size()));
+//
+//                    } else {
+//                        Log.e("Firestore", "Error fetching user tasks: " + userTask.getException());
+//                    }
+//                });
+//            } else {
+//                Log.e("Firestore", "Error fetching project tasks: " + task.getException());
+//            }
+//        });
+//
+//    }
 
     private void retrieveTaskDetails(String taskId, List<Tasks> tasksList) {
         CollectionReference tasksCollection = FirebaseFirestore.getInstance().collection("Tasks");

@@ -7,7 +7,7 @@
         android:title="Completed Projects"/>
 
     <item android:title="Notification"
-        android:id="@+id/imageNotification"
+        android:id="@+id/whiteboard"
         android:orderInCategory="100"
         app:showAsAction="ifRoom"
         android:icon="@drawable/whiteboard_svgrepo_com"/>

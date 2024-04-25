@@ -6,7 +6,7 @@ public class Users {
     private String fcmToken; // Add this field
     private String userId;
 
-    private String role;
+    private String occupation;
 
 
     // Default constructor (needed for Firestore deserialization)
@@ -15,24 +15,22 @@ public class Users {
 
     }
 
-    public Users(String userName, String userEmail, String fcmToken,String userId,String role) {
+    public Users(String userName, String userEmail, String fcmToken,String userId,String occupation) {
         this.userName = userName;
         this.userEmail = userEmail;
         this.fcmToken = fcmToken;
         this.userId = userId;
-        this.role = role;
+        this.occupation = occupation;
     }
 
 
     // Getters and setters
-
-
-    public String getRole() {
-        return role;
+    public String getOccupation() {
+        return occupation;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setOccupation(String occupation) {
+        this.occupation = occupation;
     }
 
     public String getUserName() {

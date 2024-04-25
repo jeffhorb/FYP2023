@@ -5,6 +5,7 @@ import static com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject.MESSAGE_KEY
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -22,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ecom.fyp2023.Adapters.TasksRVAdapter;
 import com.ecom.fyp2023.Analysis.TasksProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.BottomSheetFragmentAddTask;
 import com.ecom.fyp2023.Fragments.CommentListFragment;
 import com.ecom.fyp2023.Fragments.UpdateProject;
@@ -52,6 +54,8 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
     private FirebaseFirestore db;
     String projectId;
 
+    SharedPreferenceManager sharedPreferenceManager;
+
     TextView commentFrag,proTitle;
     private TextView proDes, progress, proEndDate,projectCompletionDate,completionTitle;
 
@@ -81,7 +85,16 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
         commentFrag = findViewById(R.id.commentEditText);
         ImageView expandMore = findViewById(R.id.moreImageView);
 
-        //proDes.setMaxLines(3);
+        sharedPreferenceManager = new SharedPreferenceManager(this);
+
+        String groupId = sharedPreferenceManager.getGroupId();
+
+
+
+        if (groupId == null){
+
+            commentFrag.setVisibility(View.GONE);
+        }
 
         // Set an onClickListener for the TextView
         proDes.setOnClickListener(new View.OnClickListener() {
@@ -190,12 +203,10 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
                     tasksRVAdapter.setSelectedProject(documentId);
                     fetchAndDisplayTasks(documentId);
 
-                    //CommentListFragment bottomSheetFragment = CommentListFragment.newInstance(documentId);
-                    //bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
-                    if (!isFinishing()) {
-                        CommentListFragment bottomSheetFragment = CommentListFragment.newInstance(documentId);
-                        bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
-                    }
+//                    if (!isFinishing()) {
+//                        CommentListFragment bottomSheetFragment = CommentListFragment.newInstance(documentId);
+//                        bottomSheetFragment.show(getSupportFragmentManager(), bottomSheetFragment.getTag());
+//                    }
                     UpdateTaskFragment fragment = UpdateTaskFragment.newInstance();
                     Bundle bundle = new Bundle();
                     bundle.putString("pId", documentId);
@@ -230,7 +241,6 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
         if (i.hasExtra(MESSAGE_KEY)) {
             String receivedProId = i.getStringExtra(MESSAGE_KEY);
             projectId = receivedProId;
-
 
             //update project progress textview in real time tasks progress is updated in ProjectActivity.
             assert receivedProId != null;
@@ -370,6 +380,13 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
     private void showPopupMenu(View view) {
         PopupMenu popupMenu = new PopupMenu(this, view);
         popupMenu.inflate(R.menu.project_option2);
+
+        Menu menu = popupMenu.getMenu();
+
+        // Check if groupId is null and set the visibility of teamAnalysis accordingly
+        String groupId = sharedPreferenceManager.getGroupId();
+        MenuItem teamAnalysisItem = menu.findItem(R.id.teamAnalysis);
+        teamAnalysisItem.setVisible(groupId != null);
         popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
@@ -472,13 +489,11 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
         Query query = projectTasksCollection
                 .whereEqualTo("projectId", projectId)
                 .orderBy("timestamp", Query.Direction.ASCENDING);
-
         query.addSnapshotListener((value, error) -> {
             if (error != null) {
                 Toast.makeText(ProjectActivity.this, "Error getting tasks: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                 return;
             }
-
             if (value != null) {
                 List<Tasks> tasksList = new ArrayList<>();
                 for (QueryDocumentSnapshot document : value) {
@@ -488,7 +503,6 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
             }
         });
     }
-
     private void retrieveTaskDetails(String taskId, List<Tasks> tasksList) {
         CollectionReference tasksCollection = db.collection("Tasks");
         tasksCollection.document(taskId).get()
@@ -497,7 +511,6 @@ public class ProjectActivity extends AppCompatActivity implements UpdateTaskFrag
                         DocumentSnapshot document = task.getResult();
                         if (document.exists()) {
                             Tasks taskData = document.toObject(Tasks.class);
-
                             assert taskData != null;
                             taskData.setTaskId(document.getId());
                             tasksList.add(taskData);

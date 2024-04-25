@@ -1,4 +1,4 @@
-package com.ecom.fyp2023.MiroWhiteBoardIntegration;
+package com.ecom.fyp2023.FastbaordSDK;
 
 import androidx.appcompat.app.AppCompatActivity;
 

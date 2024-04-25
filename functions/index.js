@@ -315,20 +315,16 @@ exports.sendTaskReminders = functions.pubsub.schedule("every 24 hours")
           const userTasksRef = admin.firestore().collection("userTasks");
           const userTasksQuery = userTasksRef.where("taskId", "==", taskId);
           const userTasksSnapshot = await userTasksQuery.get();
-
           if (!userTasksSnapshot.empty) {
             const userTaskData = userTasksSnapshot.docs[0].data();
             const assignedUserId = userTaskData.userId;
-
             // Get assigned user data
             const userRef = admin.firestore()
                 .collection("Users").doc(assignedUserId);
             const userSnap = await userRef.get();
-
             if (userSnap.exists) {
               const userData = userSnap.data();
               const { fcmToken } = userData;
-
               // Construct the reminder notification payload
               const payload = {
                 notification: {
@@ -345,7 +341,6 @@ exports.sendTaskReminders = functions.pubsub.schedule("every 24 hours")
                   taskId,
                 },
               };
-
               // Send the reminder notification
               return admin.messaging().sendToDevice(fcmToken, payload);
             }
@@ -359,58 +354,58 @@ exports.sendTaskReminders = functions.pubsub.schedule("every 24 hours")
     });
 
 
-// const axios = require("axios");
-//
-// exports.createRoom = functions.https.onRequest(async (req, res) => {
-//  const sdkToken = functions.config().agora.sdk_token;
-//  const options = {
-//    method: "POST",
-//    url: "https://api.netless.link/v5/rooms",
-//    headers: {
-//      "token": sdkToken,
-//      "Content-Type": "application/json",
-//      "region": "us-sv",
-//    },
-//    data: JSON.stringify({
-//      isRecord: false,
-//    }),
-//  };
-//
-//  try {
-//    const response = await axios(options);
-//    res.send(response.data);
-//  } catch (error) {
-//    console.error(error);
-//    res.status(500).send("An error occurred while creating the room.");
-//  }
-// });
-//
-// const axios = require("axios");
-//
-// exports.generateToken = functions.https.onRequest(async (req, res) => {
-//  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
-//  const sdkToken = functions.config().agora.sdk_token;
-//
-//  const options = {
-//    method: "POST",
-//    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
-//    headers: {
-//      "token": sdkToken,
-//      "Content-Type": "application/json",
-//      "region": "us-sv",
-//    },
-//    data: JSON.stringify({
-//      lifespan: 3600000,
-//      role: "admin",
-//    }),
-//  };
-//
-//  try {
-//    const response = await axios(options);
-//    res.send(response.data);
-//  } catch (error) {
-//    console.error(error);
-//    res.status(500).send("An error occurred while generating the token.");
-//  }
-// });
+ const axios = require("axios");
+
+ exports.createRoom = functions.https.onRequest(async (req, res) => {
+  const sdkToken = functions.config().agora.sdk_token;
+  const options = {
+    method: "POST",
+    url: "https://api.netless.link/v5/rooms",
+    headers: {
+      "token": sdkToken,
+      "Content-Type": "application/json",
+      "region": "us-sv",
+    },
+    data: JSON.stringify({
+      isRecord: false,
+    }),
+  };
+
+  try {
+    const response = await axios(options);
+    res.send(response.data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while creating the room.");
+  }
+ });
+
+ const axios = require("axios");
+
+ exports.generateToken = functions.https.onRequest(async (req, res) => {
+  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
+  const sdkToken = functions.config().agora.sdk_token;
+
+  const options = {
+    method: "POST",
+    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
+    headers: {
+      "token": sdkToken,
+      "Content-Type": "application/json",
+      "region": "us-sv",
+    },
+    data: JSON.stringify({
+      lifespan: 3600000,
+      role: "admin",
+    }),
+  };
+
+  try {
+    const response = await axios(options);
+    res.send(response.data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while generating the token.");
+  }
+ });
 

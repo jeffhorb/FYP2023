@@ -42,11 +42,11 @@
             android:exported="false"
             android:label="Groups" />
         <activity
-            android:name=".MiroWhiteBoardIntegration.Board"
+            android:name=".FastbaordSDK.CollabrativeWhiteboard"
             android:exported="false"
             android:label="WhiteBoard" />
         <activity
-            android:name=".MiroWhiteBoardIntegration.WhiteboardActivity"
+            android:name=".FastbaordSDK.WhiteboardActivity"
             android:exported="false" />
         <activity
             android:name=".Analysis.CombinedLineAndBarChart"
@@ -122,7 +122,7 @@
             android:label="Tasks"
             android:launchMode="singleTop" />
         <activity
-            android:name=".AiIntegration.SentimentAnalysisActivity"
+            android:name=".SentimentAnalysis.SentimentAnalysisActivity"
             android:exported="false"
             android:label="Sentiment Analysis"
             android:parentActivityName=".ProjectActivity" />
@@ -133,7 +133,7 @@
         <activity
             android:name=".Login_activity"
             android:exported="true"
-            android:label="Sign In">
+            android:label="SCRUM Mobile">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

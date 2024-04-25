@@ -4,7 +4,7 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MiroWhiteBoardIntegration.Board"
+    tools:context=".FastbaordSDK.CollabrativeWhiteboard"
     android:orientation="vertical">
 
     <LinearLayout
@@ -29,82 +29,92 @@
     </LinearLayout>
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-        <LinearLayout
-            android:id="@+id/image"
-            android:layout_width="wrap_content"
+        <ScrollView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:orientation="vertical">
+            android:background="@android:color/holo_blue_dark">
 
-            <ImageView
-                android:layout_width="30dp"
-                android:layout_height="25dp"
-                android:layout_gravity="center"
-                android:src="@drawable/baseline_insert_photo_24"/>
-            <TextView
+            <LinearLayout
+                android:orientation="horizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="photo"
-                android:textAllCaps="true"
-                android:textColor="@color/black"/>
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:id="@+id/file"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="25dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/baseline_insert_link_24"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="File"
+                        android:textAllCaps="true"
+                        android:textColor="@color/black"/>
 
 
-        </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/image"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="25dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/baseline_insert_photo_24"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Image"
+                        android:textAllCaps="true"
+                        android:textColor="@color/black"/>
 
 
+                </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/link"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:orientation="vertical">
+                <TextView
+                    android:id="@+id/userName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="100dp"
+                    android:text="user1"
+                    android:visibility="gone"
+                    android:layout_gravity="center"
+                    android:textColor="@color/black"/>
 
-            <ImageView
-                android:layout_width="30dp"
-                android:layout_height="25dp"
-                android:layout_gravity="center"
-                android:src="@drawable/baseline_insert_link_24"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Link"
-                android:textAllCaps="true"
-                android:textColor="@color/black"/>
+                <TextView
+                    android:id="@+id/groupName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="100dp"
+                    android:textColor="@color/black"
+                    android:text="groupName"/>
 
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/video"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="30dp"
-                android:layout_height="25dp"
-                android:layout_gravity="center"
-                android:src="@drawable/baseline_personal_video_24"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="video"
-                android:textAllCaps="true"
-                android:textColor="@color/black"/>
-
-
-        </LinearLayout>
-
+            </LinearLayout>
+        </ScrollView>
 
 
 
     </LinearLayout>
+
 
 
     <io.agora.board.fast.FastboardView

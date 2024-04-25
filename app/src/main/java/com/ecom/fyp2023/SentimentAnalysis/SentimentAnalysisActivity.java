@@ -1,10 +1,11 @@
-package com.ecom.fyp2023.AiIntegration;
+package com.ecom.fyp2023.SentimentAnalysis;
 
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -14,11 +15,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Adapters.SentimentRvAdapter;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
-import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ModelClasses.Sentiments;
 import com.ecom.fyp2023.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.common.reflect.TypeToken;
 import com.google.firebase.auth.FirebaseAuth;
@@ -26,14 +24,11 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.google.gson.Gson;
 
 import org.tensorflow.lite.Interpreter;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -52,6 +47,7 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
 
     private TextView sentimentResult, seeHistory, clearHistory;
 
+    ImageView positive,negative;
     RecyclerView historyRecycler;
     private Interpreter tflite;
     private FirebaseFirestore db;
@@ -79,6 +75,8 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         seeHistory = findViewById(R.id.history);
         clearHistory = findViewById(R.id.clearHistory);
         historyRecycler = findViewById(R.id.historyRecyclerview);
+        negative = findViewById(R.id.negetive);
+        positive = findViewById(R.id.positive);
 
         historyRecycler.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
         sentimentsArrayList = new ArrayList<>();
@@ -142,30 +140,6 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         }
     }
 
-//    // Clear model cache
-//    private void clearModelCache() {
-//        File cacheDir = getCacheDir();
-//        if (cacheDir != null) {
-//            File[] cachedFiles = cacheDir.listFiles(new FilenameFilter() {
-//                @Override
-//                public boolean accept(File dir, String name) {
-//                    // Filter files with .tflite extension
-//                    return name.endsWith(".tflite");
-//                }
-//            });
-//            if (cachedFiles != null) {
-//                for (File cachedFile : cachedFiles) {
-//                    if (cachedFile.delete()) {
-//                        Log.d("Sentiment", "Deleted cached model file: " + cachedFile.getName());
-//                    } else {
-//                        Log.e("sentiment", "Failed to delete cached model file: " + cachedFile.getName());
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-
     @Override
     protected void onDestroy() {
         // Release TensorFlow Lite interpreter resources
@@ -185,7 +159,6 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         long declaredLength = fileDescriptor.getDeclaredLength();
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
     }
-
     // Method to read the vocabulary JSON file and parse it into a HashMap
     private HashMap<String, Integer> loadVocabulary() throws IOException {
         AssetManager assetManager = getAssets();
@@ -270,7 +243,6 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         }
     }
 
-    // Method to analyze comments for sentiment
     private void analyzeComments(@NonNull List<String> allComments) {
         if (allComments.isEmpty()) {
             // No comments found for sentiment analysis
@@ -279,31 +251,63 @@ public class SentimentAnalysisActivity extends AppCompatActivity {
         }
 
         boolean hasRecognizedWords = false; // Flag to track if any recognized words are found
-        //for (String comment : allComments) {
-            // Perform sentiment analysis on each comment
-        //clearModelCache();
-        loadModel();
+        boolean isPositive = false; // Flag to track if sentiment is positive
+
         float[] preprocessedComment = preprocessComment(allComments.toString());
-        seeHistory.setText(allComments.toString());
+        //seeHistory.setText(allComments.toString());
         boolean containsRecognizedWords = checkRecognizedWords(preprocessedComment);
+
         if (containsRecognizedWords) {
             hasRecognizedWords = true; // Set the flag to true if recognized words are found
+
             float[][] outputVal = new float[1][1];
             tflite.run(preprocessedComment, outputVal);
             int predictedSentiment = (outputVal[0][0] > 0.5) ? 1 : 0;
-            String sentiment = predictedSentiment == 0 ? "Positive" : "Negative";
-            sentimentResult.setText("Predicted Team Communication sentiment: " + sentiment);
+            isPositive = predictedSentiment == 0;
+
+            String sentiment = isPositive ? "Positive" : "Negative";
+            sentimentResult.setText(sentiment);
             saveSentimentAndTimestamp(sentiment);
-            //we break here.
-            // break;
-            // }
         }
+
+        // Toggle visibility of image views based on sentiment
+        positive.setVisibility(isPositive ? View.VISIBLE : View.GONE);
+        negative.setVisibility(isPositive ? View.GONE : View.VISIBLE);
+
         // If no recognized words are found in any comment, set sentiment to neutral
         if (!hasRecognizedWords) {
-            sentimentResult.setText("Predicted sentiment: Neutral or Comment(s) can not be recognised");
+            sentimentResult.setText("Neutral or Comment(s) cannot be recognized");
         }
     }
 
+
+    //    // Method to analyze comments for sentiment
+//    private void analyzeComments(@NonNull List<String> allComments) {
+//        if (allComments.isEmpty()) {
+//            // No comments found for sentiment analysis
+//            sentimentResult.setText("No comments for Sentiment analysis.");
+//            return;
+//        }
+//        boolean hasRecognizedWords = false; // Flag to track if any recognized words are found
+//        //for (String comment : allComments) {
+//        // Perform sentiment analysis on each comment
+//        float[] preprocessedComment = preprocessComment(allComments.toString());
+//        seeHistory.setText(allComments.toString());
+//        boolean containsRecognizedWords = checkRecognizedWords(preprocessedComment);
+//        if (containsRecognizedWords) {
+//            hasRecognizedWords = true; // Set the flag to true if recognized words are found
+//            float[][] outputVal = new float[1][1];
+//            tflite.run(preprocessedComment, outputVal);
+//            int predictedSentiment = (outputVal[0][0] > 0.5) ? 1 : 0;
+//            String sentiment = predictedSentiment == 0 ? "Positive" : "Negative";
+//            sentimentResult.setText( sentiment);
+//            saveSentimentAndTimestamp(sentiment);
+//        }
+//        // If no recognized words are found in any comment, set sentiment to neutral
+//        if (!hasRecognizedWords) {
+//            sentimentResult.setText("Neutral or Comment(s) can not be recognised");
+//        }
+//    }
     // Method to check if the preprocessed comment contains recognized words
     private boolean checkRecognizedWords(@NonNull float[] preprocessedComment) {
         for (float word : preprocessedComment) {

@@ -22,6 +22,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.ModelClasses.Users;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -29,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class SignUpActivity extends AppCompatActivity {
@@ -54,7 +56,6 @@ public class SignUpActivity extends AppCompatActivity {
         symbols = findViewById(R.id.symbol);
 
         db = FirebaseFirestore.getInstance();
-
 
         //show password code
         ToggleButton showPasswordToggle = findViewById(R.id.showPasswordToggle);
@@ -139,6 +140,7 @@ public class SignUpActivity extends AppCompatActivity {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_username_input, null);
         final EditText usernameEditText = dialogView.findViewById(R.id.editTextUsername);
+        EditText occupationEditText = dialogView.findViewById(R.id.occupation);
         builder.setView(dialogView);
 
         // Set up the buttons for positive (OK) and negative (Cancel) actions
@@ -146,6 +148,7 @@ public class SignUpActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String enteredUsername = usernameEditText.getText().toString();
+                String occupation = occupationEditText.getText().toString();
                 String mail = email.getText().toString().trim();
 
                 // User could be forced to add a username
@@ -153,9 +156,14 @@ public class SignUpActivity extends AppCompatActivity {
                     // If the username is null or empty, set it to the email
                     enteredUsername = mail;
                 }
+                if (occupation.isEmpty()) {
+                    // If the username is null or empty, set it to the email
+                    occupationEditText.setText("Add occupation. Occupation can be updated later");
+                }
+
 
                 // Check if the entered username already exists in Firestore
-                checkUsernameExists(enteredUsername, mail);
+                checkUsernameExists(enteredUsername,occupation, mail);
             }
         });
 
@@ -191,7 +199,7 @@ public class SignUpActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private void checkUsernameExists(String enteredUsername, String userEmail) {
+    private void checkUsernameExists(String enteredUsername, String occupation, String userEmail) {
         CollectionReference dbUsers = db.collection("Users");
 
         // Query Firestore to check if the username already exists
@@ -220,7 +228,7 @@ public class SignUpActivity extends AppCompatActivity {
                                         if (tokenTask.isSuccessful() && tokenTask.getResult() != null) {
                                             String fcmToken = tokenTask.getResult();
                                             // Call a method to store the FCM token in the Firestore users collection
-                                            addUserToFirestore(enteredUsername, userEmail, fcmToken);
+                                            addUserToFirestore(enteredUsername, userEmail, fcmToken,occupation);
                                             Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
                                             Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
                                             startActivity(intent);
@@ -260,7 +268,7 @@ public class SignUpActivity extends AppCompatActivity {
                             if (tasks.isSuccessful() && tasks.getResult() != null) {
                                 String fcmToken = tasks.getResult();
                                 // Call a method to store the FCM token in the Firestore users collection
-                                addUserToFirestore(mail, mail, fcmToken);
+                                addUserToFirestore(mail, mail, fcmToken,null);
                                 Toast.makeText(SignUpActivity.this, "Authentication Successfully.", Toast.LENGTH_SHORT).show();
                                 Intent intent = new Intent(SignUpActivity.this, Login_activity.class);
                                 startActivity(intent);
@@ -273,7 +281,7 @@ public class SignUpActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private void addUserToFirestore(String userName, String userEmail, String fcmToken) {
+    private void addUserToFirestore(String userName, String userEmail, String fcmToken,String occupation) {
         // creating a collection reference
         // for our Firebase Firestore database.
         CollectionReference dbUsers = db.collection("Users");
@@ -281,7 +289,7 @@ public class SignUpActivity extends AppCompatActivity {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String userId = currentUser.getUid();
         // adding our data to our courses object class.
-        Users users = new Users(userName, userEmail, fcmToken,userId,null);
+        Users users = new Users(userName, userEmail, fcmToken,userId,occupation);
 
         // below method is use to add data to Firebase Firestore.
         dbUsers.add(users).addOnSuccessListener(documentReference -> {

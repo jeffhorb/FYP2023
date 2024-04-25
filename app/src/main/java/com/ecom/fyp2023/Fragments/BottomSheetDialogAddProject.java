@@ -56,8 +56,6 @@ public class BottomSheetDialogAddProject extends BottomSheetDialogFragment {
     FirebaseFirestore fb;
     private FirebaseAuth mAuth;
 
-    //String groupId = GroupIdGlobalVariable.getInstance().getGlobalData();
-
     SharedPreferenceManager sharedPrefManager;
 
     String groupId;

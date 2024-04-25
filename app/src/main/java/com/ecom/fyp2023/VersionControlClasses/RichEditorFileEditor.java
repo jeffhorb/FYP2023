@@ -275,94 +275,80 @@ public class RichEditorFileEditor extends AppCompatActivity {
     }
 
     // Method to load the latest version of the file content from Firestore
-    private void loadLatestFileVersion() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        CollectionReference versionsCollection = db.collection("files").document(fileDocId).collection("versions");
-
-        // Query to get the latest version based on timestamp and group id or userAuthId
-//        Query query;
-//        if (groupId != null) {
-//            // Load files belonging to the group
-//            query = versionsCollection.whereEqualTo("groupId", groupId).orderBy("timestamp", Query.Direction.DESCENDING).limit(1);
-//        } else {
-//            // Load files belonging to the user's private space
-//            String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-//            query = versionsCollection.whereEqualTo("userAuthId", userAuthId).orderBy("timestamp", Query.Direction.DESCENDING).limit(1);
-//        }
-
-        versionsCollection.get().addOnSuccessListener(queryDocumentSnapshots -> {
-            if (!queryDocumentSnapshots.isEmpty()) {
-                DocumentSnapshot latestVersion = queryDocumentSnapshots.getDocuments().get(0);
-                String content = latestVersion.getString("content");
-                time = latestVersion.getDate("timestamp");
-                if (content != null) {
-                    // Set the content of the latest version to the RichEditor
-                    mEditor.setHtml(content);
-
-                    if (revertMenuItem != null) {
-                        revertMenuItem.setVisible(true);
-                    }
-
-                } else {
-                    // Handle case where content is null
-                    Toast.makeText(getApplicationContext(), "Latest version content is null", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                // Handle case where no versions are found for the group or user
-                loadFileContent(filePath);
-            }
-        }).addOnFailureListener(e -> {
-            // Handle any errors
-            Toast.makeText(getApplicationContext(), "Failed to load latest version: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        });
-    }
-
-    // Method to load the latest version of the file content from Firestore
-
 //    private void loadLatestFileVersion() {
-//        // Get reference to Firestore collection for file versions
 //        FirebaseFirestore db = FirebaseFirestore.getInstance();
 //        CollectionReference versionsCollection = db.collection("files").document(fileDocId).collection("versions");
 //
-//        // Query to get the latest version based on timestamp
-//        versionsCollection.orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
-//                .get()
-//                .addOnSuccessListener(queryDocumentSnapshots -> {
-//                    if (!queryDocumentSnapshots.isEmpty()) {
-//                        // Retrieve the latest version document
-//                        DocumentSnapshot latestVersion = queryDocumentSnapshots.getDocuments().get(0);
-//                        String content = latestVersion.getString("content");
-//                        time = latestVersion.getDate("timestamp");
-//                        if (content != null) {
-//                            // Set the content of the latest version to the RichEditor
-//                            mEditor.setHtml(content);
+//        versionsCollection.get().addOnSuccessListener(queryDocumentSnapshots -> {
+//            if (!queryDocumentSnapshots.isEmpty()) {
+//                DocumentSnapshot latestVersion = queryDocumentSnapshots.getDocuments().get(0);
+//                String content = latestVersion.getString("content");
+//                time = latestVersion.getDate("timestamp");
+//                if (content != null) {
+//                    // Set the content of the latest version to the RichEditor
+//                    mEditor.setHtml(content);
 //
-//                            if (revertMenuItem != null) {
-//                                revertMenuItem.setVisible(true);
-//                            }
-//
-//                        } else {
-//                            // Handle case where content is null
-//                            Toast.makeText(getApplicationContext(), "Latest version content is null", Toast.LENGTH_SHORT).show();
-//                        }
-//                    } else {
-//                        // Handle case where no versions are found
-//                        loadFileContent(filePath);
+//                    if (revertMenuItem != null) {
+//                        revertMenuItem.setVisible(true);
 //                    }
-//                })
-//                .addOnFailureListener(e -> {
-//                    // Handle any errors
-//                    Toast.makeText(getApplicationContext(), "Failed to load latest version: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//                });
+//
+//                } else {
+//                    // Handle case where content is null
+//                    Toast.makeText(getApplicationContext(), "Latest version content is null", Toast.LENGTH_SHORT).show();
+//                }
+//            } else {
+//                // Handle case where no versions are found for the group or user
+//                loadFileContent(filePath);
+//            }
+//        }).addOnFailureListener(e -> {
+//            // Handle any errors
+//            Toast.makeText(getApplicationContext(), "Failed to load latest version: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//        });
 //    }
+
+     //Method to load the latest version of the file content from Firestore
+
+    private void loadLatestFileVersion() {
+        // Get reference to Firestore collection for file versions
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference versionsCollection = db.collection("files").document(fileDocId).collection("versions");
+
+        // Query to get the latest version based on timestamp
+        versionsCollection.orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        // Retrieve the latest version document
+                        DocumentSnapshot latestVersion = queryDocumentSnapshots.getDocuments().get(0);
+                        String content = latestVersion.getString("content");
+                        time = latestVersion.getDate("timestamp");
+                        if (content != null) {
+                            // Set the content of the latest version to the RichEditor
+                            mEditor.setHtml(content);
+
+                            if (revertMenuItem != null) {
+                                revertMenuItem.setVisible(true);
+                            }
+
+                        } else {
+                            // Handle case where content is null
+                            Toast.makeText(getApplicationContext(), "Latest version content is null", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        // Handle case where no versions are found
+                        loadFileContent(filePath);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Handle any errors
+                    Toast.makeText(getApplicationContext(), "Failed to load latest version: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
 
 
     // Method to load file content from Firebase Storage
     private void loadFileContent(String filePath) {
         StorageReference fileRef = storageReference.child(filePath);
-
-        // Load files based on group id or userAuthId
-        String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         fileRef.getBytes(Long.MAX_VALUE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
             @Override
             public void onSuccess(byte[] bytes) {
@@ -376,21 +362,6 @@ public class RichEditorFileEditor extends AppCompatActivity {
             }
         });
     }
-//    private void loadFileContent(String filePath) {
-//        StorageReference fileRef = storageReference.child(filePath);
-//        fileRef.getBytes(Long.MAX_VALUE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
-//            @Override
-//            public void onSuccess(byte[] bytes) {
-//                String content = new String(bytes);
-//                mEditor.setHtml(content);
-//            }
-//        }).addOnFailureListener(new OnFailureListener() {
-//            @Override
-//            public void onFailure(@NonNull Exception exception) {
-//                // Handle any errors
-//            }
-//        });
-//    }
 
     // Method to show confirmation dialog
     private void showConfirmationDialog(String title, String message, DialogInterface.OnClickListener listener) {
@@ -526,11 +497,11 @@ public class RichEditorFileEditor extends AppCompatActivity {
         versionData.put("timestamp", FieldValue.serverTimestamp());
         versionData.put("content", newContent);
         versionData.put("message", message);
-        if (groupId != null) {
-            versionData.put("groupId", groupId);
-        } else {
-            versionData.put("userAuthId", userAuthId);
-        }
+//        if (groupId != null) {
+//            versionData.put("groupId", groupId);
+//        } else {
+//            versionData.put("userAuthId", userAuthId);
+//        }
 
         // Add the version document to Firestore
         versionsCollection.add(versionData).addOnSuccessListener(documentReference -> {
@@ -639,7 +610,7 @@ public class RichEditorFileEditor extends AppCompatActivity {
                     // Update original file document in Firestore with the latest version content and metadata
                     Map<String, Object> fileData = new HashMap<>();
                     fileData.put("content", content);
-                    fileData.put("timestamp", latestVersion.getTimestamp("timestamp")); // You may need to adjust this based on your data model
+                    fileData.put("timestamp", latestVersion.getTimestamp("timestamp"));
 
                     FirebaseFirestore.getInstance().collection("files").document(fileDocId)
                             .set(fileData, SetOptions.merge()) // Merge with existing data

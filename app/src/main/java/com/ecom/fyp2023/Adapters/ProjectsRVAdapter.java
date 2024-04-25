@@ -67,6 +67,13 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
             holder.itemView.setVisibility(View.GONE);
             holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
         }
+//        FirestoreManager firestoreManager = new FirestoreManager();
+//        firestoreManager.getDocumentId("Projects", "title", projects.getTitle(), documentId -> {
+//            if (documentId != null) {
+//
+//               String projectId = documentId;
+//            }
+//        });
     }
 
     @Override
@@ -128,9 +135,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
             itemView.setOnClickListener(v -> {
 
                 Projects selectedProject = projectsArrayList.get(getAdapterPosition());
-
                 Intent intent = new Intent(itemView.getContext(), ProjectActivity.class);
-
                 // the selected project as an extra in the Intent
                 intent.putExtra("selectedProject", selectedProject);
                 itemView.getContext().startActivity(intent);

@@ -1,6 +1,7 @@
 package com.ecom.fyp2023.Adapters;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,14 +11,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.Analysis.TeamMemberEvaluation;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
+import com.ecom.fyp2023.Fragments.UsersListFragment;
 import com.ecom.fyp2023.ModelClasses.Invitation;
 import com.ecom.fyp2023.ModelClasses.Users;
 import com.ecom.fyp2023.R;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.auth.User;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -29,6 +33,8 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
     private final List<Users> userList;
     private final Context context;
 
+
+    private final UsersListFragment fragment;
     private String taskId,projectId,groupId,groupName,groupDescription;
 
     public void setSelectedTaskId(String selectedTaskId) {
@@ -39,9 +45,10 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
         this.projectId = proId;
     }
 
-    public UserRVAdapter(List<Users> userList, Context context) {
+    public UserRVAdapter(List<Users> userList, Context context, UsersListFragment fragment) {
         this.userList = userList;
         this.context = context;
+        this.fragment = fragment;
     }
 
     public void setGroupId(String groupId) {
@@ -79,10 +86,12 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
                     if (documentId != null) {
                         if (taskId != null){
                             AssignUserTask(documentId,taskId);
+                            fragment.dismiss();
 
                         }else if(groupId != null&& groupName != null) {
 
-                            SendInvitationToUser(documentId,groupId,groupName,groupDescription, user.getUserName(), user.getUserEmail());
+                            //SendInvitationToUser(documentId,groupId,groupName,groupDescription, user.getUserName(), user.getUserEmail());
+                            showConfirmationDialog(user);
 
                         }else {
                                 // Create an Intent
@@ -91,10 +100,13 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
                                 intent.putExtra("userName", user.getUserName());
                                 intent.putExtra("projID",projectId);
                                 context.startActivity(intent);
+                                fragment.dismiss();
+
 
                         }
                     }  // Handle the case where the document ID couldn't be retrieved
                 });
+
             }
         });
     }
@@ -115,15 +127,36 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
         }
     }
 
+    //show confirmation dialog before sending invitation
+    private void showConfirmationDialog(@NonNull Users user) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Send Invitation");
+        builder.setMessage("Are you sure you want to send an invitation to " + user.getUserName() + "?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Send invitation
+                FirestoreManager firestoreManager = new FirestoreManager();
+                firestoreManager.getDocumentId("Users", "userEmail", user.getUserEmail(), documentId -> {
+                    if (documentId != null) {
+                        SendInvitationToUser(documentId, groupId, groupName, groupDescription, user.getUserName(), user.getUserEmail());
+                        fragment.dismiss();
+
+                    }
+                });
+            }
+        });
+        builder.setNegativeButton("No", null);
+        builder.show();
+    }
+
     public void SendInvitationToUser(String userId,String groupId,String groupName,String groupDescription,String userName,String userEmail) {
 
-        // Initialize Firestore
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         // Get the current timestamp
         Date timestamp = new Date(System.currentTimeMillis());
 
-        // Create an invitation object
         Invitation invitation = new Invitation(groupId, userId, timestamp,groupName,groupDescription,"Pending",userName,userEmail);
 
         // Add the invitation to Firestore
@@ -140,6 +173,7 @@ public class UserRVAdapter extends RecyclerView.Adapter<UserRVAdapter.ViewHolder
     }
 
 
+    //assign user to task
     private void AssignUserTask(String userId, String taskId) {
         FirebaseFirestore fb = FirebaseFirestore.getInstance();
 

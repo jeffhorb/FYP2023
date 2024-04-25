@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/white"
-    android:layout_margin="10dp"
+    android:layout_margin="8dp"
+    android:elevation="10dp"
     android:orientation="vertical">
 
     <TextView
@@ -26,22 +27,27 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal">
 
-        <Button
+        <TextView
             android:id="@+id/button_show_members"
             android:layout_width="30dp"
             android:layout_height="wrap_content"
             android:text="Show Members"
+            android:gravity="center"
+            android:textColor="@color/black"
             android:layout_weight="1"
             android:layout_margin="4dp"/>
 
-        <Button
+        <TextView
             android:id="@+id/leaveGroup"
             android:layout_width="30dp"
             android:layout_height="wrap_content"
-            android:text="Leave group"
-            android:background="@color/red"
+            android:text="Leave Team"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:textColor="@color/red"
             android:layout_weight="1"
             android:layout_margin="4dp"/>
 
