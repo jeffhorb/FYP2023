@@ -78,6 +78,15 @@ public class SharedPreferenceManager {
         return sharedPreferences.getString(KEY_USER_AUTH_ID, null);
     }
 
+    public void clearGroupId() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove(KEY_GROUP_ID);
+        editor.remove(KEY_GROUP_NAME);
+        editor.remove(KEY_GROUP_DESCRIPTION);
+        editor.apply();
+    }
+
     public void clearSavedIds() {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();

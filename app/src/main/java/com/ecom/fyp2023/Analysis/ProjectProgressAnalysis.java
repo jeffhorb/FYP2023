@@ -140,5 +140,4 @@ public class ProjectProgressAnalysis extends AppCompatActivity {
             pieChart.invalidate(); // Refresh the chart
         }
     }
-
 }

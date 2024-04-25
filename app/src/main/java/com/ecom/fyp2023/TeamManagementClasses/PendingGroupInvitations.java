@@ -1,4 +1,4 @@
-package com.ecom.fyp2023.InvitationClass;
+package com.ecom.fyp2023.TeamManagementClasses;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;

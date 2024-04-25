@@ -1,4 +1,4 @@
-package com.ecom.fyp2023.InvitationClass;
+package com.ecom.fyp2023.TeamManagementClasses;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.ecom.fyp2023.HomeScreen;
 import com.ecom.fyp2023.ModelClasses.Invitation;
 import com.ecom.fyp2023.R;
 import com.google.android.material.appbar.MaterialToolbar;

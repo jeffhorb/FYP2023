@@ -57,13 +57,10 @@ public class TeamMemberEvaluation extends AppCompatActivity {
         next = findViewById(R.id.next);
         db = FirebaseFirestore.getInstance();
 
-
-
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
-
 
         Intent intent = getIntent();
         if (intent.hasExtra("projID")){
@@ -73,10 +70,19 @@ public class TeamMemberEvaluation extends AppCompatActivity {
                 // Retrieve the data using the key you used when putting the data
                 userId = intent.getStringExtra("userID");
                 userName = intent.getStringExtra("userName");
-                memberName.setText(projectId);
+                memberName.setText(userName);
 
             }
         }
+
+        if (getIntent().hasExtra("projID")&& getIntent().hasExtra("userName")&& getIntent().hasExtra("userID")){
+            projectId = intent.getStringExtra("projID");
+            userId = intent.getStringExtra("userID");
+            userName = intent.getStringExtra("userName");
+            memberName.setText(userName);
+        }
+
+
         Intent intent2 = getIntent();
         if (intent2.hasExtra("projectId")){
             projectId = intent2.getStringExtra("projectId");
@@ -101,8 +107,6 @@ public class TeamMemberEvaluation extends AppCompatActivity {
         });
 
         retrieveTasksForProjectAndUser(projectId,userId);
-
-
 
     }
 

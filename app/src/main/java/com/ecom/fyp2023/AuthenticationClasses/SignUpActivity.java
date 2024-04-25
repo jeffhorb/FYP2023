@@ -1,4 +1,4 @@
-package com.ecom.fyp2023;
+package com.ecom.fyp2023.AuthenticationClasses;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,7 +22,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.ModelClasses.Users;
-import com.google.android.material.appbar.MaterialToolbar;
+import com.ecom.fyp2023.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -30,7 +30,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.messaging.FirebaseMessaging;
 
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class SignUpActivity extends AppCompatActivity {

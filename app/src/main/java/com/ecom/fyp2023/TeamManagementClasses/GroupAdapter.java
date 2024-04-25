@@ -1,8 +1,10 @@
-package com.ecom.fyp2023.InvitationClass;
+package com.ecom.fyp2023.TeamManagementClasses;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,14 +16,19 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
+import com.ecom.fyp2023.Fragments.BottomSheetFragmentAddTask;
 import com.ecom.fyp2023.HomeScreen;
 import com.ecom.fyp2023.ModelClasses.Group;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -59,6 +66,34 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
         holder.groupDescriptionTextView.setText(group.getDescription());
 
 
+        holder.leaveGroupTextview.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(context);
+                builder.setTitle("Confirmation");
+                builder.setMessage("Are you sure you want to Leave this group?");
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        FirestoreManager firestoreManager = new FirestoreManager();
+                        firestoreManager.getDocumentId("groups", "groupName", group.getGroupName(), documentId -> {
+                            if (documentId != null) {
+                                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                                String currentUserUid = currentUser.getUid();
+                                removeMember(documentId, currentUserUid);
+                                groupList.remove(holder.getAdapterPosition());
+
+                            }
+                        });
+
+                        notifyDataSetChanged();
+                    }
+                });
+                builder.setNegativeButton("No", null);
+                builder.show();
+            }
+        });
         holder.showMembersButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -107,11 +142,14 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
         TextView groupDescriptionTextView;
         TextView showMembersButton;
 
+        TextView leaveGroupTextview;
+
         GroupViewHolder(@NonNull View itemView) {
             super(itemView);
             groupNameTextView = itemView.findViewById(R.id.text_view_group_name);
             groupDescriptionTextView = itemView.findViewById(R.id.text_view_group_description);
             showMembersButton = itemView.findViewById(R.id.button_show_members);
+            leaveGroupTextview = itemView.findViewById(R.id.leaveGroup);
         }
     }
 
@@ -165,6 +203,26 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
                 }
             }
         });
+    }
+
+    // Method to remove a user from the group
+    private void removeMember(String groupId, String userAuthId) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference groupRef = db.collection("groups").document(groupId);
+
+        groupRef.update("members", FieldValue.arrayRemove(userAuthId))
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Toast.makeText(context, "User removed from the group", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(context, "Failed to remove user from the group: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
 

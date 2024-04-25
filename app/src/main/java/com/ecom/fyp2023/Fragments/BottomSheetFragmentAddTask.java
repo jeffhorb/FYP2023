@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.ecom.fyp2023.AppManagers.CustomArrayAdapter;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.AppManagers.TimeConverter;
 import com.ecom.fyp2023.ModelClasses.Tasks;
 import com.ecom.fyp2023.ProjectActivity;
@@ -56,10 +57,12 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
     String taskId, projectId,timeEstimate;
     Date estimatedEDate;
 
-    String groupId;
+
     int StoryPoint;
     FirebaseFirestore fb;
     ArrayAdapter<String> prerequisitesAdapter;
+
+    SharedPreferenceManager sharedPreferenceManager;
     private final List<String> selectedPrerequisites = new ArrayList<>();
 
     @NonNull
@@ -85,6 +88,10 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         progress = view.findViewById(R.id.taskProgress);
         save = view.findViewById(R.id.saveBtn);
         duration = view.findViewById(R.id.taskDuration);
+
+        sharedPreferenceManager = new SharedPreferenceManager(getContext());
+
+
 
 
 
@@ -226,6 +233,7 @@ public class BottomSheetFragmentAddTask extends BottomSheetDialogFragment implem
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String userAuthId = currentUser.getUid();
 
+        String groupId = sharedPreferenceManager.getGroupId();
         // Calculate StoryPoint based on difficulty level and estimated time
         int storyPoint = calculateStoryPoint(diff, estimatedDays);
 

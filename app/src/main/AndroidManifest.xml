@@ -22,13 +22,13 @@
         android:supportsRtl="true"
         android:theme="@style/status_bar_color">
         <activity
-            android:name=".InvitationClass.GroupMembers"
+            android:name=".TeamManagementClasses.GroupMembers"
             android:exported="false" />
         <activity
-            android:name=".InvitationClass.PendingGroupInvitations"
+            android:name=".TeamManagementClasses.PendingGroupInvitations"
             android:exported="false" />
         <activity
-            android:name=".InvitationClass.PendingInvitesActivity"
+            android:name=".TeamManagementClasses.PendingInvitesActivity"
             android:exported="false"
             android:label="Pending Invitation">
             <intent-filter>
@@ -38,7 +38,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".InvitationClass.CreateGroupActivity"
+            android:name=".TeamManagementClasses.CreateGroupActivity"
             android:exported="false"
             android:label="Groups" />
         <activity
@@ -65,7 +65,7 @@
             android:exported="false"
             android:label="Editor" />
         <activity
-            android:name=".DocumentActivity"
+            android:name=".VersionControlClasses.DocumentActivity"
             android:exported="false"
             android:label="Document Files" />
         <activity
@@ -131,7 +131,7 @@
             android:exported="false"
             android:label="Projects" />
         <activity
-            android:name=".Login_activity"
+            android:name=".AuthenticationClasses.Login_activity"
             android:exported="true"
             android:label="SCRUM Mobile">
             <intent-filter>
@@ -150,7 +150,7 @@
         </service>
 
         <activity
-            android:name=".SignUpActivity"
+            android:name=".AuthenticationClasses.SignUpActivity"
             android:exported="false"
             android:label="Sign Up" />
     </application>

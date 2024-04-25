@@ -12,6 +12,7 @@ import com.ecom.fyp2023.Adapters.CompletedProjectsAdapter;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -77,6 +78,8 @@ public class CompletedProjects extends AppCompatActivity {
         } else if (savedGroupId != null) {
             retrieveGroupData();
 
+        }else {
+            retrievePersonalData();
         }
     }
 
@@ -110,7 +113,7 @@ public class CompletedProjects extends AppCompatActivity {
 
     public void retrievePersonalData(){
         db.collection("Projects")
-                .whereEqualTo("userAuthId", savedAuthId)
+                .whereEqualTo("userAuthId", FirebaseAuth.getInstance().getCurrentUser().getUid())
                 .whereIn("progress", Arrays.asList("Complete"))
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {

@@ -5,7 +5,8 @@
     android:orientation="vertical"
     android:layout_margin="6dp"
     android:elevation="10dp"
-    android:padding="6dp">
+    android:background="@android:color/background_light"
+    android:padding="2dp">
 
     <TextView
         android:id="@+id/userName"
@@ -35,17 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Make Admin"
-            android:visibility="gone"
-            android:textColor="@color/black"
-            android:textStyle="bold"
-            android:layout_marginTop="4dp" />
-
-        <TextView
-            android:id="@+id/unmakeAdmin"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="60dp"
-            android:text="Remove Admin Status"
+            android:textSize="16sp"
             android:visibility="gone"
             android:textColor="@color/black"
             android:textStyle="bold"
@@ -55,10 +46,25 @@
             android:id="@+id/adminStat"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:background="@android:color/holo_blue_bright"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/unmakeAdmin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
             android:visibility="gone"
+            android:layout_marginStart="120dp"
+            android:text="Remove Admin Status"
             android:textColor="@color/black"
             android:textStyle="bold"
             android:layout_marginTop="4dp" />
+
+
 
 
     </LinearLayout>
@@ -71,6 +77,7 @@
         android:layout_marginTop="16sp"
         android:textSize="20dp"
         android:gravity="center"
+        android:visibility="gone"
         android:textColor="@color/red"
         android:layout_gravity="right"
         android:textStyle="bold"

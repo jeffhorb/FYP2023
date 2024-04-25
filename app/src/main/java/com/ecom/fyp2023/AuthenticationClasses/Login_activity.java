@@ -1,4 +1,4 @@
-package com.ecom.fyp2023;
+package com.ecom.fyp2023.AuthenticationClasses;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -21,6 +21,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
+import com.ecom.fyp2023.HomeScreen;
+import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;

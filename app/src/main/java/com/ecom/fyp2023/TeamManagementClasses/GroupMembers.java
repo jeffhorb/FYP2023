@@ -1,4 +1,4 @@
-package com.ecom.fyp2023.InvitationClass;
+package com.ecom.fyp2023.TeamManagementClasses;
 
 import android.os.Bundle;
 import android.util.Log;

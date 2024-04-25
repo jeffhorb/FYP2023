@@ -1,4 +1,4 @@
-package com.ecom.fyp2023.InvitationClass;
+package com.ecom.fyp2023.TeamManagementClasses;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -87,7 +87,6 @@ public class PendingGroupInvitesAdapter extends RecyclerView.Adapter<PendingGrou
         });
         builder.show();
     }
-
     private void deleteInvitation(@NonNull Invitation invitationId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -104,6 +103,12 @@ public class PendingGroupInvitesAdapter extends RecyclerView.Adapter<PendingGrou
                                 .addOnSuccessListener(aVoid -> {
                                     // Invitation deleted successfully
                                     Toast.makeText(context, "Invitation Rescinded", Toast.LENGTH_SHORT).show();
+                                    // Remove the invitation from the list
+                                    int index = pendingInvitations.indexOf(invitationId);
+                                    if (index != -1) {
+                                        pendingInvitations.remove(index);
+                                        notifyItemRemoved(index);
+                                    }
                                 })
                                 .addOnFailureListener(e -> {
                                     // Handle failure to delete invitation
@@ -116,5 +121,35 @@ public class PendingGroupInvitesAdapter extends RecyclerView.Adapter<PendingGrou
                     Toast.makeText(context, "Failed to query invitations: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
+
+//    private void deleteInvitation(@NonNull Invitation invitationId) {
+//        FirebaseFirestore db = FirebaseFirestore.getInstance();
+//
+//        // Query the invitations collection for the invitation to delete
+//        db.collection("invitations")
+//                .whereEqualTo("userId", invitationId.getUserId())
+//                .whereEqualTo("groupId", invitationId.getGroupId())
+//                .get()
+//                .addOnSuccessListener(queryDocumentSnapshots -> {
+//                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+//                        // Delete each invitation document
+//                        db.collection("invitations").document(document.getId())
+//                                .delete()
+//                                .addOnSuccessListener(aVoid -> {
+//                                    // Invitation deleted successfully
+//                                    Toast.makeText(context, "Invitation Rescinded", Toast.LENGTH_SHORT).show();
+//                                })
+//                                .addOnFailureListener(e -> {
+//                                    // Handle failure to delete invitation
+//                                    Toast.makeText(context, "Failed to rescind invitation: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                                });
+//                    }
+//                })
+//                .addOnFailureListener(e -> {
+//                    // Handle failure to query invitations
+//                    Toast.makeText(context, "Failed to query invitations: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                });
+//    }
 
 }

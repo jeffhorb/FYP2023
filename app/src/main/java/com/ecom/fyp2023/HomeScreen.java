@@ -27,14 +27,17 @@ import com.ecom.fyp2023.Adapters.ProjectsRVAdapter;
 import com.ecom.fyp2023.Analysis.ProjectProgressAnalysis;
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
+import com.ecom.fyp2023.AuthenticationClasses.Login_activity;
 import com.ecom.fyp2023.Fragments.BottomSheetDialogAddProject;
 import com.ecom.fyp2023.Fragments.UsersListFragment;
-import com.ecom.fyp2023.InvitationClass.CreateGroupActivity;
-import com.ecom.fyp2023.InvitationClass.GroupMembers;
-import com.ecom.fyp2023.InvitationClass.PendingGroupInvitations;
+import com.ecom.fyp2023.TeamManagementClasses.AdminChecker;
+import com.ecom.fyp2023.TeamManagementClasses.CreateGroupActivity;
+import com.ecom.fyp2023.TeamManagementClasses.GroupMembers;
+import com.ecom.fyp2023.TeamManagementClasses.PendingGroupInvitations;
 import com.ecom.fyp2023.FastbaordSDK.CollabrativeWhiteboard;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.SentimentAnalysis.SentimentAnalysisActivity;
+import com.ecom.fyp2023.VersionControlClasses.DocumentActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -50,6 +53,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HomeScreen extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -101,59 +105,121 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         savedGroupId = sharedPrefManager.getGroupId();
 
 
-        retrievePersonalData();
+        //retrievePersonalData();
 
         if(savedAuthId != null){
 
             retrievePersonalData();
 
-        } else if (savedGroupId != null) {
-            retrieveGroupData();
-            String groupName = sharedPrefManager.getGroupName();
-            String groupDes = sharedPrefManager.getGroupDescription();
-            groupN.setText(groupName);
-            options.setVisibility(View.VISIBLE);
-            options.setOnClickListener(new View.OnClickListener() {
+       } else if (savedGroupId != null) {
+            isUserInGroup(savedGroupId, new FirebaseCallback() {
                 @Override
-                public void onClick(View v) {
-                    PopupMenu popupMenu = new PopupMenu(HomeScreen.this, v);
-                    popupMenu.getMenu().add("Send Invite");
-                    popupMenu.getMenu().add("Pending Invitations");
-                    popupMenu.getMenu().add("Group Members");
+                public void onCallback(boolean isUserInGroup) {
+                    if(isUserInGroup){
+                        retrieveGroupData();
+                        String groupName = sharedPrefManager.getGroupName();
+                        String groupDes = sharedPrefManager.getGroupDescription();
+                        groupN.setText(groupName);
+                        options.setVisibility(View.VISIBLE);
+                        options.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                PopupMenu popupMenu = new PopupMenu(HomeScreen.this, v);
+                                popupMenu.getMenu().add("Group Members");
+                                popupMenu.getMenu().add("");
+                                popupMenu.getMenu().add("Send Invite");
+                                popupMenu.getMenu().add("Pending Invitations");
 
-                    popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                        @Override
-                        public boolean onMenuItemClick(MenuItem item) {
-                            String selectedItem = item.getTitle().toString();
-                            if (selectedItem.equals("Pending Invitations")) {
-                                // Handle Pending Invitations option
-                                Intent intent = new Intent(HomeScreen.this, PendingGroupInvitations.class);
-                                startActivity(intent);
-                            } else if (selectedItem.equals("Group Members")) {
-                                // Handle Group Members option
-                                Intent intent = new Intent(HomeScreen.this, GroupMembers.class);
-                                startActivity(intent);
+                                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                                    @Override
+                                    public boolean onMenuItemClick(MenuItem item) {
+                                        String selectedItem = item.getTitle().toString();
+                                        if (selectedItem.equals("Pending Invitations")) {
+                                            // Handle Pending Invitations option
+                                            Intent intent = new Intent(HomeScreen.this, PendingGroupInvitations.class);
+                                            startActivity(intent);
+                                        } else if (selectedItem.equals("Group Members")) {
+                                            // Handle Group Members option
+                                            Intent intent = new Intent(HomeScreen.this, GroupMembers.class);
+                                            startActivity(intent);
+                                        } else if (selectedItem.equals("Send Invite")) {
+                                            UsersListFragment usersListFragment = UsersListFragment.newInstance();
+                                            Bundle bundle = new Bundle();
+                                            bundle.putString("groupId", savedGroupId);
+                                            bundle.putString("groupName", groupName);
+                                            bundle.putString("groupDes",groupDes);
+                                            usersListFragment.setArguments(bundle);
+                                            usersListFragment.show(getSupportFragmentManager(), usersListFragment.getTag());
+                                        }
+                                        return true;
+                                    }
+                                });
 
-                            } else if (selectedItem.equals("Send Invite")) {
-
-                                UsersListFragment usersListFragment = UsersListFragment.newInstance();
-                                Bundle bundle = new Bundle();
-                                bundle.putString("groupId", savedGroupId);
-                                bundle.putString("groupName", groupName);
-                                bundle.putString("groupDes",groupDes);
-                                usersListFragment.setArguments(bundle);
-                                usersListFragment.show(getSupportFragmentManager(), usersListFragment.getTag());
-
+                                popupMenu.show();
                             }
-                            return true;
-                        }
-                    });
+                        });
+                    } else {
+                        retrievePersonalData();
+                        sharedPrefManager.clearGroupId();
 
-                    popupMenu.show();
+                    }
                 }
             });
 
+        }else {
+            retrievePersonalData();
+            sharedPrefManager.saveUserAuthId(FirebaseAuth.getInstance().getCurrentUser().getUid());
+
         }
+//
+//            retrieveGroupData();
+//            String groupName = sharedPrefManager.getGroupName();
+//            String groupDes = sharedPrefManager.getGroupDescription();
+//            groupN.setText(groupName);
+//            options.setVisibility(View.VISIBLE);
+//            options.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    PopupMenu popupMenu = new PopupMenu(HomeScreen.this, v);
+//                    popupMenu.getMenu().add("Group Members");
+//                    popupMenu.getMenu().add("");
+//                    popupMenu.getMenu().add("Send Invite");
+//                    popupMenu.getMenu().add("Pending Invitations");
+//
+//
+//                    popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+//                        @Override
+//                        public boolean onMenuItemClick(MenuItem item) {
+//                            String selectedItem = item.getTitle().toString();
+//                            if (selectedItem.equals("Pending Invitations")) {
+//                                // Handle Pending Invitations option
+//                                Intent intent = new Intent(HomeScreen.this, PendingGroupInvitations.class);
+//                                startActivity(intent);
+//                            } else if (selectedItem.equals("Group Members")) {
+//                                // Handle Group Members option
+//                                Intent intent = new Intent(HomeScreen.this, GroupMembers.class);
+//                                startActivity(intent);
+//
+//                            } else if (selectedItem.equals("Send Invite")) {
+//
+//                                UsersListFragment usersListFragment = UsersListFragment.newInstance();
+//                                Bundle bundle = new Bundle();
+//                                bundle.putString("groupId", savedGroupId);
+//                                bundle.putString("groupName", groupName);
+//                                bundle.putString("groupDes",groupDes);
+//                                usersListFragment.setArguments(bundle);
+//                                usersListFragment.show(getSupportFragmentManager(), usersListFragment.getTag());
+//
+//                            }
+//                            return true;
+//                        }
+//                    });
+//
+//                    popupMenu.show();
+//                }
+//            });
+//
+//        }
 
         //search method
         setupSearchView();
@@ -178,6 +244,29 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         drawerLayout.addDrawerListener(actionBarDrawerToggle);
         actionBarDrawerToggle.syncState();
 
+    }
+
+    public interface FirebaseCallback {
+        void onCallback(boolean isUserInGroup);
+    }
+
+    public void isUserInGroup(String groupId, final FirebaseCallback firebaseCallback) {
+        db.collection("groups").document(groupId).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        List<String> members = (List<String>) document.get("members");
+                        firebaseCallback.onCallback(members.contains(FirebaseAuth.getInstance().getCurrentUser().getUid()));
+                    } else {
+                        Log.d("TAG", "No such document");
+                    }
+                } else {
+                    Log.d("TAG", "get failed with ", task.getException());
+                }
+            }
+        });
     }
 
 
@@ -211,7 +300,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
 
     public void retrievePersonalData(){
         db.collection("Projects")
-                .whereEqualTo("userAuthId", savedAuthId)
+                .whereEqualTo("userAuthId", FirebaseAuth.getInstance().getCurrentUser().getUid())
                 .whereIn("progress", Arrays.asList("In Progress", "Incomplete"))
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
@@ -229,7 +318,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                                 recyclerAdapter.notifyDataSetChanged();
                             }
                         }
-
                     }
                 });
     }
@@ -295,19 +383,15 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         // Hide the sentimentMenuItem if the groupId is null
-        boolean isGroupIdNotNull = savedGroupId != null;
-
-        // Get the bottom navigation menu
+        String currentGroupId = sharedPrefManager.getGroupId();
+        boolean isGroupIdNotNull = currentGroupId != null;
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-
         // Find the sentiment item in the bottom navigation menu
         MenuItem sentimentMenuItem = bottomNavigationView.getMenu().findItem(R.id.sentiment);
-
         // Set the visibility of the sentimentMenuItem
         if (sentimentMenuItem != null) {
             sentimentMenuItem.setVisible(isGroupIdNotNull);
         }
-
         // Return false to allow normal menu processing to proceed
         return false;
     }
@@ -378,7 +462,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         }
     }
 
-    // Method to set user details in the navigation header
     private void setUserDetailsInNavHeader() {
         NavigationView navigationView = findViewById(R.id.nav_view);
         View headerView = navigationView.getHeaderView(0);
@@ -387,6 +470,7 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         TextView name = headerView.findViewById(R.id.uN);
         TextView email = headerView.findViewById(R.id.uE);
         TextView skill = headerView.findViewById(R.id.skill);
+        TextView adminStatus = headerView.findViewById(R.id.adminsStatus);
 
         // Get the current user's ID
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -419,6 +503,20 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
                                 // Reset manageAccountClicked back to false
                                 manageAccountClicked = false;
                             }
+
+                            // Check if the user is an admin
+                            AdminChecker.checkIfAdmin(new AdminChecker.AdminCheckCallback() {
+                                @Override
+                                public void onResult(boolean isAdmin) {
+                                    if (isAdmin) {
+                                        // Set admin status to "ADMIN"
+                                        adminStatus.setText("ADMIN");
+                                    } else {
+                                        // User is not an admin
+                                        adminStatus.setText("");
+                                    }
+                                }
+                            }, userId, sharedPrefManager.getGroupId());
                         } else {
                             // Customer document does not exist
                             Log.d("HomePage", "No such document");
@@ -437,6 +535,67 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
             Log.d("HomePage", "No user signed in");
         }
     }
+
+    // Method to set user details in the navigation header
+//    private void setUserDetailsInNavHeader() {
+//        NavigationView navigationView = findViewById(R.id.nav_view);
+//        View headerView = navigationView.getHeaderView(0);
+//
+//        // Find TextViews in the header layout
+//        TextView name = headerView.findViewById(R.id.uN);
+//        TextView email = headerView.findViewById(R.id.uE);
+//        TextView skill = headerView.findViewById(R.id.skill);
+//        TextView adminStatus = headerView.findViewById(R.id.adminsStatus);
+//
+//        // Get the current user's ID
+//        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+//        if (currentUser != null) {
+//            String userId = currentUser.getUid();
+//
+//            // Define onCompleteListener
+//            OnCompleteListener<QuerySnapshot> onCompleteListener = new OnCompleteListener<QuerySnapshot>() {
+//                @Override
+//                public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                    if (task.isSuccessful()) {
+//                        QuerySnapshot querySnapshot = task.getResult();
+//                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
+//                            // Customer document exists, retrieve its details
+//                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+//                            String userName = document.getString("userName");
+//                            String userEmail = document.getString("userEmail");
+//                            String skl = document.getString("occupation");
+//
+//                            // Set user details in the TextViews
+//                            name.setText(userName);
+//                            email.setText(userEmail);
+//
+//                            if (skill != null){
+//                                skill.setText(skl);
+//                            }
+//                            if (manageAccountClicked) {
+//                                // If "Manage Account" is clicked, show the update account dialog
+//                                showUpdateAccountDialog(document.getId());
+//                                // Reset manageAccountClicked back to false
+//                                manageAccountClicked = false;
+//                            }
+//                        } else {
+//                            // Customer document does not exist
+//                            Log.d("HomePage", "No such document");
+//                        }
+//                    } else {
+//                        // Error occurred while retrieving customer document
+//                        Log.d("HomePage", "Error getting customer document", task.getException());
+//                    }
+//                }
+//            };
+//
+//            // Call getCustomerDocumentId with onCompleteListener
+//            getCustomerDocumentId(userId, onCompleteListener);
+//        } else {
+//            // Current user is null
+//            Log.d("HomePage", "No user signed in");
+//        }
+//    }
 
     private void showUpdateAccountDialog(String id) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

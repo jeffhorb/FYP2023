@@ -43,7 +43,7 @@ exports.sendNotificationOnNewTask = functions.firestore
 
 // Define the function that triggers on Firestore onDelete event
 exports.sendNotificationOnTaskDeleted = functions.firestore
-    .document("userTasks/{userTaskId}") // Specify the path
+    .document("userTasks/{userTaskId}")
     .onDelete(async (snap, context) => {
     // Get the deleted document data
       const deletedTask = snap.data();
@@ -78,6 +78,7 @@ exports.sendNotificationOnTaskDeleted = functions.firestore
       return admin.messaging().sendToDevice(fcmToken, payload);
     });
 
+
 // Define the function that triggers on Firestore onCreate event for Tasks
 exports.sendNotificationOnNewTaskAdded = functions.firestore
     .document("Tasks/{taskId}")
@@ -85,8 +86,19 @@ exports.sendNotificationOnNewTaskAdded = functions.firestore
       // Get the new document data
       const newTask = snap.data();
 
-      // Get all users from the Users collection
-      const usersRef = await admin.firestore().collection("Users").get();
+      // Get the groupId from the task document
+      const { groupId } = newTask;
+
+      // Fetch the group document based on the groupId
+      const groupDoc = await admin.firestore().collection("groups")
+          .doc(groupId).get();
+      if (!groupDoc.exists) {
+        console.log("Group document not found");
+        return null;
+      }
+
+      // Get the list of member userAuthIDs from the group
+      const memberUserAuthIDs = groupDoc.data().members;
 
       // Define the notification payload for new task added
       const payload = {
@@ -100,14 +112,26 @@ exports.sendNotificationOnNewTaskAdded = functions.firestore
         },
       };
 
-      // Send the notification to each user in the Users collection
-      const messagingPromises = usersRef.docs.map(async (userDoc) => {
-        const { fcmToken } = userDoc.data();
+      // Send the notification to each member of the group
+      const messagingPromises = memberUserAuthIDs.map(async (userAuthID) => {
+        // Get user document from Users collection based on the userAuthID
+        const userQuerySnapshot = await admin.firestore().collection("Users")
+            .where("userId", "==", userAuthID).get();
+        if (userQuerySnapshot.empty) {
+          console.log(`User document not found for userAuthID: ${userAuthID}`);
+          return null;
+        }
+
+        // Get the FCM token from the user document
+        const userData = userQuerySnapshot.docs[0].data();
+        const { fcmToken } = userData;
+
         return admin.messaging().sendToDevice(fcmToken, payload);
       });
 
       return Promise.all(messagingPromises);
     });
+
 
 // Define the function that triggers on Firestore onDelete event for Tasks
 exports.sendNotificationOnTaskRemoved = functions.firestore
@@ -116,8 +140,19 @@ exports.sendNotificationOnTaskRemoved = functions.firestore
       // Get the deleted document data
       const deletedTask = snap.data();
 
-      // Get all users from the Users collection
-      const usersRef = await admin.firestore().collection("Users").get();
+      // Get the groupId from the task document
+      const { groupId } = deletedTask;
+
+      // Fetch the group document based on the groupId
+      const groupDoc = await admin.firestore().collection("groups")
+          .doc(groupId).get();
+      if (!groupDoc.exists) {
+        console.log("Group document not found");
+        return null;
+      }
+
+      // Get the list of member userAuthIDs from the group
+      const memberUserAuthIDs = groupDoc.data().members;
 
       // Define the notification payload for task removal
       const removalPayload = {
@@ -131,26 +166,49 @@ exports.sendNotificationOnTaskRemoved = functions.firestore
         },
       };
 
-      // Send the notification to each user in the Users collection
-      const messagingPromises = usersRef.docs.map(async (userDoc) => {
-        const { fcmToken } = userDoc.data();
+      // Send the notification to each member of the group
+      const messagingPromises = memberUserAuthIDs.map(async (userAuthID) => {
+        // Get user document from Users collection based on the userAuthID
+        const userQuerySnapshot = await admin.firestore().collection("Users")
+            .where("userId", "==", userAuthID).get();
+        if (userQuerySnapshot.empty) {
+          console.log(`User document not found for userAuthID: ${userAuthID}`);
+          return null;
+        }
+
+        // Get the FCM token from the user document
+        const userData = userQuerySnapshot.docs[0].data();
+        const { fcmToken } = userData;
+
         return admin.messaging().sendToDevice(fcmToken, removalPayload);
       });
 
       return Promise.all(messagingPromises);
     });
 
-// Define the function that triggers on Firestore onCreate event for Tasks
+
+// Define the function that triggers on Firestore onCreate event for Projects
 exports.sendNotificationOnNewProjectAdded = functions.firestore
     .document("Projects/{projectId}")
     .onCreate(async (snap, context) => {
-      // Get the new document data
+      // Get the new project document data
       const newProject = snap.data();
 
-      // Get all users from the Users collection
-      const usersRef = await admin.firestore().collection("Users").get();
+      // Get the groupId of the project
+      const { groupId } = newProject;
 
-      // Define the notification payload for new task added
+      // Fetch the group document based on the groupId
+      const groupDoc = await admin.firestore().collection("groups")
+          .doc(groupId).get();
+      if (!groupDoc.exists) {
+        console.log("Group document not found");
+        return null;
+      }
+
+      // Get the list of member userAuthIDs from the group document
+      const { members } = groupDoc.data();
+
+      // Define the notification payload for new project added
       const payload = {
         notification: {
           title: "New Project Added!",
@@ -162,26 +220,48 @@ exports.sendNotificationOnNewProjectAdded = functions.firestore
         },
       };
 
-      // Send the notification to each user in the Users collection
-      const messagingPromises = usersRef.docs.map(async (userDoc) => {
-        const { fcmToken } = userDoc.data();
+      // Send the notification to each member of the group
+      const messagingPromises = members.map(async (userId) => {
+        // Get the user doc from the Users collection based on the userAuthID
+        const userQuerySnapshot = await admin.firestore().collection("Users")
+            .where("userId", "==", userId).get();
+        if (userQuerySnapshot.empty) {
+          console.log(`User not found for userAuthID: ${userId}`);
+          return null;
+        }
+
+        // Get the FCM token from the user document
+        const userData = userQuerySnapshot.docs[0].data();
+        const { fcmToken } = userData;
+
         return admin.messaging().sendToDevice(fcmToken, payload);
       });
 
       return Promise.all(messagingPromises);
     });
 
-// Define the function that triggers on Firestore onDelete event for Tasks
+// Define the function that triggers on Firestore onDelete event for Projects
 exports.sendNotificationOnProjectRemoved = functions.firestore
-    .document("Project/{projectId}")
+    .document("Projects/{projectId}")
     .onDelete(async (snap, context) => {
-      // Get the deleted document data
+      // Get the deleted project document data
       const deletedProject = snap.data();
 
-      // Get all users from the Users collection
-      const usersRef = await admin.firestore().collection("Users").get();
+      // Get the groupId of the project
+      const { groupId } = deletedProject;
 
-      // Define the notification payload for task removal
+      // Fetch the group document based on the groupId
+      const groupDoc = await admin.firestore().collection("groups")
+          .doc(groupId).get();
+      if (!groupDoc.exists) {
+        console.log("Group document not found");
+        return null;
+      }
+
+      // Get the list of member userAuthIDs from the group document
+      const memberUserAuthIDs = groupDoc.data().members;
+
+      // Define the notification payload for project removal
       const removalPayload = {
         notification: {
           title: "Project Removed",
@@ -193,19 +273,31 @@ exports.sendNotificationOnProjectRemoved = functions.firestore
         },
       };
 
-      // Send the notification to each user in the Users collection
-      const messagingPromises = usersRef.docs.map(async (userDoc) => {
-        const { fcmToken } = userDoc.data();
+      // Send the notification to each member of the group
+      const messagingPromises = memberUserAuthIDs.map(async (userAuthID) => {
+        // Get the user document from the Users collection based on the userID
+        const userQuerySnapshot = await admin.firestore().collection("Users")
+            .where("userId", "==", userAuthID).get();
+        if (userQuerySnapshot.empty) {
+          console.log(`User document not found for userAuthID: ${userAuthID}`);
+          return null;
+        }
+
+        // Get the FCM token from the user document
+        const userData = userQuerySnapshot.docs[0].data();
+        const { fcmToken } = userData;
+
         return admin.messaging().sendToDevice(fcmToken, removalPayload);
       });
 
       return Promise.all(messagingPromises);
     });
 
+
 exports.sendNotificationOnTaskCompletion = functions.firestore
-    .document("Tasks/{taskId}") // Specify the path
+    .document("Tasks/{taskId}")
     .onUpdate(async (change, context) => {
-      // Get the updated task data
+    // Get the updated task data
       const updatedTask = change.after.data();
       const previousTask = change.before.data();
 
@@ -214,38 +306,60 @@ exports.sendNotificationOnTaskCompletion = functions.firestore
       previousTask.progress !== "Complete";
 
       if (isTaskCompleted) {
-        // Retrieve all users from the Users collection
-        const usersRef = admin.firestore().collection("Users");
-        const usersSnap = await usersRef.get();
+      // Get the groupId from the updated task document
+        const { groupId } = updatedTask;
 
-        // Get the task name
-        const { taskName } = updatedTask;
+        try {
+        // Retrieve the group document based on the groupId
+          const groupDoc = await admin.firestore()
+              .collection("groups").doc(groupId).get();
 
-        // Define the notification payload for task completion
-        const taskCompletionPayload = {
-          notification: {
-            title: "Task Completed",
-            body: `The task '${taskName}' has been completed.`,
-          },
-          data: {
-            title: "Task Completed",
-            body: `The task '${taskName}' has been completed.`,
-          },
-        };
+          if (groupDoc.exists) {
+          // Get the list of member userAuthIDs from the group
+            const memberUserAuthIDs = groupDoc.data().members;
 
-        // Send the notification to each user in the Users collection
-        const notifications = [];
-        usersSnap.forEach((userDoc) => {
-          const { fcmToken } = userDoc.data();
-          notifications.push(admin.messaging()
-              .sendToDevice(fcmToken, taskCompletionPayload));
-        });
+            // Define the notification payload for task completion
+            const taskCompletionPayload = {
+              notification: {
+                title: "Task Completed",
+                body: `The task '${updatedTask.taskName}' has been completed.`,
+              },
+              data: {
+                title: "Task Completed",
+                body: `The task '${updatedTask.taskName}' has been completed.`,
+              },
+            };
 
-        return Promise.all(notifications);
+            // Send the notification to each member of the group
+            const messagingPromises = memberUserAuthIDs
+                .map(async (userAuthID) => {
+                  // Retrieve the user's FCM token from the Users collection
+                  const userSnapshot = await admin.firestore()
+                      .collection("Users")
+                      .where("userId", "==", userAuthID).get();
+                  if (!userSnapshot.empty) {
+                    const userData = userSnapshot.docs[0].data();
+                    const { fcmToken } = userData;
+                    if (fcmToken) {
+                      return admin.messaging()
+                          .sendToDevice(fcmToken, taskCompletionPayload);
+                    }
+                  }
+                  return null;
+                });
+
+            await Promise.all(messagingPromises);
+          } else {
+            console.log("Group document not found");
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
       }
 
-      return null; // No notifications not updated to "Complete"
+      return null; // No notifications if the task is not updated to "Complete"
     });
+
 
 exports.sendGroupInvitationNotification = functions.firestore
     .document("invitations/{invitationId}")
@@ -287,6 +401,177 @@ exports.sendGroupInvitationNotification = functions.firestore
           });
     });
 
+
+exports.sendCommentNotification = functions.firestore
+    .document("Comments/{commentId}")
+    .onCreate(async (snapshot, context) => {
+    // Get the comment data
+      const commentData = snapshot.data();
+      const { groupId, userName, currentUserId } = commentData;
+      const { commentId } = context.params;
+
+      try {
+      // Retrieve the project ID associated with the comment
+        const projectCommentSnapshot = await admin.firestore()
+            .collection("ProjectComments").doc(commentId).get();
+
+        if (!projectCommentSnapshot.exists) {
+          console.log(`No project found for commentId: ${commentId}`);
+          return null;
+        }
+
+        const { projectId } = projectCommentSnapshot.data();
+
+        // Retrieve the project document based on the projectId
+        const projectDoc = await admin.firestore().collection("Projects")
+            .doc(projectId).get();
+
+        if (!projectDoc.exists) {
+          console.log(`No project found with projectId: ${projectId}`);
+          return null;
+        }
+
+        const { projectName } = projectDoc.data();
+
+        // Retrieve the group document based on the groupId
+        const groupDoc = await admin.firestore().collection("groups")
+            .doc(groupId).get();
+
+        if (groupDoc.exists) {
+        // Get the list of member userAuthIDs from the group
+          const memberUserAuthIDs = groupDoc.data().members;
+
+          // Define the notification payload for new comment
+          const commentPayload = {
+            notification: {
+              title: "New Comment in Project",
+              body: `${userName} commented on the project "${projectName}".`,
+            },
+            data: {
+              groupId,
+              click_action: "OPEN_GROUP_ACTIVITY",
+            },
+          };
+
+          // Send notification to each member of group, except comment sender
+          const messagingPromises = memberUserAuthIDs
+              .map(async (userAuthID) => {
+                if (userAuthID !== currentUserId) {
+                  // Retrieve the user's FCM token from the Users collection
+                  const userSnapshot = await admin
+                      .firestore().collection("Users")
+                      .where("authId", "==", userAuthID).get();
+
+                  if (!userSnapshot.empty) {
+                    const userData = userSnapshot.docs[0].data();
+                    const { fcmToken } = userData;
+
+                    if (fcmToken) {
+                      return admin.messaging()
+                          .sendToDevice(fcmToken, commentPayload);
+                    }
+                  }
+                  return null;
+                }
+                return null; // Return null if userAuthID is comment sender
+              });
+
+          await Promise.all(messagingPromises);
+        } else {
+          console.log("Group document not found");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+
+      return null;
+    });
+
+
+exports.sendInvitationNotification = functions.firestore
+    .document("invitations/{invitationId}")
+    .onDelete(async (snapshot, context) => {
+      const invitation = snapshot.data();
+      const { userId } = invitation;
+      const { groupId } = invitation;
+      const { groupName } = invitation;
+
+      // Retrieve the user's authId from the Users collection
+      const userDoc = await admin.firestore().collection("Users")
+          .doc(userId).get();
+      if (!userDoc.exists) {
+        console.log(`No user found with userId: ${userId}`);
+        return null;
+      }
+      const userData = userDoc.data();
+      const { userId: authId } = userData; // Use authId from user document
+
+      // Check if the user is a member of the group
+      const groupDoc = await admin.firestore().collection("groups")
+          .doc(groupId).get();
+      const groupData = groupDoc.data();
+      const { members } = groupData;
+
+      if (members.includes(authId)) {
+        // The user accepted the invitation
+        // Send a notification to all group members
+        const payload = {
+          notification: {
+            title: "New Group Member",
+            body: `A new member has joined the group "${groupName}".`,
+          },
+          data: {
+            groupId,
+            click_action: "OPEN_GROUP_ACTIVITY",
+          },
+        };
+
+        // Send the notification to all group members
+        const messagingPromises = members.map(async (memberId) => {
+          const memberDoc = await admin.firestore().collection("Users")
+              .where("userId", "==", memberId).get();
+          if (memberDoc.empty) {
+            console.log(`No user found with authId: ${memberId}`);
+            return null;
+          }
+          const memberData = memberDoc.docs[0].data();
+          const { fcmToken } = memberData;
+          if (fcmToken) {
+            return admin.messaging().sendToDevice(fcmToken, payload);
+          }
+          return null;
+        });
+
+        await Promise.all(messagingPromises);
+      } else {
+        // The invitation was rescinded
+        // Send a notification to the user
+        const { fcmToken } = userData;
+
+        if (fcmToken) {
+          const payload = {
+            notification: {
+              title: "Group Invitation Rescinded",
+              body: `Your invitation to join the group
+              "${groupName}" has been rescinded.`,
+            },
+            data: {
+              groupId,
+              click_action: "OPEN_INVITATION_ACTIVITY",
+            },
+          };
+
+          // Send the notification
+          await admin.messaging().sendToDevice(fcmToken, payload);
+        } else {
+          console.log("User does not have an FCM token");
+        }
+      }
+      return null;
+    });
+
+
+// sends reminders to users assigned to a task when it 3 days from it enddate
 exports.sendTaskReminders = functions.pubsub.schedule("every 24 hours")
     .timeZone("UTC").onRun(async (context) => {
       const currentDate = new Date();
@@ -354,58 +639,117 @@ exports.sendTaskReminders = functions.pubsub.schedule("every 24 hours")
     });
 
 
- const axios = require("axios");
+// send noti to group of members left or removed from group
+exports.sendMemberRemovalNotification = functions.firestore
+    .document("groups/{groupId}")
+    .onUpdate(async (change, context) => {
+      const beforeData = change.before.data();
+      const afterData = change.after.data();
 
- exports.createRoom = functions.https.onRequest(async (req, res) => {
-  const sdkToken = functions.config().agora.sdk_token;
-  const options = {
-    method: "POST",
-    url: "https://api.netless.link/v5/rooms",
-    headers: {
-      "token": sdkToken,
-      "Content-Type": "application/json",
-      "region": "us-sv",
-    },
-    data: JSON.stringify({
-      isRecord: false,
-    }),
-  };
+      // Check if the members list has changed
+      if (beforeData.members.length > afterData.members.length) {
+        // Determine the removed user
+        const removedUserAuthId = beforeData.members
+            .filter((user) => !afterData.members.includes(user))[0];
 
-  try {
-    const response = await axios(options);
-    res.send(response.data);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred while creating the room.");
-  }
- });
+        try {
+          // Retrieve the user's userName from the Users collection
+          const userSnapshot = await admin.firestore().collection("Users")
+              .where("userId", "==", removedUserAuthId).get();
+          if (!userSnapshot.empty) {
+            const userData = userSnapshot.docs[0].data();
+            const { userName } = userData;
 
- const axios = require("axios");
+            // Construct the notification payload
+            const payload = {
+              notification: {
+                title: "Member Removed from Group",
+                body: `${userName} has been removed from the group.`,
+              },
+              data: {
+                groupId: context.params.groupId,
+                click_action: "OPEN_GROUP_ACTIVITY",
+              },
+            };
 
- exports.generateToken = functions.https.onRequest(async (req, res) => {
-  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
-  const sdkToken = functions.config().agora.sdk_token;
+            // Send the notification to remaining group members
+            const groupMembers = afterData.members
+                .filter((user) => user !== removedUserAuthId);
+            const messagingPromises = groupMembers.map(async (user) => {
+              const userSnap = await admin.firestore()
+                  .collection("Users").where("userId", "==", user).get();
+              if (!userSnap.empty) {
+                const userDataInner = userSnap.docs[0].data();
+                const { fcmToken } = userDataInner;
+                if (fcmToken) {
+                  return admin.messaging().sendToDevice(fcmToken, payload);
+                }
+              }
+              return null;
+            });
 
-  const options = {
-    method: "POST",
-    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
-    headers: {
-      "token": sdkToken,
-      "Content-Type": "application/json",
-      "region": "us-sv",
-    },
-    data: JSON.stringify({
-      lifespan: 3600000,
-      role: "admin",
-    }),
-  };
+            await Promise.all(messagingPromises);
+            return null;
+          }
+          console.log("document not found for userAuthID:", removedUserAuthId);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+      return null;
+    });
 
-  try {
-    const response = await axios(options);
-    res.send(response.data);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred while generating the token.");
-  }
- });
 
+// const axios = require("axios");
+//
+// exports.createRoom = functions.https.onRequest(async (req, res) => {
+//  const sdkToken = functions.config().agora.sdk_token;
+//  const options = {
+//    method: "POST",
+//    url: "https://api.netless.link/v5/rooms",
+//    headers: {
+//      "token": sdkToken,
+//      "Content-Type": "application/json",
+//      "region": "us-sv",
+//    },
+//    data: JSON.stringify({
+//      isRecord: false,
+//    }),
+//  };
+//
+//  try {
+//    const response = await axios(options);
+//    res.send(response.data);
+//  } catch (error) {
+//    console.error(error);
+//    res.status(500).send("An error occurred while creating the room.");
+//  }
+// });
+//
+// exports.generateToken = functions.https.onRequest(async (req, res) => {
+//  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
+//  const sdkToken = functions.config().agora.sdk_token;
+//
+//  const options = {
+//    method: "POST",
+//    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
+//    headers: {
+//      "token": sdkToken,
+//      "Content-Type": "application/json",
+//      "region": "us-sv",
+//    },
+//    data: JSON.stringify({
+//      lifespan: 3600000,
+//      role: "admin",
+//    }),
+//  };
+//
+//  try {
+//    const response = await axios(options);
+//    res.send(response.data);
+//  } catch (error) {
+//    console.error(error);
+//    res.status(500).send("An error occurred while generating the token.");
+//  }
+// });
+//

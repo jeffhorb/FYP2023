@@ -1,4 +1,4 @@
-package com.ecom.fyp2023.InvitationClass;
+package com.ecom.fyp2023.TeamManagementClasses;
 
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -28,6 +28,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -43,7 +44,7 @@ public class CreateGroupActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
-    private TextView createGroupButton,pendingInvites;
+    private TextView createGroupButton,pendingInvites,number_of_pending_invites;
     private RecyclerView recyclerView;
     private GroupAdapter groupAdapter;
     private List<Group> groupList;
@@ -64,13 +65,14 @@ public class CreateGroupActivity extends AppCompatActivity {
 
         sharedPreferenceManager = new SharedPreferenceManager(this);
 
-
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
         pendingInvites = findViewById(R.id.seePendingInvites);
         createGroupButton = findViewById(R.id.create_group_button);
         recyclerView = findViewById(R.id.recycler_view_groups);
+        number_of_pending_invites = findViewById(R.id.pendingInvitesCount);
+
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -79,6 +81,12 @@ public class CreateGroupActivity extends AppCompatActivity {
         groupList = new ArrayList<>();
         groupAdapter = new GroupAdapter(this, groupList);
         recyclerView.setAdapter(groupAdapter);
+
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            String userAuthId = currentUser.getUid();
+            getUserDocumentId(userAuthId);
+        }
 
         pendingInvites.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,6 +120,65 @@ public class CreateGroupActivity extends AppCompatActivity {
 
         // Load user's groups
         loadUserGroups();
+
+
+    }
+
+    //get document id of current user.
+    private void getUserDocumentId(String userAuthId) {
+        db.collection("Users")
+                .whereEqualTo("userId", userAuthId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        // User document found, get the document ID
+                        DocumentSnapshot documentSnapshot = queryDocumentSnapshots.getDocuments().get(0);
+                        String userDocId = documentSnapshot.getId();
+                        // Query Invitations collection to count pending invites for the user
+                        countPendingInvites(userDocId);
+                        // Set up a listener to listen for changes to the Invitations collection
+                        listenForInvitationChanges(userDocId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Error occurred while querying Users collection
+                    Toast.makeText(CreateGroupActivity.this, "Failed to retrieve user document ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    //cont and set pending invites
+    private void countPendingInvites(String userDocId) {
+        db.collection("invitations")
+                .whereEqualTo("userId", userDocId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int pendingInvitesCount = queryDocumentSnapshots.size();
+                    // Set the count to the number_of_pending_invites TextView
+                    number_of_pending_invites.setText(String.valueOf(pendingInvitesCount));
+                })
+                .addOnFailureListener(e -> {
+                    // Error occurred while querying Invitations collection
+                    Toast.makeText(CreateGroupActivity.this, "Failed to count pending invites: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    //listen for changes in the count of pending invites
+    private void listenForInvitationChanges(String userDocId) {
+        db.collection("invitations")
+                .whereEqualTo("userId", userDocId)
+                .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                    if (e != null) {
+                        // Error occurred while listening for changes
+                        Toast.makeText(CreateGroupActivity.this, "Error listening for invitation changes: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (queryDocumentSnapshots != null) {
+                        // Update the count of pending invites
+                        int pendingInvitesCount = queryDocumentSnapshots.size();
+                        // Set the count to the number_of_pending_invites TextView
+                        number_of_pending_invites.setText(String.valueOf(pendingInvitesCount));
+                    }
+                });
     }
 
     private void showCreateGroupDialog() {

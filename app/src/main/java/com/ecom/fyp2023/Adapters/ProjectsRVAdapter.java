@@ -19,10 +19,14 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.AppManagers.FirestoreManager;
+import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
 import com.ecom.fyp2023.Fragments.UpdateProject;
 import com.ecom.fyp2023.ModelClasses.Projects;
 import com.ecom.fyp2023.ProjectActivity;
 import com.ecom.fyp2023.R;
+import com.ecom.fyp2023.TeamManagementClasses.AdminChecker;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -35,10 +39,12 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
 
     private final Context context;
 
+    SharedPreferenceManager sharedPreferenceManager;
+
     public ProjectsRVAdapter(ArrayList<Projects> projectsArrayList, Context context) {
         this.projectsArrayList = projectsArrayList;
         this.context = context;
-
+        sharedPreferenceManager = new SharedPreferenceManager(context);
     }
 
     public void updateList(List<Projects> itemList) {
@@ -90,12 +96,28 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
             int id = item.getItemId();
 
             if (id == R.id.deletePrject) {
-                showRemoveConfirmationDialog(position);
-                return true;
-            }else if(id == R.id.updateProject){
 
-                Projects project = projectsArrayList.get(position);
-                showUpdateFragmrnt(project);
+
+                String groupId = sharedPreferenceManager.getGroupId();
+                if(groupId== null){
+                    showRemoveConfirmationDialog(position);
+                }else {
+                    // Check admin access before allowing deletion
+                    checkAdminAccessForDeleteProject(position);
+                }
+
+                return true;
+            } else if(id == R.id.updateProject){
+
+                String groupId = sharedPreferenceManager.getGroupId();
+
+                if(groupId==null){
+                    Projects project = projectsArrayList.get(position);
+                    showUpdateFragmrnt(project);
+                }else {
+                    // Check admin access before allowing update
+                    checkAdminAccessForUpdateProject(position);
+                }
 
                 return true;
             }
@@ -104,6 +126,83 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         });
         popupMenu.show();
     }
+
+    private void checkAdminAccessForDeleteProject(int position) {
+        // Get the current user's ID
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        // Get the group ID
+        String groupId = sharedPreferenceManager.getGroupId();
+        if (currentUser != null && groupId != null) {
+            String userId = currentUser.getUid();
+
+            // Check admin access using AdminChecker
+            AdminChecker.checkIfAdmin(new AdminChecker.AdminCheckCallback() {
+                @Override
+                public void onResult(boolean isAdmin) {
+                    if (isAdmin) {
+                        // User is admin, allow deletion
+                        showRemoveConfirmationDialog(position);
+                    } else {
+                        // User is not admin, show dialog
+                        showAdminAccessNeededDialog();
+                    }
+                }
+            }, userId, groupId);
+        }
+    }
+
+    private void checkAdminAccessForUpdateProject(int position) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        String groupId = sharedPreferenceManager.getGroupId();
+        if (groupId != null) {
+
+            String userId = currentUser.getUid();
+            AdminChecker.checkIfAdmin(new AdminChecker.AdminCheckCallback() {
+                @Override
+                public void onResult(boolean isAdmin) {
+                    if (isAdmin) {
+                        Projects project = projectsArrayList.get(position);
+                        showUpdateFragmrnt(project);
+                    } else {
+                        showAdminAccessNeededDialog();
+                    }
+                }
+            }, userId, groupId);
+        }
+    }
+
+    private void showAdminAccessNeededDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setMessage("Admin access required to perform this action")
+                .setPositiveButton("OK", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+//    private void showPopupMenu(View view, int position) {
+//        PopupMenu popupMenu = new PopupMenu(context, view);
+//        popupMenu.getMenuInflater().inflate(R.menu.project_menu_option, popupMenu.getMenu());
+//        // Set up a click listener for the menu items
+//        popupMenu.setOnMenuItemClickListener(item -> {
+//            int id = item.getItemId();
+//
+//            if (id == R.id.deletePrject) {
+//                showRemoveConfirmationDialog(position);
+//                return true;
+//            }else if(id == R.id.updateProject){
+//
+//                Projects project = projectsArrayList.get(position);
+//                showUpdateFragmrnt(project);
+//
+//                return true;
+//            }
+//
+//            return false;
+//        });
+//        popupMenu.show();
+//    }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
