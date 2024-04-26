@@ -182,7 +182,7 @@ public class CommentListFragment extends BottomSheetDialogFragment {
 
                         CollectionReference dbComment = fb.collection("Comments");
 
-                        Comment comment = new Comment(c, Calendar.getInstance().getTime(), currentUserId,userEmail,userName,groupId);
+                        Comment comment = new Comment(c, Calendar.getInstance().getTime(), currentUserId,userEmail,userName,groupId,null);
                         dbComment.add(comment).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                             @Override
                             public void onSuccess(DocumentReference documentReference) {

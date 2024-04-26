@@ -400,8 +400,6 @@ exports.sendGroupInvitationNotification = functions.firestore
             return null;
           });
     });
-
-
 exports.sendCommentNotification = functions.firestore
     .document("Comments/{commentId}")
     .onCreate(async (snapshot, context) => {
@@ -412,15 +410,16 @@ exports.sendCommentNotification = functions.firestore
 
       try {
       // Retrieve the project ID associated with the comment
-        const projectCommentSnapshot = await admin.firestore()
-            .collection("ProjectComments").doc(commentId).get();
+        const projectCommentQuerySnapshot = await admin.firestore()
+            .collection("ProjectComments")
+            .where("commentId", "==", commentId).get();
 
-        if (!projectCommentSnapshot.exists) {
+        if (projectCommentQuerySnapshot.empty) {
           console.log(`No project found for commentId: ${commentId}`);
           return null;
         }
 
-        const { projectId } = projectCommentSnapshot.data();
+        const { projectId } = projectCommentQuerySnapshot.docs[0].data();
 
         // Retrieve the project document based on the projectId
         const projectDoc = await admin.firestore().collection("Projects")
@@ -431,7 +430,7 @@ exports.sendCommentNotification = functions.firestore
           return null;
         }
 
-        const { projectName } = projectDoc.data();
+        const { title } = projectDoc.data();
 
         // Retrieve the group document based on the groupId
         const groupDoc = await admin.firestore().collection("groups")
@@ -445,7 +444,7 @@ exports.sendCommentNotification = functions.firestore
           const commentPayload = {
             notification: {
               title: "New Comment in Project",
-              body: `${userName} commented on the project "${projectName}".`,
+              body: `${userName} commented on the project "${title}".`,
             },
             data: {
               groupId,
@@ -453,14 +452,14 @@ exports.sendCommentNotification = functions.firestore
             },
           };
 
-          // Send notification to each member of group, except comment sender
+          // Send notification to members of the group, except comment sender
           const messagingPromises = memberUserAuthIDs
               .map(async (userAuthID) => {
                 if (userAuthID !== currentUserId) {
                   // Retrieve the user's FCM token from the Users collection
                   const userSnapshot = await admin
                       .firestore().collection("Users")
-                      .where("authId", "==", userAuthID).get();
+                      .where("userId", "==", userAuthID).get();
 
                   if (!userSnapshot.empty) {
                     const userData = userSnapshot.docs[0].data();
@@ -471,9 +470,9 @@ exports.sendCommentNotification = functions.firestore
                           .sendToDevice(fcmToken, commentPayload);
                     }
                   }
-                  return null;
+                  return null; // null if userSnapshot is empty
                 }
-                return null; // Return null if userAuthID is comment sender
+                return null; // null if userAuthID is comment sender
               });
 
           await Promise.all(messagingPromises);
@@ -484,7 +483,7 @@ exports.sendCommentNotification = functions.firestore
         console.error("Error fetching data:", error);
       }
 
-      return null;
+      return null; // End function execution
     });
 
 
@@ -700,56 +699,56 @@ exports.sendMemberRemovalNotification = functions.firestore
     });
 
 
-// const axios = require("axios");
-//
-// exports.createRoom = functions.https.onRequest(async (req, res) => {
-//  const sdkToken = functions.config().agora.sdk_token;
-//  const options = {
-//    method: "POST",
-//    url: "https://api.netless.link/v5/rooms",
-//    headers: {
-//      "token": sdkToken,
-//      "Content-Type": "application/json",
-//      "region": "us-sv",
-//    },
-//    data: JSON.stringify({
-//      isRecord: false,
-//    }),
-//  };
-//
-//  try {
-//    const response = await axios(options);
-//    res.send(response.data);
-//  } catch (error) {
-//    console.error(error);
-//    res.status(500).send("An error occurred while creating the room.");
-//  }
-// });
-//
-// exports.generateToken = functions.https.onRequest(async (req, res) => {
-//  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
-//  const sdkToken = functions.config().agora.sdk_token;
-//
-//  const options = {
-//    method: "POST",
-//    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
-//    headers: {
-//      "token": sdkToken,
-//      "Content-Type": "application/json",
-//      "region": "us-sv",
-//    },
-//    data: JSON.stringify({
-//      lifespan: 3600000,
-//      role: "admin",
-//    }),
-//  };
-//
-//  try {
-//    const response = await axios(options);
-//    res.send(response.data);
-//  } catch (error) {
-//    console.error(error);
-//    res.status(500).send("An error occurred while generating the token.");
-//  }
-// });
-//
+ const axios = require("axios");
+
+ exports.createRoom = functions.https.onRequest(async (req, res) => {
+  const sdkToken = functions.config().agora.sdk_token;
+  const options = {
+    method: "POST",
+    url: "https://api.netless.link/v5/rooms",
+    headers: {
+      "token": sdkToken,
+      "Content-Type": "application/json",
+      "region": "us-sv",
+    },
+    data: JSON.stringify({
+      isRecord: false,
+    }),
+  };
+
+  try {
+    const response = await axios(options);
+    res.send(response.data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while creating the room.");
+  }
+ });
+
+ exports.generateToken = functions.https.onRequest(async (req, res) => {
+  const roomUUID = "87cad3f0fc1a11ee8f6b69560a95c9aa";
+  const sdkToken = functions.config().agora.sdk_token;
+
+  const options = {
+    method: "POST",
+    url: `https://api.netless.link/v5/tokens/rooms/${roomUUID}`,
+    headers: {
+      "token": sdkToken,
+      "Content-Type": "application/json",
+      "region": "us-sv",
+    },
+    data: JSON.stringify({
+      lifespan: 3600000,
+      role: "admin",
+    }),
+  };
+
+  try {
+    const response = await axios(options);
+    res.send(response.data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while generating the token.");
+  }
+ });
+

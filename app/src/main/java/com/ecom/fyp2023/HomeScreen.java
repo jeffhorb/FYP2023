@@ -105,8 +105,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         savedGroupId = sharedPrefManager.getGroupId();
 
 
-        //retrievePersonalData();
-
         if(savedAuthId != null){
 
             retrievePersonalData();
@@ -171,55 +169,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
             sharedPrefManager.saveUserAuthId(FirebaseAuth.getInstance().getCurrentUser().getUid());
 
         }
-//
-//            retrieveGroupData();
-//            String groupName = sharedPrefManager.getGroupName();
-//            String groupDes = sharedPrefManager.getGroupDescription();
-//            groupN.setText(groupName);
-//            options.setVisibility(View.VISIBLE);
-//            options.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    PopupMenu popupMenu = new PopupMenu(HomeScreen.this, v);
-//                    popupMenu.getMenu().add("Group Members");
-//                    popupMenu.getMenu().add("");
-//                    popupMenu.getMenu().add("Send Invite");
-//                    popupMenu.getMenu().add("Pending Invitations");
-//
-//
-//                    popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-//                        @Override
-//                        public boolean onMenuItemClick(MenuItem item) {
-//                            String selectedItem = item.getTitle().toString();
-//                            if (selectedItem.equals("Pending Invitations")) {
-//                                // Handle Pending Invitations option
-//                                Intent intent = new Intent(HomeScreen.this, PendingGroupInvitations.class);
-//                                startActivity(intent);
-//                            } else if (selectedItem.equals("Group Members")) {
-//                                // Handle Group Members option
-//                                Intent intent = new Intent(HomeScreen.this, GroupMembers.class);
-//                                startActivity(intent);
-//
-//                            } else if (selectedItem.equals("Send Invite")) {
-//
-//                                UsersListFragment usersListFragment = UsersListFragment.newInstance();
-//                                Bundle bundle = new Bundle();
-//                                bundle.putString("groupId", savedGroupId);
-//                                bundle.putString("groupName", groupName);
-//                                bundle.putString("groupDes",groupDes);
-//                                usersListFragment.setArguments(bundle);
-//                                usersListFragment.show(getSupportFragmentManager(), usersListFragment.getTag());
-//
-//                            }
-//                            return true;
-//                        }
-//                    });
-//
-//                    popupMenu.show();
-//                }
-//            });
-//
-//        }
 
         //search method
         setupSearchView();
@@ -477,7 +426,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
         if (currentUser != null) {
             String userId = currentUser.getUid();
 
-            // Define onCompleteListener
             OnCompleteListener<QuerySnapshot> onCompleteListener = new OnCompleteListener<QuerySnapshot>() {
                 @Override
                 public void onComplete(@NonNull Task<QuerySnapshot> task) {
@@ -535,67 +483,6 @@ public class HomeScreen extends AppCompatActivity implements NavigationView.OnNa
             Log.d("HomePage", "No user signed in");
         }
     }
-
-    // Method to set user details in the navigation header
-//    private void setUserDetailsInNavHeader() {
-//        NavigationView navigationView = findViewById(R.id.nav_view);
-//        View headerView = navigationView.getHeaderView(0);
-//
-//        // Find TextViews in the header layout
-//        TextView name = headerView.findViewById(R.id.uN);
-//        TextView email = headerView.findViewById(R.id.uE);
-//        TextView skill = headerView.findViewById(R.id.skill);
-//        TextView adminStatus = headerView.findViewById(R.id.adminsStatus);
-//
-//        // Get the current user's ID
-//        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-//        if (currentUser != null) {
-//            String userId = currentUser.getUid();
-//
-//            // Define onCompleteListener
-//            OnCompleteListener<QuerySnapshot> onCompleteListener = new OnCompleteListener<QuerySnapshot>() {
-//                @Override
-//                public void onComplete(@NonNull Task<QuerySnapshot> task) {
-//                    if (task.isSuccessful()) {
-//                        QuerySnapshot querySnapshot = task.getResult();
-//                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
-//                            // Customer document exists, retrieve its details
-//                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
-//                            String userName = document.getString("userName");
-//                            String userEmail = document.getString("userEmail");
-//                            String skl = document.getString("occupation");
-//
-//                            // Set user details in the TextViews
-//                            name.setText(userName);
-//                            email.setText(userEmail);
-//
-//                            if (skill != null){
-//                                skill.setText(skl);
-//                            }
-//                            if (manageAccountClicked) {
-//                                // If "Manage Account" is clicked, show the update account dialog
-//                                showUpdateAccountDialog(document.getId());
-//                                // Reset manageAccountClicked back to false
-//                                manageAccountClicked = false;
-//                            }
-//                        } else {
-//                            // Customer document does not exist
-//                            Log.d("HomePage", "No such document");
-//                        }
-//                    } else {
-//                        // Error occurred while retrieving customer document
-//                        Log.d("HomePage", "Error getting customer document", task.getException());
-//                    }
-//                }
-//            };
-//
-//            // Call getCustomerDocumentId with onCompleteListener
-//            getCustomerDocumentId(userId, onCompleteListener);
-//        } else {
-//            // Current user is null
-//            Log.d("HomePage", "No user signed in");
-//        }
-//    }
 
     private void showUpdateAccountDialog(String id) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,10 +13,14 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.ecom.fyp2023.AppManagers.SharedPreferenceManager;
+import com.ecom.fyp2023.ModelClasses.Users;
 import com.ecom.fyp2023.R;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -23,15 +28,21 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -44,13 +55,17 @@ public class RichEditorFileEditor extends AppCompatActivity {
     String filePath,fileDocId;
     String originalContent, enteredMessage;
 
-    //String groupId = GroupIdGlobalVariable.getInstance().getGlobalData();
-
+    PresenceAdapter adapter;
+    List<Presence> presenceList;
+    FirebaseFirestore db;
+    FirebaseAuth auth;
+    RecyclerView recyclerView;
     private MenuItem revertMenuItem;
 
     Date time;
 
     String groupId;
+
 
     private SharedPreferenceManager sharedPreferenceManager;
 
@@ -62,10 +77,20 @@ public class RichEditorFileEditor extends AppCompatActivity {
         sharedPreferenceManager = new SharedPreferenceManager(this);
         mEditor = findViewById(R.id.rich_editor);
 
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
+
+        presenceList = new ArrayList<>();
+        adapter = new PresenceAdapter(presenceList);
+        recyclerView = findViewById(R.id.horizontal_recycler_view);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(adapter);
 
         storageReference = FirebaseStorage.getInstance().getReference();
 
@@ -74,6 +99,9 @@ public class RichEditorFileEditor extends AppCompatActivity {
         if (getIntent().hasExtra("filePath") && getIntent().hasExtra("filesDocId")) {
             filePath = getIntent().getStringExtra("filePath");
             fileDocId = getIntent().getStringExtra("filesDocId");
+
+            // Set up Firestore presence listener
+            setupPresenceListener();
 
             // Check if SharedPreferences is empty
             String savedText = sharedPreferenceManager.getRichEditorText(fileDocId);
@@ -85,7 +113,6 @@ public class RichEditorFileEditor extends AppCompatActivity {
                 mEditor.setHtml(savedText);
             }
         }
-
         mEditor.setOnTextChangeListener(new RichEditor.OnTextChangeListener() {
             @Override
             public void onTextChange(String text) {
@@ -274,40 +301,91 @@ public class RichEditorFileEditor extends AppCompatActivity {
 
     }
 
-    // Method to load the latest version of the file content from Firestore
-//    private void loadLatestFileVersion() {
-//        FirebaseFirestore db = FirebaseFirestore.getInstance();
-//        CollectionReference versionsCollection = db.collection("files").document(fileDocId).collection("versions");
-//
-//        versionsCollection.get().addOnSuccessListener(queryDocumentSnapshots -> {
-//            if (!queryDocumentSnapshots.isEmpty()) {
-//                DocumentSnapshot latestVersion = queryDocumentSnapshots.getDocuments().get(0);
-//                String content = latestVersion.getString("content");
-//                time = latestVersion.getDate("timestamp");
-//                if (content != null) {
-//                    // Set the content of the latest version to the RichEditor
-//                    mEditor.setHtml(content);
-//
-//                    if (revertMenuItem != null) {
-//                        revertMenuItem.setVisible(true);
-//                    }
-//
-//                } else {
-//                    // Handle case where content is null
-//                    Toast.makeText(getApplicationContext(), "Latest version content is null", Toast.LENGTH_SHORT).show();
-//                }
-//            } else {
-//                // Handle case where no versions are found for the group or user
-//                loadFileContent(filePath);
-//            }
-//        }).addOnFailureListener(e -> {
-//            // Handle any errors
-//            Toast.makeText(getApplicationContext(), "Failed to load latest version: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//        });
-//    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        String currentUserId = auth.getCurrentUser().getUid();
 
-     //Method to load the latest version of the file content from Firestore
+        // Query the Users collection to find the user with the current authId
+        db.collection("Users").whereEqualTo("userId", currentUserId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            // Assuming there's only one document per user
+                            if (document.exists()) {
+                                // Get the username from the document
+                                String userName = document.getString("userName");
+                                Log.d("TAG", "Username fetched: " + userName);
 
+                                // Create a map to represent presence data
+                                Map<String, Object> presence = new HashMap<>();
+                                presence.put("authId", currentUserId);
+                                presence.put("username", userName);
+
+                                // Add user to presence collection with the fetched username
+                                db.collection("presence").document(currentUserId)
+                                        .set(presence)
+                                        .addOnSuccessListener(aVoid -> Log.d("TAG", "User added to presence with username."))
+                                        .addOnFailureListener(e -> Log.w("TAG", "Error adding user to presence.", e));
+                            }
+                        }
+                    } else {
+                        Log.d("TAG", "Error querying for user document.", task.getException());
+                    }
+                });
+
+    }
+
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Remove user from presence collection when they leave the activity
+        db.collection("presence").document(auth.getCurrentUser().getUid())
+                .delete()
+                .addOnSuccessListener(aVoid -> Log.d("TAG", "User removed from presence."))
+                .addOnFailureListener(e -> Log.w("TAG", "Error removing user from presence.", e));
+    }
+
+    private void setupPresenceListener() {
+        db.collection("presence")
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots,
+                                        @Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.w("TAG", "Listen failed.", e);
+                            return;
+                        }
+                        List<Presence> updatedList = new ArrayList<>();
+                        for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                            Presence presence = doc.toObject(Presence.class);
+                            updatedList.add(presence);
+                        }
+                        adapter.updateData(updatedList);
+                    }
+                });
+    }
+
+
+    private void showReminderDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Reminder");
+        builder.setMessage("Remember to load the latest version to avoid conflict in the version of the file");
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked OK button
+                // You can put code here to handle what happens when the user clicks OK
+                dialog.dismiss();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+
+    //Method to load the latest version of the file content from Firestore
     private void loadLatestFileVersion() {
         // Get reference to Firestore collection for file versions
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -322,6 +400,13 @@ public class RichEditorFileEditor extends AppCompatActivity {
                         DocumentSnapshot latestVersion = queryDocumentSnapshots.getDocuments().get(0);
                         String content = latestVersion.getString("content");
                         time = latestVersion.getDate("timestamp");
+
+                        // Get the version ID
+                        String versionId = latestVersion.getId();
+
+                        // Record the version ID
+                        sharedPreferenceManager.recordVersion(versionId);
+
                         if (content != null) {
                             // Set the content of the latest version to the RichEditor
                             mEditor.setHtml(content);
@@ -391,22 +476,71 @@ public class RichEditorFileEditor extends AppCompatActivity {
             String currentContent = mEditor.getHtml();
             sharedPreferenceManager.saveRichEditorText(fileDocId,currentContent);
             return true;
-        } else if (itemId == R.id.saveChanges) {
-            // Show confirmation dialog before saving changes
-            showConfirmationDialog("Save Changes", "This will create a new version of the file", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    // Show dialog for entering message
-                    showEnterMessageDialog(new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            // Call saveChanges with entered message
-                            saveChanges(enteredMessage);
-                            String currentContent = mEditor.getHtml();
+        }
+//        else if (itemId == R.id.saveChanges) {
+//            // Show confirmation dialog before saving changes
+//            showConfirmationDialog("Save Changes", "This will create a new version of the file", new DialogInterface.OnClickListener() {
+//                @Override
+//                public void onClick(DialogInterface dialogInterface, int i) {
+//                    // Show dialog for entering message
+//                    showEnterMessageDialog(new DialogInterface.OnClickListener() {
+//                        @Override
+//                        public void onClick(DialogInterface dialogInterface, int i) {
+//                            // Call saveChanges with entered message
+//                            saveChanges(enteredMessage);
+//                           // String currentContent = mEditor.getHtml();
+//                        }
+//                    });
+//                }
+//            });
+//            return true;
+//        }
+
+        else if (itemId == R.id.saveChanges) {
+            // Get reference to Firestore collection for file versions
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            CollectionReference versionsCollection = db.collection("files").document(fileDocId).collection("versions");
+
+            // Query to get the latest version based on timestamp
+            versionsCollection.orderBy("timestamp", Query.Direction.DESCENDING).limit(1)
+                    .get()
+                    .addOnSuccessListener(queryDocumentSnapshots -> {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            // Retrieve the latest version document
+                            DocumentSnapshot latestVersion = queryDocumentSnapshots.getDocuments().get(0);
+
+                            // Get the current version ID
+                            String currentVersionId = latestVersion.getId();
+
+                            // Check if the saved version ID is the same as the current version ID
+                            String savedVersionId = sharedPreferenceManager.getVersion();
+                            if (!savedVersionId.equals(currentVersionId)) {
+                                // A new version has been created, show a warning dialog
+                                showWarningDialog();
+                            } else {
+                                // The current version and the saved version are the same, proceed with saving changes
+                                // Show confirmation dialog before saving changes
+                                showConfirmationDialog("Save Changes", "This will create a new version of the file", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        // Show dialog for entering message
+                                        showEnterMessageDialog(new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialogInterface, int i) {
+                                                // Call saveChanges with entered message
+                                                saveChanges(enteredMessage);
+                                            }
+                                        });
+                                    }
+                                });
+                            }
                         }
+                    })
+                    .addOnFailureListener(e -> {
+                        // Handle any errors
+                        Toast.makeText(getApplicationContext(), "Failed to load latest version: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
-                }
-            });
+
             return true;
         }
         else if (itemId == R.id.latestVersion) {
@@ -450,6 +584,34 @@ public class RichEditorFileEditor extends AppCompatActivity {
             return  true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showWarningDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Warning");
+        builder.setMessage("Please pull the latest changes as a new version was created while you were editing.");
+        builder.setPositiveButton("Continue Saving", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked Continue Saving button
+                // Show dialog for entering message
+                showEnterMessageDialog(new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // Call saveChanges with entered message
+                        saveChanges(enteredMessage);
+                    }
+                });
+            }
+        });
+        builder.setNegativeButton("Go Back", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked Go Back button
+                // Just close the dialog
+                dialog.dismiss();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     // Method to show dialog for entering message

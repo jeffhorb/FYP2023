@@ -71,7 +71,7 @@ public class CompletedTaskAnalysisBarChart extends AppCompatActivity {
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent2 = new Intent(CompletedTaskAnalysisBarChart.this, TasksProgressAnalysis.class);
+                Intent intent2 = new Intent(CompletedTaskAnalysisBarChart.this, BurndownChart.class);
                 intent2.putExtra("PROID", projectId);
                 startActivity(intent2);
             }

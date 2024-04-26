@@ -204,35 +204,6 @@ public class GroupMembersAdapter extends RecyclerView.Adapter<GroupMembersAdapte
 
 
 
-//        holder.unMakeAdmin.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                if (isAdmin) {
-//                    String selectedUserId = user.getUserId();
-//                    String groupId = sharedPreferenceManager.getGroupId();
-//
-//                    countAdmins(groupId, new CountAdminsCallback() {
-//                        @Override
-//                        public void onCounted(int adminCount) {
-//                            if (adminCount > 1) {
-//                                // More than one admin, allow removal
-//                                removeAdminFromGroup(groupId, selectedUserId);
-//                                holder.unMakeAdmin.setVisibility(View.GONE);
-//                                holder.makeAdmin.setVisibility(View.VISIBLE);
-//                                holder.adminStatus.setVisibility(View.GONE);
-//                                holder.removeButton.setVisibility(View.VISIBLE);
-//                            } else {
-//                                // Show dialog indicating that there must be at least one admin
-//                                showLastAdminDialog();
-//                            }
-//                        }
-//                    });
-//                } else {
-//                    showRestrictActionDialog();
-//                }
-//            }
-//        });
-
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -415,42 +386,6 @@ public class GroupMembersAdapter extends RecyclerView.Adapter<GroupMembersAdapte
         });
     }
 
-//    private void showProjectsDialog(@NonNull List<Projects> projects, String userId) {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//        builder.setTitle("PROJECT LIST");
-//
-//        // Create a LinearLayout to hold the custom views
-//        LinearLayout layout = new LinearLayout(context);
-//        layout.setOrientation(LinearLayout.VERTICAL);
-//
-//        for (Projects project : projects) {
-//            View customView = LayoutInflater.from(context).inflate(R.layout.custom_project_item_dialog, null);
-//            TextView projectNameTextView = customView.findViewById(R.id.projectNameTextView);
-//            TextView descriptionTextView = customView.findViewById(R.id.descriptionTextView);
-//            TextView progressTextView = customView.findViewById(R.id.progressTextView);
-//            projectNameTextView.setText(project.getTitle());
-//            descriptionTextView.setText(project.getDescription());
-//            progressTextView.setText(project.getProgress());
-//
-//            // Set the click listener for each custom view
-//            customView.setOnClickListener(v -> navigateToTeamMemberEvaluation(project, userId));
-//
-//            // Add the custom view to the layout
-//            layout.addView(customView);
-//        }
-//
-//        // If there are no projects, show a message
-//        if (projects.isEmpty()) {
-//            builder.setMessage("No projects found for this group.");
-//        } else {
-//            // Set the custom layout as the dialog view
-//            builder.setView(layout);
-//        }
-//
-//        builder.setPositiveButton("OK", null);
-//        builder.show();
-//    }
-
 
     private void showProjectsDialog(@NonNull List<Projects> projects, String userId, String userName ) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -467,82 +402,5 @@ public class GroupMembersAdapter extends RecyclerView.Adapter<GroupMembersAdapte
         builder.show();
     }
 
-//    private void navigateToTeamMemberEvaluation(@NonNull Projects project, String userId) {
-//        String projectId = project.getProjectId();
-//        Intent intent = new Intent(context, TeamMemberEvaluation.class);
-//        intent.putExtra("userID", userId);
-//        intent.putExtra("userName", userName);
-//        intent.putExtra("projID", projectId);
-//        context.startActivity(intent);
-//    }
-
-
-//    private void showProjectsDialog(@NonNull List<Projects> projects, String userId) {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//        builder.setTitle("PROJECT LIST");
-//        CharSequence[] projectTitles = new CharSequence[projects.size()];
-//        for (int i = 0; i < projects.size(); i++) {
-//            projectTitles[i] = projects.get(i).getTitle();
-//        }
-//        builder.setItems(projectTitles, new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int which) {
-//                Projects selectedProject = projects.get(which);
-//                navigateToTeamMemberEvaluation(selectedProject, userId);
-//            }
-//        });
-//        builder.setPositiveButton("OK", null);
-//        builder.show();
-//    }
-//
-//    private void navigateToTeamMemberEvaluation(Projects project, String userId) {
-//        String projectId = project.getProjectId();
-//        Intent intent = new Intent(context, TeamMemberEvaluation.class);
-//        intent.putExtra("userID", userId);
-//        intent.putExtra("userName", userName);
-//        intent.putExtra("projID", projectId);
-//        context.startActivity(intent);
-//    }
-
-
-//    private void showProjectsDialog(@NonNull List<Projects> projects, String userId) {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//        builder.setTitle("PROJECT LIST");
-//
-//        LinearLayout layout = new LinearLayout(context);
-//        layout.setOrientation(LinearLayout.VERTICAL);
-//
-//        for (int i = 0; i < projects.size(); i++) {
-//            final Projects project = projects.get(i);
-//            View customView = LayoutInflater.from(context).inflate(R.layout.custom_project_item_dialog, null);
-//            TextView projectNameTextView = customView.findViewById(R.id.projectNameTextView);
-//            TextView descriptionTextView = customView.findViewById(R.id.descriptionTextView);
-//            TextView progressTextView = customView.findViewById(R.id.progressTextView);
-//            projectNameTextView.setText(project.getTitle());
-//            descriptionTextView.setText(project.getDescription());
-//            progressTextView.setText(project.getProgress());
-//
-//            customView.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    String projectId = project.getProjectId();
-//                    Intent intent = new Intent(context, TeamMemberEvaluation.class);
-//                    intent.putExtra("userID", userId);
-//                    intent.putExtra("userName", userName);
-//                    intent.putExtra("projID", projectId);
-//                    context.startActivity(intent);
-//                }
-//            });
-//
-//            layout.addView(customView);
-//        }
-//
-//        builder.setView(layout);
-//
-//    //}
-//        builder.setPositiveButton("OK", null);
-//        builder.show();
-//    }
-//
 }
 

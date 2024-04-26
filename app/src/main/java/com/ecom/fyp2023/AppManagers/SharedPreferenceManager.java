@@ -9,6 +9,9 @@ public class SharedPreferenceManager {
     private static final String KEY_CLIENT_SECRET = "client_secret";
     private static final String KEY_ACCESS_TOKEN = "access_token";
 
+    private static final String PREFS_NAME = "VersionPrefs";
+    private static final String VERSION_KEY = "version_id";
+
     private static final String KEY_GROUP_ID = "groupId";
     private static final String KEY_USER_AUTH_ID = "userAuthId";
 
@@ -20,6 +23,20 @@ public class SharedPreferenceManager {
 
     public SharedPreferenceManager(Context context) {
             this.context = context;
+    }
+
+
+
+    public void recordVersion(String versionId) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(VERSION_KEY, versionId);
+        editor.apply();
+    }
+
+    public String getVersion() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(VERSION_KEY, null);
     }
     public void saveLoginDetails(String email, String password) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("LoginDetails", Context.MODE_PRIVATE);

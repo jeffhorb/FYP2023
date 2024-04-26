@@ -136,68 +136,6 @@ public class CompletedProjects extends AppCompatActivity {
                 });
     }
 
-
-//    private void fetchCompletedFromFirestore() {
-//        CollectionReference filesCollection = db.collection("Projects");
-//
-//        Query query;
-//        if (groupId != null) {
-//            // Retrieve files belonging to the provided groupId
-//            query = filesCollection.whereEqualTo("groupId", groupId);
-//        } else {
-//            // Retrieve files belonging to the provided userAuthId
-//            String userAuthId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-//            query = filesCollection.whereEqualTo("userAuthId", userAuthId);
-//        }
-//
-//        query.addSnapshotListener((value, error) -> {
-//            if (error != null) {
-//                // Handle errors
-//                Toast.makeText(getApplicationContext(), "Failed to fetch files from Firestore: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-//                return;
-//            }
-//
-//            if (value != null) {
-//                projectsArrayList.clear(); // Clear the existing list
-//                for (QueryDocumentSnapshot document : value) {
-//                    Projects projects = document.toObject(Projects.class);
-//                    projectsArrayList.add(projects);
-//                }
-//                recyclerAdapter.updateList(projectsArrayList);
-//            }
-//        });
-//    }
-//
-//    public void retrieveGroupData(){
-//
-//        db.collection("Projects")
-//                .whereEqualTo("groupId", savedGroupId) // Filter projects by groupId
-//                .whereIn("progress", Arrays.asList("In Progress", "Incomplete"))
-//                .addSnapshotListener((value, error) -> {
-//                    if (error != null) {
-//                        return;
-//                    }
-//
-//                    if (value != null) {
-//                        projectsArrayList.clear();
-//                        for (DocumentSnapshot document : value) {
-//                            Projects project = document.toObject(Projects.class);
-//                            if (project != null) {
-//                                project.setProjectId(document.getId());
-//                                projectsArrayList.add(project);
-//                            }else {
-//
-//
-//
-//                            }
-//                        }
-//                        recyclerAdapter.notifyDataSetChanged();
-//                    }
-//                });
-//
-//    }
-
-
     private void setupSearchView() {
         searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
             @Override

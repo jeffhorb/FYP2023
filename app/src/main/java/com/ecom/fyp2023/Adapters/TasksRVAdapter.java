@@ -241,7 +241,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                 }
             });
         } else {
-            // Handle invalid position (e.g., show a log message)
             Log.e("RemoveTask", "Invalid position: " + position);
         }
     }
@@ -333,66 +332,6 @@ public class TasksRVAdapter extends RecyclerView.Adapter<TasksRVAdapter.ViewHold
                 .addOnSuccessListener(aVoid -> Log.d("RemoveNote", "Note removed successfully"))
                 .addOnFailureListener(e -> Log.e("RemoveNote", "Error removing note", e));
     }
-
-    //update end date of project automatically. this does not account for prerequisites take out when satisfied
-    /*private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
-        fb.collection("projectTasks")
-                .whereEqualTo("projectId", projectId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        AtomicLong highestEstimatedTime = new AtomicLong();
-                        AtomicInteger tasksProcessed = new AtomicInteger(0);
-                        int totalTasks = task.getResult().size();
-
-                        for (DocumentSnapshot document : task.getResult()) {
-                            String taskId = document.getString("taskId");
-
-                            fb.collection("Tasks")
-                                    .document(taskId)
-                                    .get()
-                                    .addOnCompleteListener(taskDocumentTask -> {
-                                        if (taskDocumentTask.isSuccessful()) {
-                                            DocumentSnapshot taskDocument = taskDocumentTask.getResult();
-
-                                            if (taskDocument != null && taskDocument.exists()) {
-                                                String estimatedTime = taskDocument.getString("estimatedTime");
-
-                                                if (estimatedTime != null) {
-                                                    long taskDays = TimeConverter.convertToDays(estimatedTime);
-
-                                                    // Update the highest estimated time
-                                                    highestEstimatedTime.updateAndGet(currentValue ->
-                                                            Math.max(currentValue, taskDays)
-                                                    );
-
-                                                    Log.d("CalculateTime", "Task processed. Highest estimated time so far: " + highestEstimatedTime);
-                                                } else {
-                                                    Log.e("CalculateTime", "Estimated time is null for task: " + taskId);
-                                                }
-                                            } else {
-                                                Log.e("CalculateTime", "Task document is null or doesn't exist for taskId: " + taskId);
-                                            }
-                                        } else {
-                                            // Handle failure in fetching task document
-                                            Log.e("CalculateTime", "Error fetching task document", taskDocumentTask.getException());
-                                        }
-
-                                        // Increment the counter for processed tasks
-                                        tasksProcessed.incrementAndGet();
-
-                                        // Check if all tasks have been processed
-                                        if (tasksProcessed.get() == totalTasks) {
-                                            // Update the project's end date based on the highest estimated time
-                                            updateProjectEndDate(projectId, highestEstimatedTime.get());
-                                        }
-                                    });
-                        }
-                    } else {
-                        Log.e("CalculateTime", "Error fetching project tasks", task.getException());
-                    }
-                });
-    }*/
 
     private void calculateTotalEstimatedTimeAndEndDate(String projectId) {
         fb.collection("projectTasks")

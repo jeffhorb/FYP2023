@@ -73,13 +73,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
             holder.itemView.setVisibility(View.GONE);
             holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
         }
-//        FirestoreManager firestoreManager = new FirestoreManager();
-//        firestoreManager.getDocumentId("Projects", "title", projects.getTitle(), documentId -> {
-//            if (documentId != null) {
-//
-//               String projectId = documentId;
-//            }
-//        });
+
     }
 
     @Override
@@ -180,30 +174,7 @@ public class ProjectsRVAdapter extends RecyclerView.Adapter<ProjectsRVAdapter.Vi
         AlertDialog dialog = builder.create();
         dialog.show();
     }
-
-//    private void showPopupMenu(View view, int position) {
-//        PopupMenu popupMenu = new PopupMenu(context, view);
-//        popupMenu.getMenuInflater().inflate(R.menu.project_menu_option, popupMenu.getMenu());
-//        // Set up a click listener for the menu items
-//        popupMenu.setOnMenuItemClickListener(item -> {
-//            int id = item.getItemId();
-//
-//            if (id == R.id.deletePrject) {
-//                showRemoveConfirmationDialog(position);
-//                return true;
-//            }else if(id == R.id.updateProject){
-//
-//                Projects project = projectsArrayList.get(position);
-//                showUpdateFragmrnt(project);
-//
-//                return true;
-//            }
-//
-//            return false;
-//        });
-//        popupMenu.show();
-//    }
-
+    
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final TextView projectT;

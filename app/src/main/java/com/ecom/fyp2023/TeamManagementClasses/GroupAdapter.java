@@ -103,7 +103,7 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
 
                         showGroupMembers(documentId);
 
-                    }  // Handle the case where the document ID couldn't be retrieved
+                    }
                 });
 
             }
@@ -125,7 +125,7 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
                         Intent intent = new Intent(context, HomeScreen.class);
                         context.startActivity(intent);
 
-                    }  // Handle the case where the document ID couldn't be retrieved
+                    }
                 });
 
             }
@@ -178,7 +178,7 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
                                                 if (task.isSuccessful()) {
                                                     for (DocumentSnapshot userDoc : task.getResult()) {
                                                         String userName = userDoc.getString("userName");
-                                                        String userRole = userDoc.getString("role");
+                                                        String userRole = userDoc.getString("occupation");
                                                         membersBuilder.append(userName).append(" (").append(userRole).append(")\n");
                                                     }
                                                 }
@@ -226,52 +226,6 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
     }
 
 
-    //    private void showGroupMembers(String groupId) {
-//        DocumentReference groupRef = db.collection("groups").document(groupId);
-//
-//        groupRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-//            @Override
-//            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-//                if (task.isSuccessful()) {
-//                    DocumentSnapshot groupDoc = task.getResult();
-//                    if (groupDoc.exists()) {
-//                        List<String> memberIds = (List<String>) groupDoc.get("members");
-//                        if (memberIds != null && !memberIds.isEmpty()) {
-//                            StringBuilder membersBuilder = new StringBuilder();
-//                            // Query users collection to retrieve user names
-//                            for (String memberId : memberIds) {
-//                                db.collection("Users")
-//                                        .whereEqualTo("userId", memberId)
-//                                        .get()
-//                                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-//                                            @Override
-//                                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-//                                                if (task.isSuccessful()) {
-//                                                    for (DocumentSnapshot userDoc : task.getResult()) {
-//                                                        String userName = userDoc.getString("userName");
-//                                                        String userRole = userDoc.getString("role");
-//                                                        membersBuilder.append(userName).append(" (").append(userRole).append(")\n");
-//                                                    }
-//                                                }
-//                                                // Show dialog only when all members are fetched
-//                                                if (membersBuilder.length() > 0) {
-//                                                    showMembersDialog(membersBuilder.toString());
-//                                                }
-//                                            }
-//                                        });
-//                            }
-//                        } else {
-//                            Toast.makeText(context, "No members found", Toast.LENGTH_SHORT).show();
-//                        }
-//                    } else {
-//                        Toast.makeText(context, "Group document does not exist", Toast.LENGTH_SHORT).show();
-//                    }
-//                } else {
-//                    Toast.makeText(context, "Failed to fetch group details", Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//        });
-//    }
     private void showMembersDialog(String members) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("Group Members");
