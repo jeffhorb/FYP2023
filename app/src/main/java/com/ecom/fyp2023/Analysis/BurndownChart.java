@@ -44,7 +44,6 @@ public class BurndownChart extends AppCompatActivity {
 
     String projectId;
 
-    //String groupId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
